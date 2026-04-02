@@ -1,12 +1,12 @@
 <?php
 
-namespace VendorName\Skeleton\Commands;
+namespace InEngine\Table\Commands;
 
 use Illuminate\Console\Command;
 
-class SkeletonCommand extends Command
+class TableCommand extends Command
 {
-    public $signature = 'skeleton';
+    public $signature = 'tableui';
 
     public $description = 'My command';
 
