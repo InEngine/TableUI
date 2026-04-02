@@ -2,9 +2,9 @@
 
 namespace InEngine\Table;
 
+use InEngine\Table\Commands\TableCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use InEngine\Table\Commands\TableCommand;
 
 class TableServiceProvider extends PackageServiceProvider
 {
