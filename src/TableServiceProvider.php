@@ -1,12 +1,12 @@
 <?php
 
-namespace VendorName\Skeleton;
+namespace InEngine\Table;
 
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use VendorName\Skeleton\Commands\SkeletonCommand;
+use InEngine\Table\Commands\TableCommand;
 
-class SkeletonServiceProvider extends PackageServiceProvider
+class TableServiceProvider extends PackageServiceProvider
 {
     public function configurePackage(Package $package): void
     {
@@ -16,10 +16,10 @@ class SkeletonServiceProvider extends PackageServiceProvider
          * More info: https://github.com/spatie/laravel-package-tools
          */
         $package
-            ->name('skeleton')
+            ->name('tableui')
             ->hasConfigFile()
             ->hasViews()
-            ->hasMigration('create_migration_table_name_table')
-            ->hasCommand(SkeletonCommand::class);
+            ->hasMigration('create_tableui_table')
+            ->hasCommand(TableCommand::class);
     }
 }
