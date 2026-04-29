@@ -90,6 +90,24 @@ it('renders money column cells with minor-unit divisor', function (): void {
         ->assertSee('$42.00');
 });
 
+it('sets data-underline-links on the table root from config tableui.underline_links', function (): void {
+    config()->set('tableui.underline_links', true);
+
+    Livewire::test(TableView::class, [
+        'table' => new Table([]),
+        'headers' => ['Name'],
+        'rows' => [['Ada']],
+    ])->assertSeeHtml('data-underline-links="1"');
+
+    config()->set('tableui.underline_links', false);
+
+    Livewire::test(TableView::class, [
+        'table' => new Table([]),
+        'headers' => ['Name'],
+        'rows' => [['Ada']],
+    ])->assertSeeHtml('data-underline-links="0"');
+});
+
 it('sorts rows by selected column and toggles direction', function (): void {
     Livewire::test(TableView::class, [
         'table' => new Table([]),

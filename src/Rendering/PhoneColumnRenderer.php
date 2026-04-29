@@ -4,6 +4,7 @@ namespace InEngine\TableUI\Rendering;
 
 use Illuminate\Support\HtmlString;
 use InEngine\TableUI\ColumnTypes\Column;
+use InEngine\TableUI\Support\PhoneDisplayFormatter;
 
 final class PhoneColumnRenderer extends AbstractColumnRenderer
 {
@@ -15,14 +16,20 @@ final class PhoneColumnRenderer extends AbstractColumnRenderer
             return '';
         }
 
-        $digits = preg_replace('/\D+/', '', $raw) ?? '';
+        $display = PhoneDisplayFormatter::formatDisplay($raw);
 
-        if ($digits !== '') {
+        if ($display === '') {
+            return '';
+        }
+
+        $href = PhoneDisplayFormatter::telHref($raw);
+
+        if ($href !== null) {
             return (new HtmlString(
-                '<a class="table-ui__link table-ui__link--phone" href="tel:'.e($digits).'">'.e($raw).'</a>'
+                '<a class="table-ui__link table-ui__link--phone" href="'.e($href).'">'.e($display).'</a>'
             ))->toHtml();
         }
 
-        return e($raw);
+        return e($display);
     }
 }

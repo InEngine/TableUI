@@ -1,5 +1,12 @@
-@php($tableUiThemeStyle = \InEngine\TableUI\Support\TableUiTheme::inlineStyleAttribute())
-<div {{ $attributes->class(['table-ui']) }} @if($tableUiThemeStyle !== '') style="{{ $tableUiThemeStyle }}" @endif>
+@php
+    $tableUiThemeStyle = \InEngine\TableUI\Support\TableUiTheme::inlineStyleAttribute();
+    $tableUiUnderlineLinks = filter_var(config('tableui.underline_links', false), FILTER_VALIDATE_BOOLEAN);
+@endphp
+<div
+    {{ $attributes->class(['table-ui']) }}
+    data-underline-links="{{ $tableUiUnderlineLinks ? '1' : '0' }}"
+    @if($tableUiThemeStyle !== '') style="{{ $tableUiThemeStyle }}" @endif
+>
     @if (count($headers) === 0 && count($rows) === 0)
         <p class="table-ui__empty" role="status">{{ $emptyMessage }}</p>
     @else
