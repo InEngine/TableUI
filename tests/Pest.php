@@ -1,5 +1,5 @@
 <?php
 
-use InEngine\Table\Tests\TestCase;
+use InEngine\TableUI\Tests\TestCase;
 
 uses(TestCase::class)->in(__DIR__);

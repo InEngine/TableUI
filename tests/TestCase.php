@@ -1,9 +1,11 @@
 <?php
 
-namespace InEngine\Table\Tests;
+namespace InEngine\TableUI\Tests;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use InEngine\Table\TableServiceProvider;
+use InEngine\TableUI\Rendering\ColumnRendererRegistry;
+use InEngine\TableUI\TableServiceProvider;
+use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 class TestCase extends Orchestra
@@ -13,13 +15,22 @@ class TestCase extends Orchestra
         parent::setUp();
 
         Factory::guessFactoryNamesUsing(
-            fn (string $modelName) => 'InEngine\\Table\\Database\\Factories\\'.class_basename($modelName).'Factory'
+            fn (string $modelName) => 'InEngine\\TableUI\\Database\\Factories\\'.class_basename($modelName).'Factory'
         );
+
+        config()->set('tableui.columns', []);
+        config()->set('tableui.renderers', []);
+
+        $tableuiDefaults = require dirname(__DIR__).'/config/tableui.php';
+        config()->set('tableui.column_types', $tableuiDefaults['column_types']);
+
+        $this->app->forgetInstance(ColumnRendererRegistry::class);
     }
 
     protected function getPackageProviders($app)
     {
         return [
+            LivewireServiceProvider::class,
             TableServiceProvider::class,
         ];
     }
@@ -27,11 +38,6 @@ class TestCase extends Orchestra
     public function getEnvironmentSetUp($app)
     {
         config()->set('database.default', 'testing');
-
-        /*
-         foreach (\Illuminate\Support\Facades\File::allFiles(__DIR__ . '/../database/migrations') as $migration) {
-            (include $migration->getRealPath())->up();
-         }
-         */
+        config()->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
     }
 }
