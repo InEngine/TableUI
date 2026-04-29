@@ -1,6 +1,123 @@
 <?php
 
-// config for InEngine/Table
 return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Table UI defaults
+    |--------------------------------------------------------------------------
+    |
+    | Publish this file and adjust for your app. The Livewire table uses this when no
+    | `emptyMessage` argument is passed; override per invocation via the component prop.
+    |
+    */
+    'empty_message' => 'No rows to display.',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Column type defaults (presentation)
+    |--------------------------------------------------------------------------
+    |
+    | Package-level options keyed by column kind. These values are merged with sensible
+    | defaults in code; override only the branches you need.
+    |
+    | boolean — Used by {@see \InEngine\TableUI\ColumnTypes\Primitives\BooleanColumn} and
+    | {@see \InEngine\TableUI\Rendering\BooleanColumnRenderer}.
+    |
+    | - `true` / `false`: each branch may define:
+    |   - `icon` (string): Heroicons v2 **outline** icon slug (kebab-case), e.g. `check`, `x-mark`.
+    |     Only built-in slugs ship in the package (`check`, `x-mark`, `question-mark-circle` as fallback);
+    |     unknown slugs render the fallback icon until you extend {@see \InEngine\TableUI\Support\HeroiconOutlineSvg}.
+    |   - `color` (string): Tailwind text colour applied to the SVG via `stroke="currentColor"`.
+    |     You may pass:
+    |       • a shorthand token such as `green-600` → normalized to `text-green-600`;
+    |       • a full class list such as `text-green-600 dark:text-green-400`;
+    |       • arbitrary-value / arbitrary-property Tailwind classes (`text-[#abc]`, `dark:text-white`);
+    |       • any custom CSS class your application defines (e.g. `text-brand-accent`).
+    |
+    | - `show_false` (bool): when `false`, negative values render an empty cell (no false icon). Default `true`.
+    |
+    | Cell values are interpreted as boolean with common casts (bool, 0/1, "true"/"false", etc.).
+    |
+    | Column inference picks {@see \InEngine\TableUI\ColumnTypes\Primitives\BooleanColumn} when the attribute name
+    | looks like a flag (`is_*`), or when `has_*` / `can_*` combine with a flag-like sample (bool or 0/1),
+    | so numeric counts such as `has_children = 3` are not treated as booleans.
+    |
+    | money — {@see \InEngine\TableUI\ColumnTypes\Complex\MoneyColumn} (extends {@see \InEngine\TableUI\ColumnTypes\Primitives\NumberColumn}) / {@see \InEngine\TableUI\Rendering\MoneyColumnRenderer}.
+    | Integer/decimal schema types with monetary names (e.g. `total`, `line_amount`) are inferred as money.
+    | Stored values are divided by `divisor` (default 100 for cents → dollars display).
+    |
+    | Primitives under {@see \InEngine\TableUI\ColumnTypes\Primitives} map from {@see \Illuminate\Support\Facades\Schema::getColumnType()}:
+    | StringColumn (varchar-family), TextColumn (text/medium/long/blob), EnumColumn, TimestampColumn (date/datetime/timestamp/time),
+    | NumberColumn (non-ID numerics), IdColumn (uuid/guid and `id` / `*_id` / name contains uuid|ulid).
+    |
+    */
+    'column_types' => [
+        'text' => [
+            'max_display_length' => 0,
+        ],
+        'timestamp' => [
+            'datetime_format' => 'Y-m-d H:i:s',
+        ],
+        'number' => [
+            'max_decimals' => 12,
+        ],
+        'id' => [
+            // Trailing character count shown after "…" for ULID (UUID uses the last hyphen-separated segment).
+            'ulid_suffix_length' => 8,
+        ],
+        'money' => [
+            'divisor' => 100,
+            'decimals' => 2,
+            'prefix' => '$',
+            'suffix' => '',
+        ],
+        'boolean' => [
+            'show_false' => true,
+            'true' => [
+                'icon' => 'check',
+                'color' => 'green-600',
+            ],
+            'false' => [
+                'icon' => 'x-mark',
+                'color' => 'red-600',
+            ],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Additional column type classes (FQCN)
+    |--------------------------------------------------------------------------
+    |
+    | Each class must extend {@see \InEngine\TableUI\ColumnTypes\Column}, implement
+    | {@see \InEngine\TableUI\Contracts\DefinesColumnRenderers}, and declare at least one renderer
+    | plus a default via {@see DefinesColumnRenderers::rendererClassNames()} and
+    | {@see DefinesColumnRenderers::defaultRendererClassName()}. Every renderer FQCN listed there must
+    | also appear under `renderers` below (unless it is a package built-in renderer).
+    |
+    | Registered types participate in {@see \InEngine\TableUI\Columns::fromAttributeKeys()} inference (with a
+    | {@see \Illuminate\Support\Facades\Schema::getColumnType()} map from {@see \InEngine\TableUI\Table::columns()})
+    | when applicable and in {@see \InEngine\TableUI\ColumnTypes\ColumnFactory::make()}.
+    |
+    | @var list<class-string<\InEngine\TableUI\ColumnTypes\Column>>
+    */
+    'columns' => [
+        //
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Additional renderer classes (FQCN)
+    |--------------------------------------------------------------------------
+    |
+    | Each must extend {@see \InEngine\TableUI\Rendering\AbstractColumnRenderer}. Only renderers listed here
+    | (or shipped with the package) may be instantiated for cells.
+    |
+    | @var list<class-string<\InEngine\TableUI\Rendering\AbstractColumnRenderer>>
+    */
+    'renderers' => [
+        //
+    ],
 
 ];
