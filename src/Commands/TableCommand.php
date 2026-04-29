@@ -1,6 +1,6 @@
 <?php
 
-namespace InEngine\Table\Commands;
+namespace InEngine\TableUI\Commands;
 
 use Illuminate\Console\Command;
 
