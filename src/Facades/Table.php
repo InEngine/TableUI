@@ -1,16 +1,16 @@
 <?php
 
-namespace InEngine\Table\Facades;
+namespace InEngine\TableUI\Facades;
 
 use Illuminate\Support\Facades\Facade;
 
 /**
- * @see \InEngine\Table\Table
+ * @see \InEngine\TableUI\Table (Eloquent model collection for table data)
  */
 class Table extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return \InEngine\Table\Table::class;
+        return \InEngine\TableUI\Table::class;
     }
 }

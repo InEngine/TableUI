@@ -1,5 +1,135 @@
 <?php
 
-namespace InEngine\Table;
+namespace InEngine\TableUI;
 
-class Table {}
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
+use InEngine\TableUI\Support\LaravelColumnSchema;
+
+/**
+ * Table domain object: a model collection plus optional explicit {@see Columns} and {@see Options}.
+ *
+ * When {@code $options} is omitted or null, a new {@see Options} instance is created with its constructor defaults
+ * (same for {@see fromCollection}).
+ *
+ * Pass models only for inferred columns, or provide {@see Columns} for full control. Use {@see fromCollection} for a fluent entry point.
+ *
+ * @extends EloquentCollection<int, Model>
+ */
+class Table extends EloquentCollection
+{
+    private ?Columns $explicitColumns = null;
+
+    private Options $options;
+
+    /**
+     * @param  EloquentCollection<int, Model>|list<Model>  $items
+     * @param  ?Options  $options  When null, {@see Options} is instantiated with default flags and routes.
+     */
+    public function __construct(
+        EloquentCollection|array $items = [],
+        ?Columns $columns = null,
+        ?Options $options = null,
+    ) {
+        if ($items instanceof EloquentCollection) {
+            $items = $items->all();
+        }
+
+        parent::__construct($items);
+
+        $this->explicitColumns = $columns;
+        $this->options = $options ?? new Options;
+    }
+
+    /**
+     * @param  EloquentCollection<int, Model>|list<Model>  $items
+     * @param  ?Options  $options  When null, {@see Options} is instantiated with default flags and routes.
+     */
+    public static function fromCollection(EloquentCollection|array $items, ?Columns $columns = null, ?Options $options = null): static
+    {
+        return new static($items, $columns, $options);
+    }
+
+    /**
+     * When {@see setColumns} was used or constructor passed columns, returns that definition;
+     * otherwise derives columns from the first model’s attributes (same order as {@see Model::getAttributes()}).
+     *
+     * When the collection is empty, returns an empty {@see Columns} instance.
+     *
+     * Inferred columns use {@see Schema::getColumns()} for each attribute (via {@see LaravelColumnSchema}): abstract
+     * {@code type_name} tokens are passed in, with MySQL/MariaDB {@code tinyint(1)} normalized to {@code boolean}.
+     */
+    public function columns(): Columns
+    {
+        if ($this->explicitColumns !== null) {
+            return $this->explicitColumns;
+        }
+
+        if ($this->isEmpty()) {
+            return new Columns([]);
+        }
+
+        $first = $this->first();
+        $attributes = $first->getAttributes();
+
+        return Columns::fromAttributeKeys(
+            $this->columnSchemaTypesByKey($first),
+            $attributes
+        );
+    }
+
+    /**
+     * Attribute name => abstract column type token for inference (see {@see LaravelColumnSchema}), or {@code null}
+     * when the attribute is not backed by a physical column (or lookup fails).
+     *
+     * @return array<string, string|null>
+     */
+    private function columnSchemaTypesByKey(Model $model): array
+    {
+        $table = $model->getTable();
+
+        $columnsByLowerName = self::schemaColumnsIndexedByLowerName($table);
+
+        $map = [];
+
+        foreach (array_keys($model->getAttributes()) as $key) {
+            $map[$key] = LaravelColumnSchema::abstractTypeForColumn($columnsByLowerName, (string) $key);
+        }
+
+        return $map;
+    }
+
+    /**
+     * @return array<string, array{name: string, type: string, type_name: string, nullable: bool, default: mixed, auto_increment: bool, comment: string|null, generation: array{type: string, expression: string|null}|null}>
+     */
+    private static function schemaColumnsIndexedByLowerName(string $table): array
+    {
+        try {
+            $indexed = [];
+
+            foreach (Schema::getColumns($table) as $column) {
+                $indexed[strtolower($column['name'])] = $column;
+            }
+
+            return $indexed;
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    public function setColumns(Columns $columns): void
+    {
+        $this->explicitColumns = $columns;
+    }
+
+    public function options(): Options
+    {
+        return $this->options;
+    }
+
+    public function setOptions(Options $options): void
+    {
+        $this->options = $options;
+    }
+}
