@@ -16,11 +16,13 @@
         }
     ],
     "require": {
-        "php": "^8.4",
+        "php": "^8.5",
         "spatie/laravel-package-tools": "^1.90.0",
-        "illuminate/contracts": "^12.0||^13.0"
+        "illuminate/contracts": "^12.0||^13.0",
+        "illuminate/database": "^12.0||^13.0"
     },
     "require-dev": {
+        "livewire/livewire": "^4.0",
         "laravel/pint": "^1.14",
         "nunomaduro/collision": "^8.8",
         "larastan/larastan": "^3.0",
@@ -34,13 +36,13 @@
     },
     "autoload": {
         "psr-4": {
-            "InEngine\\Table\\": "src/",
-            "InEngine\\Table\\Database\\Factories\\": "database/factories/"
+            "InEngine\\TableUI\\": "src/",
+            "InEngine\\TableUI\\Database\\Factories\\": "database/factories/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "InEngine\\Table\\Tests\\": "tests/",
+            "InEngine\\TableUI\\Tests\\": "tests/",
             "Workbench\\App\\": "workbench/app/"
         }
     },
@@ -52,6 +54,9 @@
         "test-coverage": "vendor/bin/pest --coverage",
         "format": "vendor/bin/pint"
     },
+    "suggest": {
+        "livewire/livewire": "Required to use the Table Livewire component (^4.0)."
+    },
     "config": {
         "sort-packages": true,
         "allow-plugins": {
@@ -62,10 +67,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "InEngine\\Table\\TableServiceProvider"
+                "InEngine\\TableUI\\TableServiceProvider"
             ],
             "aliases": {
-                "Table": "InEngine\\Table\\Facades\\Table"
+                "Table": "InEngine\\TableUI\\Facades\\Table"
             }
         }
     },
