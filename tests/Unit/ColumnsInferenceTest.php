@@ -10,6 +10,7 @@ use InEngine\TableUI\ColumnTypes\Primitives\IdColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\NumberColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\StringColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\TextColumn;
+use InEngine\TableUI\ColumnTypes\Primitives\TimestampColumn;
 use InEngine\TableUI\Rendering\ColumnRendererRegistry;
 use InEngine\TableUI\Tests\Fixtures\SkuColumn;
 use InEngine\TableUI\Tests\Fixtures\SkuColumnRenderer;
@@ -129,6 +130,18 @@ it('infers text for long-text schema types', function (): void {
     );
 
     expect($columns->items()[0])->toBeInstanceOf(TextColumn::class);
+});
+
+it('infers date-only timestamp columns when the schema type is date', function (): void {
+    $columns = Columns::fromAttributeKeys(
+        ['starts_on' => 'date'],
+        ['starts_on' => '2026-04-29']
+    );
+
+    $column = $columns->items()[0];
+
+    expect($column)->toBeInstanceOf(TimestampColumn::class)
+        ->and($column->isDateOnly())->toBeTrue();
 });
 
 it('infers registered custom columns when ParticipatesInColumnInference matches', function (): void {

@@ -74,6 +74,10 @@ final class ColumnInference
         }
 
         if (in_array(TimestampColumn::class, $allowedColumnClasses, true) && self::isTimestampSchemaType($t)) {
+            if ($t === 'date') {
+                return new TimestampColumn($attributeKey, dateOnly: true);
+            }
+
             return ColumnFactory::make($attributeKey, TimestampColumn::class);
         }
 

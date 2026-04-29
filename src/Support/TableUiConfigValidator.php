@@ -16,6 +16,7 @@ final class TableUiConfigValidator
 {
     public static function validateOrThrow(): void
     {
+        self::assertThemeShape();
         self::assertColumnTypesShape();
 
         foreach (config('tableui.renderers', []) as $fqcn) {
@@ -108,6 +109,29 @@ final class TableUiConfigValidator
         }
     }
 
+    private static function assertThemeShape(): void
+    {
+        $theme = config('tableui.theme');
+
+        if ($theme === null) {
+            return;
+        }
+
+        if (! is_array($theme)) {
+            throw new InvalidArgumentException('tableui.theme must be an array when present.');
+        }
+
+        foreach (['primary', 'secondary'] as $key) {
+            if (! array_key_exists($key, $theme)) {
+                continue;
+            }
+
+            if (! is_string($theme[$key])) {
+                throw new InvalidArgumentException("tableui.theme.{$key} must be a string when present.");
+            }
+        }
+    }
+
     private static function assertColumnTypesShape(): void
     {
         $columnTypes = config('tableui.column_types');
@@ -118,6 +142,10 @@ final class TableUiConfigValidator
 
         if (! is_array($columnTypes)) {
             throw new InvalidArgumentException('tableui.column_types must be an array when present.');
+        }
+
+        if (isset($columnTypes['date']) && is_array($columnTypes['date']) && array_key_exists('format', $columnTypes['date']) && ! is_string($columnTypes['date']['format'])) {
+            throw new InvalidArgumentException('tableui.column_types.date.format must be a string when present.');
         }
 
         if (! isset($columnTypes['boolean'])) {

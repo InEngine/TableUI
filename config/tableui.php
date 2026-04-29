@@ -15,6 +15,27 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Theme (Tailwind colors)
+    |--------------------------------------------------------------------------
+    |
+    | Sets CSS variables on the root .table-ui wrapper pointing at your app’s Tailwind v4 palette:
+    | --table-ui-primary and --table-ui-secondary each resolve to var(--color-{token}).
+    |
+    | Each value may be:
+    | • A palette token: "gray-600", "rose-950"
+    | • A custom / semantic name from your @theme: "primary", "secondary", "brand"
+    | • Optional utility-style prefix (stripped): "text-gray-600", "bg-primary"
+    |
+    | Used by resources/css/tableui.css for header labels, sort controls, and subtle borders.
+    |
+    */
+    'theme' => [
+        'primary' => 'gray-600',
+        'secondary' => 'blue-600',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Column type defaults (presentation)
     |--------------------------------------------------------------------------
     |
@@ -82,6 +103,12 @@ return [
                 'icon' => 'x-mark',
                 'color' => 'red-600',
             ],
+        ],
+        /*
+        | date — Used when the database column is {@code date} (not datetime); see {@see \InEngine\TableUI\ColumnTypes\Primitives\TimestampColumn::isDateOnly()}.
+        */
+        'date' => [
+            'format' => 'Y-m-d',
         ],
     ],
 

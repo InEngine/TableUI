@@ -22,6 +22,7 @@ class TestCase extends Orchestra
         config()->set('tableui.renderers', []);
 
         $tableuiDefaults = require dirname(__DIR__).'/config/tableui.php';
+        config()->set('tableui.theme', $tableuiDefaults['theme'] ?? []);
         config()->set('tableui.column_types', $tableuiDefaults['column_types']);
 
         $this->app->forgetInstance(ColumnRendererRegistry::class);

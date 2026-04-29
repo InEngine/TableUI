@@ -1,4 +1,5 @@
-<div {{ $attributes->class(['table-ui']) }}>
+@php($tableUiThemeStyle = \InEngine\TableUI\Support\TableUiTheme::inlineStyleAttribute())
+<div {{ $attributes->class(['table-ui']) }} @if($tableUiThemeStyle !== '') style="{{ $tableUiThemeStyle }}" @endif>
     @if (count($headers) === 0 && count($rows) === 0)
         <p class="table-ui__empty" role="status">{{ $emptyMessage }}</p>
     @else
