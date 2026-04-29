@@ -1,0 +1,64 @@
+/*
+|--------------------------------------------------------------------------
+| Table UI — embed in your app CSS (single Tailwind import)
+|--------------------------------------------------------------------------
+|
+| Import this file *after* `@import "tailwindcss"` in your Vite entry so the host
+| app’s Tailwind build processes @source, @layer, and @apply here without loading
+| Tailwind twice. See `tableui-standalone.css` for a pre-built bundle.
+|
+*/
+
+@source "../views/**/*.blade.php";
+
+/* Boolean renderer wrapper (output from PHP, not always visible as literals in Blade). */
+@source inline("table-ui__boolean");
+
+/* Row striping utilities applied via Blade @class(...) when stripping is enabled. */
+@source inline("odd:bg-gray-50/90 dark:odd:bg-gray-900/45 odd:hover:bg-gray-100 dark:odd:hover:bg-gray-800/70");
+
+@layer components {
+    .table-ui {
+        @apply w-full overflow-x-auto text-gray-900 dark:text-gray-100;
+    }
+
+    .table-ui__empty {
+        @apply rounded-md border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center text-sm text-gray-500 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-400;
+    }
+
+    .table-ui__table {
+        @apply min-w-full border-collapse text-left text-sm;
+    }
+
+    .table-ui__thead {
+        @apply border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/50;
+    }
+
+    .table-ui__th {
+        @apply px-3 py-2 font-semibold text-gray-700 dark:text-gray-200;
+    }
+
+    .table-ui__sort-button {
+        @apply inline-flex w-full items-center gap-1 rounded px-1 py-0.5 text-left font-semibold text-gray-800 hover:bg-gray-100 hover:text-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400 dark:text-gray-100 dark:hover:bg-gray-800 dark:hover:text-white dark:focus-visible:outline-gray-500;
+    }
+
+    .table-ui__tbody {
+        @apply bg-white dark:bg-gray-950;
+    }
+
+    .table-ui__tbody .table-ui__tr {
+        @apply border-b border-gray-200 last:border-b-0 dark:border-gray-700;
+    }
+
+    .table-ui__tr {
+        @apply transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/60;
+    }
+
+    .table-ui__td {
+        @apply whitespace-nowrap px-3 py-2 align-middle text-gray-800 dark:text-gray-200;
+    }
+
+    .table-ui__boolean {
+        @apply inline-flex items-center justify-center;
+    }
+}

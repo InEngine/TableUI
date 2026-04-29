@@ -1,0 +1,16 @@
+/*
+|--------------------------------------------------------------------------
+| Vite input: pre-built Table UI CSS (full Tailwind + package sources)
+|--------------------------------------------------------------------------
+|
+| Use the output `public/css/tableui.css` when you are not merging into an app
+| that already compiles Tailwind. Most apps should import `tableui.css` only, after
+| their own `@import "tailwindcss"`.
+|
+*/
+
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@import "./tableui.css";
