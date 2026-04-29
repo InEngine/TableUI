@@ -14,8 +14,10 @@
 /* Boolean renderer wrapper (output from PHP, not always visible as literals in Blade). */
 @source inline("table-ui__boolean");
 
-/* Link columns (email, phone): underline toggled via [data-underline-links] on .table-ui (see config tableui.underline_links). */
+/* Link columns (email, phone): .table-ui gets underlined | no-underlined from Livewire (config tableui.underline_links). */
 @source inline("table-ui__link");
+@source inline("underlined");
+@source inline("no-underlined");
 
 /* Row striping utilities applied via Blade @class(...) when stripping is enabled. */
 @source inline("odd:bg-gray-50/90 dark:odd:bg-gray-900/45 odd:hover:bg-gray-100 dark:odd:hover:bg-gray-800/70");
@@ -82,14 +84,14 @@
     }
 
     /*
-     * Email and phone cells render <a class="table-ui__link …">. Default: no underline (matches tableui.underline_links false).
-     * When the Livewire root has data-underline-links="1", links show an underline for clearer affordance.
+     * Email and phone cells render <a class="table-ui__link …">. The table root adds exactly one of:
+     * .underlined (config tableui.underline_links true) or .no-underlined (false, default).
      */
-    .table-ui .table-ui__link {
+    .table-ui.no-underlined .table-ui__link {
         @apply no-underline;
     }
 
-    .table-ui[data-underline-links='1'] .table-ui__link {
+    .table-ui.underlined .table-ui__link {
         @apply underline underline-offset-2;
     }
 }

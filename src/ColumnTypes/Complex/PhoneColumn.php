@@ -13,9 +13,9 @@ use InEngine\TableUI\Support\PhoneDisplayFormatter;
  * (NANP-style display; no extra Composer deps for formatting).
  *
  * Link markup uses {@code class="table-ui__link table-ui__link--phone"}. Underline on anchors follows
- * {@code config('tableui.underline_links')} (default {@code false}) via {@code data-underline-links} on the
- * table root and rules in {@code resources/css/tableui.css} for {@code .table-ui__link} — same mechanism as
- * {@see EmailColumn}.
+ * {@code config('tableui.underline_links')} (default {@code false}) via {@code .underlined} / {@code .no-underlined}
+ * on the {@code .table-ui} wrapper and rules in {@code resources/css/tableui.css} for {@code .table-ui__link}
+ * — same mechanism as {@see EmailColumn}.
  */
 class PhoneColumn extends StringColumn
 {

@@ -3,8 +3,11 @@
     $tableUiUnderlineLinks = filter_var(config('tableui.underline_links', false), FILTER_VALIDATE_BOOLEAN);
 @endphp
 <div
-    {{ $attributes->class(['table-ui']) }}
-    data-underline-links="{{ $tableUiUnderlineLinks ? '1' : '0' }}"
+    {{ $attributes->class([
+        'table-ui',
+        'underlined' => $tableUiUnderlineLinks,
+        'no-underlined' => ! $tableUiUnderlineLinks,
+    ]) }}
     @if($tableUiThemeStyle !== '') style="{{ $tableUiThemeStyle }}" @endif
 >
     @if (count($headers) === 0 && count($rows) === 0)
