@@ -36,6 +36,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Link underline (email & phone columns)
+    |--------------------------------------------------------------------------
+    |
+    | The Livewire table root adds exactly one of `.underlined` or `.no-underlined` on `.table-ui`.
+    | When false (default), `.table-ui__link` anchors have no text underline; when true, underlines show.
+    |
+    */
+    'underline_links' => false,
+
+    /*
+    |--------------------------------------------------------------------------
     | Column type defaults (presentation)
     |--------------------------------------------------------------------------
     |
