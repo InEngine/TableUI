@@ -36,7 +36,7 @@ final class ColumnFactory
             StringColumn::class => new StringColumn($attributeKey),
             TextColumn::class => new TextColumn($attributeKey),
             EnumColumn::class => new EnumColumn($attributeKey),
-            TimestampColumn::class => new TimestampColumn($attributeKey, dateOnly: false, timeOnly: false),
+            TimestampColumn::class => new TimestampColumn($attributeKey),
             NumberColumn::class => new NumberColumn($attributeKey),
             IdColumn::class => new IdColumn($attributeKey),
             EmailColumn::class => new EmailColumn($attributeKey),

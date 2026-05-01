@@ -82,7 +82,8 @@ final class ColumnInference
                 return new TimestampColumn($attributeKey, dateOnly: false, timeOnly: true);
             }
 
-            return ColumnFactory::make($attributeKey, TimestampColumn::class);
+            // datetime, datetimetz, timestamp: use package default (date-only presentation) unless the host sets explicit {@see Columns}.
+            return new TimestampColumn($attributeKey);
         }
 
         if (in_array(EnumColumn::class, $allowedColumnClasses, true) && $t === 'enum') {

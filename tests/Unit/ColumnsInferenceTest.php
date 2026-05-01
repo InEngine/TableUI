@@ -145,6 +145,19 @@ it('infers date-only timestamp columns when the schema type is date', function (
         ->and($column->isTimeOnly())->toBeFalse();
 });
 
+it('infers datetime and timestamp schema columns with date-only presentation by default', function (): void {
+    $columns = Columns::fromAttributeKeys(
+        ['created_at' => 'datetime'],
+        ['created_at' => '2026-01-15 14:30:00']
+    );
+
+    $column = $columns->items()[0];
+
+    expect($column)->toBeInstanceOf(TimestampColumn::class)
+        ->and($column->isDateOnly())->toBeTrue()
+        ->and($column->isTimeOnly())->toBeFalse();
+});
+
 it('infers time-only timestamp columns when the schema type is time', function (): void {
     $columns = Columns::fromAttributeKeys(
         ['opens_at' => 'time'],
