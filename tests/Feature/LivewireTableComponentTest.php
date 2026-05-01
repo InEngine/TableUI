@@ -199,6 +199,34 @@ it('omits bulk controls when multipleSelect is disabled via options', function (
         ->assertDontSee(__('Select all'));
 });
 
+it('dispatches tableui-bulk-action when a bulk action is chosen', function (): void {
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 10, 'user_name' => 'Ada']);
+
+    Livewire::test(TableView::class, [
+        'table' => new Table([$ada]),
+        'multipleSelect' => true,
+    ])
+        ->set('bulkActionSelection', 'delete')
+        ->assertDispatched('tableui-bulk-action');
+});
+
+it('hides the actions dropdown when no option flags enable bulk actions', function (): void {
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 1, 'user_name' => 'Ada']);
+
+    $html = Livewire::test(TableView::class, [
+        'table' => new Table([$ada], null, new Options(
+            multipleSelect: true,
+            deletable: false,
+            editable: false,
+            detailable: false,
+        )),
+    ])->html();
+
+    expect($html)->not->toContain('table-ui__actions-select');
+});
+
 it('toggleSelectAll selects and clears all displayed row keys', function (): void {
     $ada = new LivewireTableComponentTestModel;
     $ada->forceFill(['id' => 2, 'user_name' => 'Ada']);

@@ -68,6 +68,25 @@ class TableView extends Component
     public array $selectedRowKeys = [];
 
     /**
+     * Mirrors {@see Table::options()} for bulk toolbar actions (delete / edit / details).
+     */
+    public bool $optionDeletable = false;
+
+    public bool $optionEditable = false;
+
+    public bool $optionDetailable = false;
+
+    /**
+     * Current value of the bulk actions select; reset after {@see updatedBulkActionSelection()}.
+     */
+    public string $bulkActionSelection = '';
+
+    /**
+     * Stable DOM id for the bulk actions select when multiple tables exist on one page.
+     */
+    public string $bulkActionsSelectId = '';
+
+    /**
      * @param  array<string>  $headers
      * @param  list<array<array-key, mixed>>  $rows
      */
@@ -86,6 +105,13 @@ class TableView extends Component
         $this->stripping = $stripping ?? $table->options()->getStripping();
 
         $this->multipleSelect = $multipleSelect ?? $table->options()->getMultipleSelect();
+
+        $opts = $table->options();
+        $this->optionDeletable = $opts->getDeletable();
+        $this->optionEditable = $opts->getEditable();
+        $this->optionDetailable = $opts->getDetailable();
+
+        $this->bulkActionsSelectId = 'tableui-bulk-actions-'.bin2hex(random_bytes(4));
 
         $this->sortDirection = strtolower($sortDirection) === 'desc' ? 'desc' : 'asc';
 
@@ -122,6 +148,29 @@ class TableView extends Component
         }
 
         $this->emptyMessage = $emptyMessage ?? config('tableui.empty_message', 'No rows to display.');
+    }
+
+    /**
+     * Whether any bulk action (delete / edit / details) is enabled on {@see Options}.
+     */
+    public function getHasBulkActionOptionsProperty(): bool
+    {
+        return $this->optionDeletable || $this->optionEditable || $this->optionDetailable;
+    }
+
+    /**
+     * Dispatches {@code tableui-bulk-action} with the chosen action name and current {@see $selectedRowKeys}, then resets the select.
+     *
+     * Host apps should listen for {@code tableui-bulk-action} (e.g. on the table component or via JS) to perform routing or API calls.
+     */
+    public function updatedBulkActionSelection(mixed $value): void
+    {
+        if (! is_string($value) || $value === '') {
+            return;
+        }
+
+        $this->dispatch('tableui-bulk-action', action: $value, keys: $this->selectedRowKeys);
+        $this->bulkActionSelection = '';
     }
 
     /**
