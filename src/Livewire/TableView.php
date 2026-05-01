@@ -74,7 +74,7 @@ class TableView extends Component
     /**
      * Serialized {@see Action} definitions for row links + bulk toolbar (built in {@see mount()}).
      *
-     * @var list<array{name: string, label: string, bulk: bool, target: ?string, dispatchOnly: bool}>
+     * @var list<array{name: string, label: string, bulk: bool, target: ?string, dispatchOnly: bool, isButton: bool}>
      */
     public array $actionSnapshots = [];
 
@@ -117,6 +117,7 @@ class TableView extends Component
                 'bulk' => $action->isBulk(),
                 'target' => $action->serializableTarget(),
                 'dispatchOnly' => $action->getTarget() instanceof \Closure,
+                'isButton' => $action->isButton(),
             ],
             $table->actions()->items()
         );
@@ -161,7 +162,7 @@ class TableView extends Component
     /**
      * Snapshots for actions with {@code bulk: true} (toolbar select options).
      *
-     * @return list<array{name: string, label: string, bulk: bool, target: ?string, dispatchOnly: bool}>
+     * @return list<array{name: string, label: string, bulk: bool, target: ?string, dispatchOnly: bool, isButton: bool}>
      */
     public function getBulkActionSnapshotsProperty(): array
     {
@@ -174,7 +175,7 @@ class TableView extends Component
     /**
      * Resolved href for a row action snapshot, or null when using dispatch-only or missing target.
      *
-     * @param  array{name: string, label: string, bulk: bool, target: ?string, dispatchOnly: bool}  $snapshot
+     * @param  array{name: string, label: string, bulk: bool, target: ?string, dispatchOnly: bool, isButton: bool}  $snapshot
      * @param  array<array-key, mixed>  $row
      */
     public function rowActionHref(array $snapshot, array $row): ?string

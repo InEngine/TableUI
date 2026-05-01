@@ -6,9 +6,9 @@ use Closure;
 
 final class UpdateAction extends Action
 {
-    public function __construct(?string $label = null, string|Closure|null $target = null, ?bool $bulk = null)
+    public function __construct(?string $label = null, string|Closure|null $target = null, ?bool $bulk = null, ?bool $isButton = null)
     {
-        parent::__construct($label, $target, $bulk ?? false);
+        parent::__construct($label, $target, $bulk ?? false, $isButton ?? true);
     }
 
     public function name(): string

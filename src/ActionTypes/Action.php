@@ -13,6 +13,7 @@ abstract class Action
         protected ?string $label = null,
         protected string|Closure|null $target = null,
         protected bool $bulk = false,
+        protected bool $isButton = true,
     ) {
         //
     }
@@ -37,6 +38,14 @@ abstract class Action
     public function isBulk(): bool
     {
         return $this->bulk;
+    }
+
+    /**
+     * When true, row UI renders a {@code <button>}; when false, a link-style {@code <a>}.
+     */
+    public function isButton(): bool
+    {
+        return $this->isButton;
     }
 
     /**

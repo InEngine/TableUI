@@ -43,3 +43,11 @@ it('resolves append id url for path targets', function (): void {
 
     expect($action->urlForRow(['id' => 5]))->toBe('/items/edit/5');
 });
+
+it('defaults isButton to true', function (): void {
+    expect((new EditAction)->isButton())->toBeTrue();
+});
+
+it('honors isButton false', function (): void {
+    expect((new EditAction(isButton: false))->isButton())->toBeFalse();
+});
