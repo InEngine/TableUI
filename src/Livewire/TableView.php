@@ -5,6 +5,7 @@ namespace InEngine\TableUI\Livewire;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use InEngine\TableUI\ActionTypes\Action;
 use InEngine\TableUI\ColumnTypes\Column;
 use InEngine\TableUI\ColumnTypes\ColumnFactory;
 use InEngine\TableUI\Livewire\Concerns\ManagesBulkSelection;
@@ -71,12 +72,14 @@ class TableView extends Component
     public array $selectedRowKeys = [];
 
     /**
-     * Mirrors {@see Table::options()} for bulk toolbar delete action.
+     * Serialized {@see Action} definitions for row links + bulk toolbar (built in {@see mount()}).
+     *
+     * @var list<array{name: string, label: string, bulk: bool, target: ?string, dispatchOnly: bool}>
      */
-    public bool $optionDeletable = false;
+    public array $actionSnapshots = [];
 
     /**
-     * Current bulk action chosen from the actions select (e.g. {@code delete}). When non-empty, the primary toolbar button runs {@see executeBulkAction()} instead of {@see toggleSelectAll()}.
+     * Current bulk action chosen from the actions select (token matches {@see Action::name()}). When non-empty, the primary toolbar button runs {@see executeBulkAction()} instead of {@see toggleSelectAll()}.
      */
     public string $bulkActionSelection = '';
 
@@ -105,10 +108,18 @@ class TableView extends Component
 
         $this->multipleSelect = $multipleSelect ?? $table->options()->getMultipleSelect();
 
-        $opts = $table->options();
-        $this->optionDeletable = $opts->getDeletable();
-
         $this->bulkActionsSelectId = 'tableui-bulk-actions-'.bin2hex(random_bytes(4));
+
+        $this->actionSnapshots = array_map(
+            static fn (Action $action): array => [
+                'name' => $action->name(),
+                'label' => $action->label(),
+                'bulk' => $action->isBulk(),
+                'target' => $action->serializableTarget(),
+                'dispatchOnly' => $action->getTarget() instanceof \Closure,
+            ],
+            $table->actions()->items()
+        );
 
         $this->sortDirection = strtolower($sortDirection) === 'desc' ? 'desc' : 'asc';
 
@@ -145,6 +156,42 @@ class TableView extends Component
         }
 
         $this->emptyMessage = $emptyMessage ?? config('tableui.empty_message', 'No rows to display.');
+    }
+
+    /**
+     * Snapshots for actions with {@code bulk: true} (toolbar select options).
+     *
+     * @return list<array{name: string, label: string, bulk: bool, target: ?string, dispatchOnly: bool}>
+     */
+    public function getBulkActionSnapshotsProperty(): array
+    {
+        return array_values(array_filter(
+            $this->actionSnapshots,
+            static fn (array $snapshot): bool => ($snapshot['bulk'] ?? false) === true
+        ));
+    }
+
+    /**
+     * Resolved href for a row action snapshot, or null when using dispatch-only or missing target.
+     *
+     * @param  array{name: string, label: string, bulk: bool, target: ?string, dispatchOnly: bool}  $snapshot
+     * @param  array<array-key, mixed>  $row
+     */
+    public function rowActionHref(array $snapshot, array $row): ?string
+    {
+        if (($snapshot['dispatchOnly'] ?? false) === true) {
+            return null;
+        }
+
+        return Action::resolveUrlFromStringTarget($snapshot['target'] ?? null, $row);
+    }
+
+    /**
+     * Dispatches {@code tableui-row-action} when a row control cannot use a plain URL (closure target).
+     */
+    public function dispatchRowAction(string $actionName, string $rowKey): void
+    {
+        $this->dispatch('tableui-row-action', action: $actionName, key: $rowKey);
     }
 
     /**

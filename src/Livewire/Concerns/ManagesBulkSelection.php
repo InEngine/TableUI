@@ -2,20 +2,25 @@
 
 namespace InEngine\TableUI\Livewire\Concerns;
 
-use InEngine\TableUI\Livewire\TableView;
-use InEngine\TableUI\Options;
-
 /**
- * Bulk toolbar + row checkbox selection for {@see TableView}.
+ * Bulk toolbar + row checkbox selection for {@see \InEngine\TableUI\Livewire\TableView}.
+ *
+ * Expects {@see $actionSnapshots} on the component ({@see TableView::mount()}).
  */
 trait ManagesBulkSelection
 {
     /**
-     * Whether bulk delete is enabled on {@see Options}.
+     * Whether at least one {@see Action} has bulk enabled (toolbar Actions select).
      */
     public function getHasBulkActionOptionsProperty(): bool
     {
-        return $this->optionDeletable;
+        foreach ($this->actionSnapshots as $snapshot) {
+            if (($snapshot['bulk'] ?? false) === true) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -47,7 +52,7 @@ trait ManagesBulkSelection
             return;
         }
 
-        if ($action === 'delete' && ! $this->optionDeletable) {
+        if (! $this->bulkActionSelectionIsAllowed()) {
             $this->bulkActionSelection = '';
 
             return;
@@ -55,6 +60,20 @@ trait ManagesBulkSelection
 
         $this->dispatch('tableui-bulk-action', action: $action, keys: $this->selectedRowKeys);
         $this->bulkActionSelection = '';
+    }
+
+    /**
+     * True when {@see $bulkActionSelection} matches a bulk-capable snapshot entry.
+     */
+    protected function bulkActionSelectionIsAllowed(): bool
+    {
+        foreach ($this->actionSnapshots as $snapshot) {
+            if (($snapshot['bulk'] ?? false) === true && ($snapshot['name'] ?? '') === $this->bulkActionSelection) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

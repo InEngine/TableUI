@@ -16,9 +16,10 @@
             class="table-ui__select-all"
             @disabled($this->isBulkActionButtonDisabled)
         >
-            @if ($bulkActionSelection === 'delete')
-                {{ __('Delete') }}
-            @endif
+            @php
+                $activeBulk = collect($this->bulkActionSnapshots)->firstWhere('name', $bulkActionSelection);
+            @endphp
+            {{ $activeBulk['label'] ?? $bulkActionSelection }}
         </button>
     @endif
     @if ($this->hasBulkActionOptions)
@@ -30,9 +31,9 @@
                 class="table-ui__actions-select"
             >
                 <option value="">{{ __('Actions') }}</option>
-                @if ($optionDeletable)
-                    <option value="delete">{{ __('Delete') }}</option>
-                @endif
+                @foreach ($this->bulkActionSnapshots as $snap)
+                    <option value="{{ $snap['name'] }}">{{ $snap['label'] }}</option>
+                @endforeach
             </select>
         </div>
     @endif

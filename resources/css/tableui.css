@@ -29,6 +29,11 @@
 @source inline("table-ui__actions-select");
 @source inline("table-ui__select-all");
 @source inline("table-ui__checkbox");
+@source inline("table-ui__th--actions");
+@source inline("table-ui__td--actions");
+@source inline("table-ui__row-actions");
+@source inline("table-ui__row-action-link");
+@source inline("table-ui__row-action-btn");
 
 @layer components {
     /*
@@ -113,6 +118,10 @@
         @apply w-10 px-2 text-center align-middle;
     }
 
+    .table-ui__th--actions {
+        @apply w-1 px-3 text-right align-middle;
+    }
+
     .table-ui__sort-button {
         @apply inline-flex w-full items-center gap-1 rounded px-1 py-0.5 text-left font-semibold hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400 dark:text-gray-100 dark:hover:bg-gray-800 dark:focus-visible:outline-gray-500;
         color: var(--table-ui-primary, theme(colors.gray.800));
@@ -144,6 +153,27 @@
 
     .table-ui__td--select {
         @apply w-10 px-2 text-center align-middle;
+    }
+
+    .table-ui__td--actions {
+        @apply whitespace-normal px-3 py-2 align-middle text-right;
+    }
+
+    .table-ui__row-actions {
+        @apply flex flex-wrap items-center justify-end gap-x-2 gap-y-1 text-xs;
+    }
+
+    .table-ui__row-action-link {
+        color: var(--table-ui-secondary, theme(colors.blue.600));
+        @apply font-medium underline-offset-2 hover:underline;
+    }
+
+    .table-ui__row-action-btn {
+        color: var(--table-ui-secondary, theme(colors.blue.600));
+        @apply cursor-pointer rounded px-1 py-0.5 font-medium hover:underline;
+        background: transparent;
+        border: none;
+        padding-inline: 0.25rem;
     }
 
     .table-ui__checkbox {

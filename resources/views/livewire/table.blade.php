@@ -2,7 +2,8 @@
     $tableUiThemeStyle = \InEngine\TableUI\Support\TableUiTheme::inlineStyleAttribute();
     $tableUiUnderlineLinks = filter_var(config('tableui.underline_links', false), FILTER_VALIDATE_BOOLEAN);
     $visibleColumnCount = max(count($headers), count($columnKeys), 1);
-    $totalColspan = $visibleColumnCount + ($multipleSelect ? 1 : 0);
+    $showRowActions = count($actionSnapshots) > 0;
+    $totalColspan = $visibleColumnCount + ($multipleSelect ? 1 : 0) + ($showRowActions ? 1 : 0);
 @endphp
 <div
     {{ $attributes->class([

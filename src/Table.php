@@ -21,6 +21,8 @@ class Table extends EloquentCollection
 {
     private ?Columns $explicitColumns = null;
 
+    private ?Actions $explicitActions = null;
+
     private Options $options;
 
     /**
@@ -31,6 +33,7 @@ class Table extends EloquentCollection
         EloquentCollection|array $items = [],
         ?Columns $columns = null,
         ?Options $options = null,
+        ?Actions $actions = null,
     ) {
         if ($items instanceof EloquentCollection) {
             $items = $items->all();
@@ -39,6 +42,7 @@ class Table extends EloquentCollection
         parent::__construct($items);
 
         $this->explicitColumns = $columns;
+        $this->explicitActions = $actions;
         $this->options = $options ?? new Options;
     }
 
@@ -46,9 +50,9 @@ class Table extends EloquentCollection
      * @param  EloquentCollection<int, Model>|list<Model>  $items
      * @param  ?Options  $options  When null, {@see Options} is instantiated with default flags and routes.
      */
-    public static function fromCollection(EloquentCollection|array $items, ?Columns $columns = null, ?Options $options = null): static
+    public static function fromCollection(EloquentCollection|array $items, ?Columns $columns = null, ?Options $options = null, ?Actions $actions = null): static
     {
-        return new static($items, $columns, $options);
+        return new static($items, $columns, $options, $actions);
     }
 
     /**
@@ -131,6 +135,19 @@ class Table extends EloquentCollection
     public function setOptions(Options $options): void
     {
         $this->options = $options;
+    }
+
+    /**
+     * Row and bulk actions. When not set explicitly, derived from {@see options()} via {@see Actions::fromOptions()}.
+     */
+    public function actions(): Actions
+    {
+        return $this->explicitActions ?? Actions::fromOptions($this->options);
+    }
+
+    public function setActions(Actions $actions): void
+    {
+        $this->explicitActions = $actions;
     }
 
     /**

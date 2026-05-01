@@ -17,6 +17,11 @@
                     </button>
                 </th>
             @endforeach
+            @if (count($actionSnapshots) > 0)
+                <th class="table-ui__th table-ui__th--actions" scope="col">
+                    <span class="sr-only">{{ __('Actions') }}</span>
+                </th>
+            @endif
         </tr>
     </thead>
 @endif

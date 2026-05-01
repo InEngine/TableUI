@@ -23,4 +23,24 @@
             {!! $this->renderCellForRow($row, $cellIndex) !!}
         </td>
     @endforeach
+    @if (count($actionSnapshots) > 0)
+        <td class="table-ui__td table-ui__td--actions" wire:key="table-ui-r-{{ $rowKey }}-actions">
+            <div class="table-ui__row-actions">
+                @foreach ($actionSnapshots as $snap)
+                    @php($href = $this->rowActionHref($snap, $row))
+                    @if ($href !== null)
+                        <a href="{{ $href }}" class="table-ui__row-action-link">{{ $snap['label'] }}</a>
+                    @else
+                        <button
+                            type="button"
+                            class="table-ui__row-action-btn"
+                            wire:click="dispatchRowAction('{{ $snap['name'] }}', '{{ $rowKey }}')"
+                        >
+                            {{ $snap['label'] }}
+                        </button>
+                    @endif
+                @endforeach
+            </div>
+        </td>
+    @endif
 </tr>
