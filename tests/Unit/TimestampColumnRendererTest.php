@@ -30,7 +30,7 @@ it('uses column_types.time.format when the column is schema time-only', function
     config()->set('tableui.column_types.time', ['format' => 'g:i A']);
 
     $renderer = new TimestampColumnRenderer;
-    $column = new TimestampColumn('opens_at', timeOnly: true);
+    $column = new TimestampColumn('opens_at', dateOnly: false, timeOnly: true);
 
     expect($renderer->renderCell($column, '14:30:00'))->toBe('2:30 PM');
 });

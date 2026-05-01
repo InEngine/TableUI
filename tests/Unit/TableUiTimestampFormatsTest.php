@@ -11,8 +11,8 @@ it('falls back when merged config supplies empty format strings', function (): v
     config()->set('tableui.column_types.timestamp', ['datetime_format' => "\t"]);
 
     $dateCol = new TimestampColumn('d', dateOnly: true);
-    $timeCol = new TimestampColumn('t', timeOnly: true);
-    $dtCol = new TimestampColumn('dt');
+    $timeCol = new TimestampColumn('t', dateOnly: false, timeOnly: true);
+    $dtCol = new TimestampColumn('dt', dateOnly: false, timeOnly: false);
 
     expect(TableUiTimestampFormats::phpFormatFor($dateCol))->toBe('Y-m-d')
         ->and(TableUiTimestampFormats::phpFormatFor($timeCol))->toBe('H:i:s')
