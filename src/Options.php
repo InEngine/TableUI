@@ -18,11 +18,14 @@ final class Options
      * @param  bool  $deletable  Default: true
      * @param  string  $delete  Default: '/delete'
      * @param  bool  $detailable  Default: true
-     * @param  string  $details  Default: '/'
+     * @param  string  $details  Default: '/' — Non-empty {@see isValidRouteOrUrl()} strings for {@code edit}, {@code delete}, or {@code details} automatically set the matching flag to {@code true}. When a flag is {@code true}, the matching string must be present and valid.
+     * @param  ?string  $defaultSortColumn  When non-null and present on the table, used as initial sort column (also works for legacy headers/rows). When null, {@see TableView} infers {@code id} or the first column only for non-empty domain {@see Table} payloads.
+     * @param  string  $defaultSortDirection  Initial sort direction when a default column applies: {@code asc} or {@code desc}.
+     * @param  bool  $enableDefaultSort  When false, no initial sort is applied unless the host passes {@code sortBy} into {@see TableView::mount()}.
      *
      * Pass only the arguments you need; omitted parameters keep the defaults above (use named arguments).
      *
-     * @throws InvalidArgumentException When a flag is true but its route string is empty (after trim).
+     * @throws InvalidArgumentException When a flag is true but its route string is missing, empty (after trim), or not a valid route/URL; or when {@see setEdit}/{@see setDelete}/{@see setDetails}/{@see setEditable}/{@see setDeletable}/{@see setDetailable} create the same inconsistency.
      */
     public function __construct(
         private bool $multipleSelect = true,
@@ -34,7 +37,13 @@ final class Options
         private string $delete = '/delete',
         private bool $detailable = true,
         private string $details = '/',
+        private ?string $defaultSortColumn = null,
+        private string $defaultSortDirection = 'asc',
+        private bool $enableDefaultSort = true,
     ) {
+        $this->assertDefaultSortDirection($defaultSortDirection);
+        $this->defaultSortDirection = strtolower($defaultSortDirection) === 'desc' ? 'desc' : 'asc';
+        $this->inferActionFlagsFromRouteStrings(routeSetterInvocation: false);
         $this->assertRouteStringsMatchActiveFlags();
     }
 
@@ -102,6 +111,7 @@ final class Options
     {
         $this->edit = $edit;
 
+        $this->inferActionFlagsFromRouteStrings(routeSetterInvocation: true);
         $this->assertRouteStringsMatchActiveFlags();
     }
 
@@ -139,6 +149,7 @@ final class Options
     {
         $this->delete = $delete;
 
+        $this->inferActionFlagsFromRouteStrings(routeSetterInvocation: true);
         $this->assertRouteStringsMatchActiveFlags();
     }
 
@@ -176,7 +187,70 @@ final class Options
     {
         $this->details = $details;
 
+        $this->inferActionFlagsFromRouteStrings(routeSetterInvocation: true);
         $this->assertRouteStringsMatchActiveFlags();
+    }
+
+    /**
+     * Enables edit/delete/details when a valid route or URL is supplied that is not the package default placeholder for that slot,
+     * so {@code new Options(editable: false)} can keep default paths without flipping flags back on.
+     *
+     * {@see setEdit()}, {@see setDelete()}, and {@see setDetails()} always re-run this and enable when the stored string is valid.
+     */
+    private function inferActionFlagsFromRouteStrings(bool $routeSetterInvocation = false): void
+    {
+        if ($this->isValidRouteOrUrl($this->edit) && ($routeSetterInvocation || ! $this->routeMatchesDefaultEdit())) {
+            $this->editable = true;
+        }
+
+        if ($this->isValidRouteOrUrl($this->delete) && ($routeSetterInvocation || ! $this->routeMatchesDefaultDelete())) {
+            $this->deletable = true;
+        }
+
+        if ($this->isValidRouteOrUrl($this->details) && ($routeSetterInvocation || ! $this->routeMatchesDefaultDetails())) {
+            $this->detailable = true;
+        }
+    }
+
+    private function routeMatchesDefaultEdit(): bool
+    {
+        return trim($this->edit) === '/edit';
+    }
+
+    private function routeMatchesDefaultDelete(): bool
+    {
+        return trim($this->delete) === '/delete';
+    }
+
+    private function routeMatchesDefaultDetails(): bool
+    {
+        return trim($this->details) === '/';
+    }
+
+    /**
+     * Accepts application paths beginning with {@code /}, absolute {@code http(s)} URLs, and other schemes {@see filter_var()} validates (e.g. {@code mailto:}).
+     */
+    private function isValidRouteOrUrl(string $value): bool
+    {
+        if ($this->isEffectivelyEmptyString($value)) {
+            return false;
+        }
+
+        $trimmed = trim($value);
+
+        if (str_starts_with($trimmed, '/')) {
+            return true;
+        }
+
+        if (filter_var($trimmed, FILTER_VALIDATE_URL) !== false) {
+            return true;
+        }
+
+        if (str_starts_with($trimmed, '//') && filter_var('https:'.$trimmed, FILTER_VALIDATE_URL) !== false) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -184,21 +258,88 @@ final class Options
      */
     private function assertRouteStringsMatchActiveFlags(): void
     {
-        if ($this->editable && $this->isEffectivelyEmptyString($this->edit)) {
-            throw new InvalidArgumentException('When editable is true, edit must be a non-empty string.');
+        if ($this->editable) {
+            if ($this->isEffectivelyEmptyString($this->edit)) {
+                throw new InvalidArgumentException('When editable is true, edit must be a non-empty route or URL string.');
+            }
+
+            if (! $this->isValidRouteOrUrl($this->edit)) {
+                throw new InvalidArgumentException('When editable is true, edit must be a valid route or URL (for example a path beginning with / or an http(s) URL).');
+            }
         }
 
-        if ($this->deletable && $this->isEffectivelyEmptyString($this->delete)) {
-            throw new InvalidArgumentException('When deletable is true, delete must be a non-empty string.');
+        if ($this->deletable) {
+            if ($this->isEffectivelyEmptyString($this->delete)) {
+                throw new InvalidArgumentException('When deletable is true, delete must be a non-empty route or URL string.');
+            }
+
+            if (! $this->isValidRouteOrUrl($this->delete)) {
+                throw new InvalidArgumentException('When deletable is true, delete must be a valid route or URL (for example a path beginning with / or an http(s) URL).');
+            }
         }
 
-        if ($this->detailable && $this->isEffectivelyEmptyString($this->details)) {
-            throw new InvalidArgumentException('When detailable is true, details must be a non-empty string.');
+        if ($this->detailable) {
+            if ($this->isEffectivelyEmptyString($this->details)) {
+                throw new InvalidArgumentException('When detailable is true, details must be a non-empty route or URL string.');
+            }
+
+            if (! $this->isValidRouteOrUrl($this->details)) {
+                throw new InvalidArgumentException('When detailable is true, details must be a valid route or URL (for example a path beginning with / or an http(s) URL).');
+            }
         }
     }
 
     private function isEffectivelyEmptyString(string $value): bool
     {
         return trim($value) === '';
+    }
+
+    public function getDefaultSortColumn(): ?string
+    {
+        return $this->defaultSortColumn;
+    }
+
+    /**
+     * @throws InvalidArgumentException
+     */
+    public function setDefaultSortColumn(?string $defaultSortColumn): void
+    {
+        $this->defaultSortColumn = $defaultSortColumn;
+    }
+
+    public function getDefaultSortDirection(): string
+    {
+        return $this->defaultSortDirection;
+    }
+
+    /**
+     * @throws InvalidArgumentException
+     */
+    public function setDefaultSortDirection(string $defaultSortDirection): void
+    {
+        $this->assertDefaultSortDirection($defaultSortDirection);
+        $this->defaultSortDirection = strtolower($defaultSortDirection) === 'desc' ? 'desc' : 'asc';
+    }
+
+    public function getEnableDefaultSort(): bool
+    {
+        return $this->enableDefaultSort;
+    }
+
+    public function setEnableDefaultSort(bool $enableDefaultSort): void
+    {
+        $this->enableDefaultSort = $enableDefaultSort;
+    }
+
+    /**
+     * @throws InvalidArgumentException
+     */
+    private function assertDefaultSortDirection(string $direction): void
+    {
+        $normalized = strtolower(trim($direction));
+
+        if (! in_array($normalized, ['asc', 'desc'], true)) {
+            throw new InvalidArgumentException('defaultSortDirection must be "asc" or "desc".');
+        }
     }
 }

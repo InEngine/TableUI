@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use InEngine\TableUI\ColumnTypes\Column;
 use InEngine\TableUI\ColumnTypes\ColumnFactory;
+use InEngine\TableUI\Options;
 use InEngine\TableUI\Rendering\ColumnRendererRegistry;
 use InEngine\TableUI\Table;
 use InEngine\TableUI\TableServiceProvider;
@@ -73,8 +74,11 @@ class TableView extends Component
 
         $this->sortDirection = strtolower($sortDirection) === 'desc' ? 'desc' : 'asc';
 
+        $hydratedFromDomainTable = false;
+
         if ($table->isNotEmpty()) {
             $this->hydrateFromDomainTable($table);
+            $hydratedFromDomainTable = true;
         } elseif (count($headers) > 0 || count($rows) > 0) {
             $this->headers = $headers;
             $this->rows = $rows;
@@ -92,6 +96,14 @@ class TableView extends Component
 
         if ($sortBy !== null && in_array($sortBy, $this->columnKeys, true)) {
             $this->sortBy = $sortBy;
+        } elseif ($table->options()->getEnableDefaultSort()) {
+            $resolved = $this->resolveInitialSortColumn($table->options(), $this->columnKeys, $hydratedFromDomainTable);
+
+            if ($resolved !== null) {
+                $this->sortBy = $resolved;
+                // Inferred / options-driven default column uses Options sort direction; explicit mount `sortBy` uses mount `sortDirection` (handled above).
+                $this->sortDirection = $table->options()->getDefaultSortDirection();
+            }
         }
 
         $this->emptyMessage = $emptyMessage ?? config('tableui.empty_message', 'No rows to display.');
@@ -180,6 +192,28 @@ class TableView extends Component
      * @param  list<string>  $headers
      * @return list<string>
      */
+    /**
+     * @param  list<string>  $columnKeys
+     */
+    private function resolveInitialSortColumn(Options $options, array $columnKeys, bool $hydratedFromDomainTable): ?string
+    {
+        $explicit = $options->getDefaultSortColumn();
+
+        if ($explicit !== null && in_array($explicit, $columnKeys, true)) {
+            return $explicit;
+        }
+
+        if (! $hydratedFromDomainTable) {
+            return null;
+        }
+
+        if (in_array('id', $columnKeys, true)) {
+            return 'id';
+        }
+
+        return $columnKeys[0] ?? null;
+    }
+
     private function resolveColumnKeys(array $rows, array $headers): array
     {
         $firstRow = $rows[0] ?? null;

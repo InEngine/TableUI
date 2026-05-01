@@ -73,7 +73,51 @@ it('hydrates headers and rows from a Table domain object', function (): void {
     ])
         ->assertSet('headers', ['ID', 'User Name'])
         ->assertSet('columnKeys', ['id', 'user_name'])
+        ->assertSet('sortBy', 'id')
+        ->assertSet('sortDirection', 'asc')
+        ->assertSeeInOrder(['1', 'Bob', '2', 'Ada']);
+});
+
+it('does not apply inferred default sort when enableDefaultSort is false', function (): void {
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 2, 'user_name' => 'Ada']);
+
+    $bob = new LivewireTableComponentTestModel;
+    $bob->forceFill(['id' => 1, 'user_name' => 'Bob']);
+
+    Livewire::test(TableView::class, [
+        'table' => new Table([$ada, $bob], null, new Options(enableDefaultSort: false)),
+    ])
+        ->assertSet('sortBy', null)
         ->assertSeeInOrder(['2', 'Ada', '1', 'Bob']);
+});
+
+it('defaults sort to the first column when the domain table has no id key', function (): void {
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['user_name' => 'Ada']);
+
+    $bob = new LivewireTableComponentTestModel;
+    $bob->forceFill(['user_name' => 'Bob']);
+
+    Livewire::test(TableView::class, [
+        'table' => new Table([$ada, $bob]),
+    ])
+        ->assertSet('sortBy', 'user_name')
+        ->assertSeeInOrder(['Ada', 'Bob']);
+});
+
+it('uses explicit defaultSortColumn for legacy headers and rows', function (): void {
+    Livewire::test(TableView::class, [
+        'table' => new Table([], null, new Options(defaultSortColumn: '1')),
+        'headers' => ['Name', 'Role'],
+        'rows' => [
+            ['Bob', 'Operator'],
+            ['Ada', 'Developer'],
+        ],
+    ])
+        ->assertSet('sortBy', '1')
+        ->assertSet('sortDirection', 'asc')
+        ->assertSeeInOrder(['Ada', 'Developer', 'Bob', 'Operator']);
 });
 
 it('renders money column cells with minor-unit divisor', function (): void {

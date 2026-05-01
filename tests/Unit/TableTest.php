@@ -62,3 +62,12 @@ it('returns empty column lists when the table has no models', function (): void 
     expect($table->columns()->all())->toBe([])
         ->and($table->columns()->toLabels())->toBe([]);
 });
+
+it('delegates setDefaultSort to options', function (): void {
+    $table = new Table([]);
+
+    $table->setDefaultSort('user_name', 'desc');
+
+    expect($table->options()->getDefaultSortColumn())->toBe('user_name')
+        ->and($table->options()->getDefaultSortDirection())->toBe('desc');
+});

@@ -132,4 +132,15 @@ class Table extends EloquentCollection
     {
         $this->options = $options;
     }
+
+    /**
+     * Prefer sorting by this column on first render (see {@see Options::defaultSortColumn}).
+     *
+     * Pass {@code null} to clear an explicit column and rely on {@code id} / first-column inference when defaults are enabled.
+     */
+    public function setDefaultSort(?string $column, string $direction = 'asc'): void
+    {
+        $this->options->setDefaultSortColumn($column);
+        $this->options->setDefaultSortDirection($direction);
+    }
 }
