@@ -125,7 +125,7 @@ return [
         | date — Used when the database column is {@code date} (not datetime); see {@see \InEngine\TableUI\ColumnTypes\Primitives\TimestampColumn::isDateOnly()}.
         */
         'date' => [
-            'format' => 'm d,Y',
+            'format' => 'Y-m-d',
         ],
         /*
         | time — Used when the database column is {@code time}; see {@see \InEngine\TableUI\ColumnTypes\Primitives\TimestampColumn::isTimeOnly()}.
