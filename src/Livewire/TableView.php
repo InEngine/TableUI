@@ -56,6 +56,18 @@ class TableView extends Component
     public bool $stripping = true;
 
     /**
+     * When true, show a leading selection column and bulk toolbar. Mirrors {@see Table::options()} unless overridden in {@see mount()}.
+     */
+    public bool $multipleSelect = false;
+
+    /**
+     * Stable keys for checked rows (see {@see rowKey()}), aligned with {@see wire:model} on checkboxes.
+     *
+     * @var list<string>
+     */
+    public array $selectedRowKeys = [];
+
+    /**
      * @param  array<string>  $headers
      * @param  list<array<array-key, mixed>>  $rows
      */
@@ -67,10 +79,13 @@ class TableView extends Component
         string $sortDirection = 'asc',
         ?string $emptyMessage = null,
         ?bool $stripping = null,
+        ?bool $multipleSelect = null,
     ): void {
         $table ??= new Table([]);
 
         $this->stripping = $stripping ?? $table->options()->getStripping();
+
+        $this->multipleSelect = $multipleSelect ?? $table->options()->getMultipleSelect();
 
         $this->sortDirection = strtolower($sortDirection) === 'desc' ? 'desc' : 'asc';
 
@@ -107,6 +122,64 @@ class TableView extends Component
         }
 
         $this->emptyMessage = $emptyMessage ?? config('tableui.empty_message', 'No rows to display.');
+    }
+
+    /**
+     * True when every currently displayed row’s key is in {@see $selectedRowKeys}.
+     */
+    public function getAllDisplayedSelectedProperty(): bool
+    {
+        $keys = $this->keysForDisplayedRows();
+
+        if ($keys === []) {
+            return false;
+        }
+
+        foreach ($keys as $key) {
+            if (! in_array($key, $this->selectedRowKeys, true)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Select or clear every displayed row (after sort).
+     */
+    public function toggleSelectAll(): void
+    {
+        $keys = $this->keysForDisplayedRows();
+
+        if ($keys === []) {
+            return;
+        }
+
+        $allSelected = true;
+
+        foreach ($keys as $key) {
+            if (! in_array($key, $this->selectedRowKeys, true)) {
+                $allSelected = false;
+
+                break;
+            }
+        }
+
+        if ($allSelected) {
+            $this->selectedRowKeys = array_values(array_diff($this->selectedRowKeys, $keys));
+        } else {
+            $this->selectedRowKeys = array_values(array_unique(array_merge($this->selectedRowKeys, $keys)));
+        }
+    }
+
+    /**
+     * Stable key for checkbox state (prefixed so attribute keys never collide with hashed rows).
+     *
+     * @param  array<array-key, mixed>  $row
+     */
+    public function rowKeyForRow(array $row): string
+    {
+        return $this->rowKey($row);
     }
 
     /**
@@ -166,6 +239,34 @@ class TableView extends Component
             ->all();
     }
 
+    /**
+     * @return list<string>
+     */
+    private function keysForDisplayedRows(): array
+    {
+        return array_map(
+            fn (array $row): string => $this->rowKey($row),
+            $this->displayRows
+        );
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $row
+     */
+    private function rowKey(array $row): string
+    {
+        if (array_key_exists('id', $row) && $row['id'] !== null && (string) $row['id'] !== '') {
+            return 'id:'.(string) $row['id'];
+        }
+
+        $sorted = $row;
+        ksort($sorted);
+
+        $encoded = json_encode($sorted);
+
+        return 'row:'.md5(is_string($encoded) ? $encoded : serialize($sorted));
+    }
+
     public function render(): View
     {
         return view('tableui::livewire.table');
@@ -187,11 +288,6 @@ class TableView extends Component
             ->all();
     }
 
-    /**
-     * @param  list<array<array-key, mixed>>  $rows
-     * @param  list<string>  $headers
-     * @return list<string>
-     */
     /**
      * @param  list<string>  $columnKeys
      */

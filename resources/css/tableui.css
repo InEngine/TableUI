@@ -22,12 +22,32 @@
 /* Row striping utilities applied via Blade @class(...) when stripping is enabled. */
 @source inline("odd:bg-gray-50/90 dark:odd:bg-gray-900/45 odd:hover:bg-gray-100 dark:odd:hover:bg-gray-800/70");
 
+/* Bulk selection toolbar + primary / secondary theme button */
+@source inline("table-ui__bulk-toolbar");
+@source inline("table-ui__select-all");
+@source inline("table-ui__checkbox");
+
 @layer components {
     /*
      * Theme: config tableui.theme.primary / secondary set --table-ui-* on .table-ui via Blade (Tailwind --color-* palette).
      */
     .table-ui {
         @apply w-full overflow-x-auto text-gray-900 dark:text-gray-100;
+    }
+
+    .table-ui__bulk-toolbar {
+        @apply mb-2 flex items-center;
+    }
+
+    .table-ui__select-all {
+        @apply inline-flex cursor-pointer rounded-md px-3 py-1.5 text-sm font-medium transition-colors;
+        background-color: var(--table-ui-primary, theme(colors.gray.600));
+        color: #fff;
+    }
+
+    .table-ui__select-all:hover {
+        background-color: var(--table-ui-secondary, theme(colors.blue.600));
+        color: #fff;
     }
 
     .table-ui__empty {
@@ -48,6 +68,10 @@
     .table-ui__th {
         @apply px-3 py-2 font-semibold dark:text-gray-200;
         color: var(--table-ui-primary, theme(colors.gray.700));
+    }
+
+    .table-ui__th--select {
+        @apply w-10 px-2 text-center align-middle;
     }
 
     .table-ui__sort-button {
@@ -77,6 +101,15 @@
 
     .table-ui__td {
         @apply whitespace-nowrap px-3 py-2 align-middle text-gray-800 dark:text-gray-200;
+    }
+
+    .table-ui__td--select {
+        @apply w-10 px-2 text-center align-middle;
+    }
+
+    .table-ui__checkbox {
+        @apply h-4 w-4 cursor-pointer rounded border-gray-300 focus:ring-2 focus:ring-offset-1 dark:border-gray-600 dark:bg-gray-900;
+        accent-color: var(--table-ui-primary, theme(colors.gray.600));
     }
 
     .table-ui__boolean {

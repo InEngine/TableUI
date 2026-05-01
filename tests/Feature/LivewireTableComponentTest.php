@@ -176,3 +176,42 @@ it('sorts rows by selected column and toggles direction', function (): void {
         ->assertSet('sortDirection', 'desc')
         ->assertSeeInOrder(['Bob', 'Operator', 'Ada', 'Developer']);
 });
+
+it('renders bulk toolbar and row checkboxes when multipleSelect is enabled', function (): void {
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 10, 'user_name' => 'Ada']);
+
+    Livewire::test(TableView::class, [
+        'table' => new Table([$ada]),
+        'multipleSelect' => true,
+    ])
+        ->assertSee(__('Select all'))
+        ->assertSeeHtml('type="checkbox"');
+});
+
+it('omits bulk controls when multipleSelect is disabled via options', function (): void {
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 1, 'user_name' => 'Ada']);
+
+    Livewire::test(TableView::class, [
+        'table' => new Table([$ada], null, new Options(multipleSelect: false)),
+    ])
+        ->assertDontSee(__('Select all'));
+});
+
+it('toggleSelectAll selects and clears all displayed row keys', function (): void {
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 2, 'user_name' => 'Ada']);
+
+    $bob = new LivewireTableComponentTestModel;
+    $bob->forceFill(['id' => 1, 'user_name' => 'Bob']);
+
+    Livewire::test(TableView::class, [
+        'table' => new Table([$ada, $bob]),
+        'multipleSelect' => true,
+    ])
+        ->call('toggleSelectAll')
+        ->assertSet('selectedRowKeys', ['id:1', 'id:2'])
+        ->call('toggleSelectAll')
+        ->assertSet('selectedRowKeys', []);
+});
