@@ -51,3 +51,9 @@ it('defaults isButton to true', function (): void {
 it('honors isButton false', function (): void {
     expect((new EditAction(isButton: false))->isButton())->toBeFalse();
 });
+
+it('resolves no url for closure targets', function (): void {
+    $action = new EditAction(target: static fn (array $row): string => '/nope');
+
+    expect($action->urlForRow(['id' => 1]))->toBeNull();
+});

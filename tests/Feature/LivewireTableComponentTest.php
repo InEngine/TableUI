@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 use Illuminate\Database\Eloquent\Model;
+use InEngine\TableUI\Actions;
+use InEngine\TableUI\ActionTypes\DeleteAction;
+use InEngine\TableUI\ActionTypes\ViewAction;
 use InEngine\TableUI\Columns;
 use InEngine\TableUI\ColumnTypes\Complex\MoneyColumn;
 use InEngine\TableUI\Livewire\TableView;
@@ -275,6 +278,71 @@ it('hides the actions dropdown when no option flags enable bulk actions', functi
     ])->html();
 
     expect($html)->not->toContain('table-ui__actions-select');
+});
+
+it('executes a row action closure on the server', function (): void {
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 10, 'user_name' => 'Ada']);
+
+    $GLOBALS['tableui_row_closure_test'] = null;
+    $table = new Table([$ada], null, new Options(
+        detailable: false,
+        editable: false,
+        deletable: false,
+        edit: '',
+        delete: '',
+        details: '',
+    ));
+    $table->setActions(new Actions([
+        new ViewAction(target: static function (array $row): void {
+            $GLOBALS['tableui_row_closure_test'] = $row;
+        }),
+    ]));
+
+    Livewire::test(TableView::class, [
+        'table' => $table,
+    ])
+        ->call('runRowAction', 'view', 'id:10');
+
+    expect($GLOBALS['tableui_row_closure_test'])->toBeArray()
+        ->toMatchArray(['id' => 10, 'user_name' => 'Ada']);
+
+    unset($GLOBALS['tableui_row_closure_test']);
+});
+
+it('executes a bulk action closure and does not dispatch tableui-bulk-action', function (): void {
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 10, 'user_name' => 'Ada']);
+
+    $GLOBALS['tableui_bulk_closure_test'] = null;
+    $table = new Table([$ada], null, new Options(
+        multipleSelect: true,
+        detailable: false,
+        editable: false,
+        deletable: false,
+        edit: '',
+        delete: '',
+        details: '',
+    ));
+    $table->setActions(new Actions([
+        new DeleteAction(target: static function (array $rows): void {
+            $GLOBALS['tableui_bulk_closure_test'] = $rows;
+        }),
+    ]));
+
+    Livewire::test(TableView::class, [
+        'table' => $table,
+        'multipleSelect' => true,
+    ])
+        ->set('bulkActionSelection', 'delete')
+        ->set('selectedRowKeys', ['id:10'])
+        ->call('executeBulkAction')
+        ->assertNotDispatched('tableui-bulk-action');
+
+    expect($GLOBALS['tableui_bulk_closure_test'])->toBeArray()->toHaveCount(1);
+    expect($GLOBALS['tableui_bulk_closure_test'][0])->toMatchArray(['id' => 10, 'user_name' => 'Ada']);
+
+    unset($GLOBALS['tableui_bulk_closure_test']);
 });
 
 it('toggleSelectAll selects and clears all displayed row keys', function (): void {

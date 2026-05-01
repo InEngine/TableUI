@@ -58,6 +58,12 @@ trait ManagesBulkSelection
             return;
         }
 
+        if ($this->invokeBulkSerializedClosureIfPresent()) {
+            $this->bulkActionSelection = '';
+
+            return;
+        }
+
         $this->dispatch('tableui-bulk-action', action: $action, keys: $this->selectedRowKeys);
         $this->bulkActionSelection = '';
     }

@@ -6,11 +6,18 @@ use Closure;
 
 /**
  * Base definition for a table row or bulk action (see {@see EditAction}, {@see ViewAction}, …).
+ *
+ * {@see $target}: a path or URL for browser navigation, or a {@see Closure} executed on the server by Livewire.
+ * Closures must be serializable (avoid capturing unserializable values). Signatures: row actions
+ * {@code function (array $row): void}; bulk actions {@code function (array $rows): void} where {@code $rows} is a list of row arrays.
  */
 abstract class Action
 {
     public function __construct(
         protected ?string $label = null,
+        /**
+         * Path/URL (optional `{id}` token) or a server-side {@see Closure}.
+         */
         protected string|Closure|null $target = null,
         protected bool $bulk = false,
         protected bool $isButton = true,
@@ -67,7 +74,9 @@ abstract class Action
     }
 
     /**
-     * Resolved URL for a data row, or null when the target is a closure (evaluate in PHP only) or missing.
+     * Resolved URL for a data row from a string route or URL target.
+     *
+     * When the target is a {@see Closure}, returns {@code null} (the closure is executed server-side by Livewire, not used as a link).
      *
      * @param  array<array-key, mixed>  $row
      */
@@ -76,7 +85,7 @@ abstract class Action
         $t = $this->target;
 
         if ($t instanceof Closure) {
-            return $t($row);
+            return null;
         }
 
         return self::resolveUrlFromStringTarget(is_string($t) ? $t : null, $row);

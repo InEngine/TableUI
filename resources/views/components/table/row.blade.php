@@ -47,7 +47,7 @@
                     <button
                         type="button"
                         class="{{ $this->actionButtonClasses($snap['name']) }}"
-                        wire:click="dispatchRowAction({{ json_encode($snap['name']) }}, {{ json_encode($rowKey) }})"
+                        wire:click="runRowAction({{ json_encode($snap['name']) }}, {{ json_encode($rowKey) }})"
                     >
                         {{ $snap['label'] }}
                     </button>
@@ -55,7 +55,7 @@
                     <a
                         href="#"
                         class="table-ui__row-action-link"
-                        wire:click.prevent="dispatchRowAction({{ json_encode($snap['name']) }}, {{ json_encode($rowKey) }})"
+                        wire:click.prevent="runRowAction({{ json_encode($snap['name']) }}, {{ json_encode($rowKey) }})"
                     >
                         {{ $snap['label'] }}
                     </a>

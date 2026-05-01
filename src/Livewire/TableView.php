@@ -11,6 +11,7 @@ use InEngine\TableUI\ColumnTypes\ColumnFactory;
 use InEngine\TableUI\Livewire\Concerns\ManagesBulkSelection;
 use InEngine\TableUI\Options;
 use InEngine\TableUI\Rendering\ColumnRendererRegistry;
+use InEngine\TableUI\Support\SerializableClosurePayload;
 use InEngine\TableUI\Table;
 use InEngine\TableUI\TableServiceProvider;
 use Livewire\Component;
@@ -74,7 +75,7 @@ class TableView extends Component
     /**
      * Serialized {@see Action} definitions for row links + bulk toolbar (built in {@see mount()}).
      *
-     * @var list<array{name: string, label: string, bulk: bool, target: ?string, dispatchOnly: bool, isButton: bool}>
+     * @var list<array{name: string, label: string, bulk: bool, target: ?string, serializedClosure: string, isButton: bool}>
      */
     public array $actionSnapshots = [];
 
@@ -111,14 +112,20 @@ class TableView extends Component
         $this->bulkActionsSelectId = 'tableui-bulk-actions-'.bin2hex(random_bytes(4));
 
         $this->actionSnapshots = array_map(
-            static fn (Action $action): array => [
-                'name' => $action->name(),
-                'label' => $action->label(),
-                'bulk' => $action->isBulk(),
-                'target' => $action->serializableTarget(),
-                'dispatchOnly' => $action->getTarget() instanceof \Closure,
-                'isButton' => $action->isButton(),
-            ],
+            static function (Action $action): array {
+                $target = $action->getTarget();
+
+                return [
+                    'name' => $action->name(),
+                    'label' => $action->label(),
+                    'bulk' => $action->isBulk(),
+                    'target' => $action->serializableTarget(),
+                    'serializedClosure' => $target instanceof \Closure
+                        ? SerializableClosurePayload::encode($target)
+                        : '',
+                    'isButton' => $action->isButton(),
+                ];
+            },
             $table->actions()->items()
         );
 
@@ -162,7 +169,7 @@ class TableView extends Component
     /**
      * Snapshots for actions with {@code bulk: true} (toolbar select options).
      *
-     * @return list<array{name: string, label: string, bulk: bool, target: ?string, dispatchOnly: bool, isButton: bool}>
+     * @return list<array{name: string, label: string, bulk: bool, target: ?string, serializedClosure: string, isButton: bool}>
      */
     public function getBulkActionSnapshotsProperty(): array
     {
@@ -175,12 +182,12 @@ class TableView extends Component
     /**
      * Resolved href for a row action snapshot, or null when using dispatch-only or missing target.
      *
-     * @param  array{name: string, label: string, bulk: bool, target: ?string, dispatchOnly: bool, isButton: bool}  $snapshot
+     * @param  array{name: string, label: string, bulk: bool, target: ?string, serializedClosure: string, isButton: bool}  $snapshot
      * @param  array<array-key, mixed>  $row
      */
     public function rowActionHref(array $snapshot, array $row): ?string
     {
-        if (($snapshot['dispatchOnly'] ?? false) === true) {
+        if (($snapshot['serializedClosure'] ?? '') !== '') {
             return null;
         }
 
@@ -205,11 +212,108 @@ class TableView extends Component
     }
 
     /**
-     * Dispatches {@code tableui-row-action} when a row control cannot use a plain URL (closure target).
+     * Runs the row action: navigates via string targets (handled in Blade), executes a serialized {@see \Closure} when present, otherwise dispatches {@code tableui-row-action}.
+     */
+    public function runRowAction(string $actionName, string $rowKey): void
+    {
+        $snapshot = $this->actionSnapshotFor($actionName);
+        if ($snapshot === null) {
+            return;
+        }
+
+        $payload = $snapshot['serializedClosure'] ?? '';
+        if ($payload !== '') {
+            $row = $this->rowDataForKey($rowKey);
+            if ($row === null) {
+                return;
+            }
+
+            $invokable = SerializableClosurePayload::decode($payload);
+            $invokable($row);
+
+            return;
+        }
+
+        $this->dispatch('tableui-row-action', action: $actionName, key: $rowKey);
+    }
+
+    /**
+     * @deprecated Use {@see runRowAction()}
      */
     public function dispatchRowAction(string $actionName, string $rowKey): void
     {
-        $this->dispatch('tableui-row-action', action: $actionName, key: $rowKey);
+        $this->runRowAction($actionName, $rowKey);
+    }
+
+    /**
+     * Invokes a bulk {@see Action} whose target is a closure; receives {@code list<array<array-key, mixed>>} of selected rows.
+     *
+     * @return bool True when a closure was executed (no browser event).
+     */
+    protected function invokeBulkSerializedClosureIfPresent(): bool
+    {
+        $snapshot = $this->actionSnapshotFor($this->bulkActionSelection);
+        if ($snapshot === null) {
+            return false;
+        }
+
+        $payload = $snapshot['serializedClosure'] ?? '';
+        if ($payload === '') {
+            return false;
+        }
+
+        $rows = $this->selectedRowsForBulkAction();
+        $invokable = SerializableClosurePayload::decode($payload);
+        $invokable($rows);
+
+        return true;
+    }
+
+    /**
+     * @return array{name: string, label: string, bulk: bool, target: ?string, serializedClosure: string, isButton: bool}|null
+     */
+    private function actionSnapshotFor(string $actionName): ?array
+    {
+        foreach ($this->actionSnapshots as $snapshot) {
+            if (($snapshot['name'] ?? '') === $actionName) {
+                return $snapshot;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<array-key, mixed>|null
+     */
+    private function rowDataForKey(string $rowKey): ?array
+    {
+        foreach ($this->displayRows as $row) {
+            if ($this->rowKey($row) === $rowKey) {
+                return $row;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Selected rows in display order for bulk closure handlers.
+     *
+     * @return list<array<array-key, mixed>>
+     */
+    private function selectedRowsForBulkAction(): array
+    {
+        $selected = array_flip($this->selectedRowKeys);
+        $rows = [];
+
+        foreach ($this->displayRows as $row) {
+            if (isset($selected[$this->rowKey($row)])) {
+                $rows[] = $row;
+            }
+        }
+
+        return $rows;
     }
 
     /**
