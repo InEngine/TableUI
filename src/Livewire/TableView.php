@@ -188,6 +188,23 @@ class TableView extends Component
     }
 
     /**
+     * Composed classes for action {@code <button>} elements (row + bulk toolbar). Hosts override {@code .btn}, {@code .btn-delete}, {@code .btn-view}, {@code .btn-edit}, {@code .btn-neutral} in published {@code tableui.css}.
+     *
+     * @see resources/css/tableui.css
+     */
+    public function actionButtonClasses(string $actionName): string
+    {
+        $suffix = match ($actionName) {
+            'delete' => 'btn-delete',
+            'view' => 'btn-view',
+            'edit', 'update' => 'btn-edit',
+            default => 'btn-neutral',
+        };
+
+        return 'btn '.$suffix;
+    }
+
+    /**
      * Dispatches {@code tableui-row-action} when a row control cannot use a plain URL (closure target).
      */
     public function dispatchRowAction(string $actionName, string $rowKey): void

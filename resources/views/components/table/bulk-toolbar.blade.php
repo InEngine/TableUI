@@ -13,7 +13,7 @@
         <button
             type="button"
             wire:click="executeBulkAction"
-            class="table-ui__select-all"
+            class="{{ $this->actionButtonClasses($bulkActionSelection) }}"
             @disabled($this->isBulkActionButtonDisabled)
         >
             @php

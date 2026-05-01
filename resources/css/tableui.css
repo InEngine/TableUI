@@ -32,7 +32,12 @@
 @source inline("table-ui__th--action");
 @source inline("table-ui__td--action");
 @source inline("table-ui__row-action-link");
-@source inline("table-ui__row-action-btn");
+/* Row + bulk action buttons: compose .btn with .btn-delete | .btn-view | .btn-edit | .btn-neutral */
+@source inline("btn");
+@source inline("btn-delete");
+@source inline("btn-view");
+@source inline("btn-edit");
+@source inline("btn-neutral");
 
 @layer components {
     /*
@@ -163,12 +168,93 @@
         @apply font-medium underline-offset-2 hover:underline;
     }
 
-    .table-ui__row-action-btn {
-        color: var(--table-ui-secondary, theme(colors.blue.600));
-        @apply cursor-pointer rounded px-1 py-0.5 font-medium hover:underline;
-        background: transparent;
-        border: none;
-        padding-inline: 0.25rem;
+    /*
+     * Action buttons (row cells + bulk execute): compose .btn with a variant. Publish this file to customize.
+     */
+    .table-ui .btn {
+        @apply inline-flex cursor-pointer items-center justify-center rounded-md border-2 px-3 py-1.5 text-sm font-medium transition-colors;
+        @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400 dark:focus-visible:outline-gray-500;
+    }
+
+    .table-ui .btn:disabled,
+    .table-ui .btn[disabled] {
+        @apply cursor-not-allowed opacity-70;
+        background-color: theme(colors.gray.400) !important;
+        color: theme(colors.gray.200) !important;
+        border-color: theme(colors.gray.500) !important;
+    }
+
+    .table-ui .btn:disabled:hover,
+    .table-ui .btn[disabled]:hover {
+        background-color: theme(colors.gray.400) !important;
+        color: theme(colors.gray.200) !important;
+        border-color: theme(colors.gray.500) !important;
+    }
+
+    .dark .table-ui .btn:disabled,
+    .dark .table-ui .btn[disabled] {
+        background-color: theme(colors.gray.600) !important;
+        color: theme(colors.gray.400) !important;
+        border-color: theme(colors.gray.600) !important;
+    }
+
+    .dark .table-ui .btn:disabled:hover,
+    .dark .table-ui .btn[disabled]:hover {
+        background-color: theme(colors.gray.600) !important;
+        color: theme(colors.gray.400) !important;
+        border-color: theme(colors.gray.600) !important;
+    }
+
+    .table-ui .btn.btn-delete {
+        @apply bg-white text-red-600;
+        border-color: theme(colors.red.600);
+    }
+
+    .table-ui .btn.btn-delete:hover:not(:disabled):not([disabled]) {
+        @apply bg-red-600 text-white;
+        border-color: theme(colors.red.600);
+    }
+
+    .dark .table-ui .btn.btn-delete {
+        @apply bg-gray-950 text-red-400;
+        border-color: theme(colors.red.500);
+    }
+
+    .dark .table-ui .btn.btn-delete:hover:not(:disabled):not([disabled]) {
+        @apply bg-red-600 text-white;
+        border-color: theme(colors.red.600);
+    }
+
+    .table-ui .btn.btn-view {
+        @apply bg-white;
+        color: var(--table-ui-primary, theme(colors.gray.700));
+        border-color: var(--table-ui-primary, theme(colors.gray.700));
+    }
+
+    .table-ui .btn.btn-view:hover:not(:disabled):not([disabled]) {
+        background-color: var(--table-ui-primary, theme(colors.gray.700));
+        color: #fff;
+        border-color: var(--table-ui-primary, theme(colors.gray.700));
+    }
+
+    .table-ui .btn.btn-edit {
+        background-color: var(--table-ui-primary, theme(colors.gray.600));
+        color: #fff;
+        border-color: #fff;
+    }
+
+    .table-ui .btn.btn-edit:hover:not(:disabled):not([disabled]) {
+        @apply bg-white;
+        color: var(--table-ui-primary, theme(colors.gray.600));
+        border-color: var(--table-ui-primary, theme(colors.gray.600));
+    }
+
+    .table-ui .btn.btn-neutral {
+        @apply border-gray-300 bg-white text-gray-800 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-100;
+    }
+
+    .table-ui .btn.btn-neutral:hover:not(:disabled):not([disabled]) {
+        @apply bg-gray-100 dark:bg-gray-900;
     }
 
     .table-ui__checkbox {

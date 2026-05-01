@@ -34,7 +34,7 @@
                 @if ($useButton)
                     <button
                         type="button"
-                        class="table-ui__row-action-btn"
+                        class="{{ $this->actionButtonClasses($snap['name']) }}"
                         onclick="window.location.assign(@js($href))"
                     >
                         {{ $snap['label'] }}
@@ -46,7 +46,7 @@
                 @if ($useButton)
                     <button
                         type="button"
-                        class="table-ui__row-action-btn"
+                        class="{{ $this->actionButtonClasses($snap['name']) }}"
                         wire:click="dispatchRowAction({{ json_encode($snap['name']) }}, {{ json_encode($rowKey) }})"
                     >
                         {{ $snap['label'] }}
