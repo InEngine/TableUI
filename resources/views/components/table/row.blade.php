@@ -23,45 +23,44 @@
             {!! $this->renderCellForRow($row, $cellIndex) !!}
         </td>
     @endforeach
-    @if (count($actionSnapshots) > 0)
-        <td class="table-ui__td table-ui__td--actions" wire:key="table-ui-r-{{ $rowKey }}-actions">
-            <div class="table-ui__row-actions">
-                @foreach ($actionSnapshots as $snap)
-                    @php($href = $this->rowActionHref($snap, $row))
-                    @php($useButton = $snap['isButton'] ?? true)
-                    @if ($href !== null)
-                        @if ($useButton)
-                            <button
-                                type="button"
-                                class="table-ui__row-action-btn"
-                                onclick="window.location.assign(@js($href))"
-                            >
-                                {{ $snap['label'] }}
-                            </button>
-                        @else
-                            <a href="{{ $href }}" class="table-ui__row-action-link">{{ $snap['label'] }}</a>
-                        @endif
-                    @else
-                        @if ($useButton)
-                            <button
-                                type="button"
-                                class="table-ui__row-action-btn"
-                                wire:click="dispatchRowAction({{ json_encode($snap['name']) }}, {{ json_encode($rowKey) }})"
-                            >
-                                {{ $snap['label'] }}
-                            </button>
-                        @else
-                            <a
-                                href="#"
-                                class="table-ui__row-action-link"
-                                wire:click.prevent="dispatchRowAction({{ json_encode($snap['name']) }}, {{ json_encode($rowKey) }})"
-                            >
-                                {{ $snap['label'] }}
-                            </a>
-                        @endif
-                    @endif
-                @endforeach
-            </div>
+    @foreach ($actionSnapshots as $actionIndex => $snap)
+        @php($href = $this->rowActionHref($snap, $row))
+        @php($useButton = $snap['isButton'] ?? true)
+        <td
+            class="table-ui__td table-ui__td--action"
+            wire:key="table-ui-r-{{ $rowKey }}-a-{{ $actionIndex }}"
+        >
+            @if ($href !== null)
+                @if ($useButton)
+                    <button
+                        type="button"
+                        class="table-ui__row-action-btn"
+                        onclick="window.location.assign(@js($href))"
+                    >
+                        {{ $snap['label'] }}
+                    </button>
+                @else
+                    <a href="{{ $href }}" class="table-ui__row-action-link">{{ $snap['label'] }}</a>
+                @endif
+            @else
+                @if ($useButton)
+                    <button
+                        type="button"
+                        class="table-ui__row-action-btn"
+                        wire:click="dispatchRowAction({{ json_encode($snap['name']) }}, {{ json_encode($rowKey) }})"
+                    >
+                        {{ $snap['label'] }}
+                    </button>
+                @else
+                    <a
+                        href="#"
+                        class="table-ui__row-action-link"
+                        wire:click.prevent="dispatchRowAction({{ json_encode($snap['name']) }}, {{ json_encode($rowKey) }})"
+                    >
+                        {{ $snap['label'] }}
+                    </a>
+                @endif
+            @endif
         </td>
-    @endif
+    @endforeach
 </tr>

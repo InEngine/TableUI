@@ -17,11 +17,14 @@
                     </button>
                 </th>
             @endforeach
-            @if (count($actionSnapshots) > 0)
-                <th class="table-ui__th table-ui__th--actions" scope="col">
-                    <span class="sr-only">{{ __('Actions') }}</span>
-                </th>
-            @endif
+            @foreach ($actionSnapshots as $actionIndex => $actionSnap)
+                <th
+                    class="table-ui__th table-ui__th--action"
+                    scope="col"
+                    wire:key="table-ui-ha-{{ $actionIndex }}"
+                    aria-hidden="true"
+                ></th>
+            @endforeach
         </tr>
     </thead>
 @endif

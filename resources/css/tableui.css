@@ -29,9 +29,8 @@
 @source inline("table-ui__actions-select");
 @source inline("table-ui__select-all");
 @source inline("table-ui__checkbox");
-@source inline("table-ui__th--actions");
-@source inline("table-ui__td--actions");
-@source inline("table-ui__row-actions");
+@source inline("table-ui__th--action");
+@source inline("table-ui__td--action");
 @source inline("table-ui__row-action-link");
 @source inline("table-ui__row-action-btn");
 
@@ -118,8 +117,8 @@
         @apply w-10 px-2 text-center align-middle;
     }
 
-    .table-ui__th--actions {
-        @apply w-1 px-3 text-right align-middle;
+    .table-ui__th--action {
+        @apply w-0 min-w-0 px-2 py-2 text-right align-middle;
     }
 
     .table-ui__sort-button {
@@ -155,12 +154,8 @@
         @apply w-10 px-2 text-center align-middle;
     }
 
-    .table-ui__td--actions {
-        @apply whitespace-normal px-3 py-2 align-middle text-right;
-    }
-
-    .table-ui__row-actions {
-        @apply flex flex-wrap items-center justify-end gap-x-2 gap-y-1 text-xs;
+    .table-ui__td--action {
+        @apply w-0 min-w-0 whitespace-nowrap px-2 py-2 align-middle text-right text-xs;
     }
 
     .table-ui__row-action-link {
