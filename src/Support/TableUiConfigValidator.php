@@ -148,6 +148,14 @@ final class TableUiConfigValidator
             throw new InvalidArgumentException('tableui.column_types.date.format must be a string when present.');
         }
 
+        if (isset($columnTypes['timestamp']) && is_array($columnTypes['timestamp']) && array_key_exists('datetime_format', $columnTypes['timestamp']) && ! is_string($columnTypes['timestamp']['datetime_format'])) {
+            throw new InvalidArgumentException('tableui.column_types.timestamp.datetime_format must be a string when present.');
+        }
+
+        if (isset($columnTypes['time']) && is_array($columnTypes['time']) && array_key_exists('format', $columnTypes['time']) && ! is_string($columnTypes['time']['format'])) {
+            throw new InvalidArgumentException('tableui.column_types.time.format must be a string when present.');
+        }
+
         if (! isset($columnTypes['boolean'])) {
             return;
         }

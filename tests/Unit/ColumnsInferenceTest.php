@@ -141,7 +141,21 @@ it('infers date-only timestamp columns when the schema type is date', function (
     $column = $columns->items()[0];
 
     expect($column)->toBeInstanceOf(TimestampColumn::class)
-        ->and($column->isDateOnly())->toBeTrue();
+        ->and($column->isDateOnly())->toBeTrue()
+        ->and($column->isTimeOnly())->toBeFalse();
+});
+
+it('infers time-only timestamp columns when the schema type is time', function (): void {
+    $columns = Columns::fromAttributeKeys(
+        ['opens_at' => 'time'],
+        ['opens_at' => '09:15:00']
+    );
+
+    $column = $columns->items()[0];
+
+    expect($column)->toBeInstanceOf(TimestampColumn::class)
+        ->and($column->isTimeOnly())->toBeTrue()
+        ->and($column->isDateOnly())->toBeFalse();
 });
 
 it('infers registered custom columns when ParticipatesInColumnInference matches', function (): void {

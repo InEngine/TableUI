@@ -83,6 +83,12 @@ return [
     | StringColumn (varchar-family), TextColumn (text/medium/long/blob), EnumColumn, TimestampColumn (date/datetime/timestamp/time),
     | NumberColumn (non-ID numerics), IdColumn (uuid/guid and `id` / `*_id` / name contains uuid|ulid).
     |
+    | Timestamp display formats ({@see \InEngine\TableUI\Support\TableUiTimestampFormats}):
+    | • {@code date} schema columns → {@code column_types.date.format}
+    | • {@code time} schema columns → {@code column_types.time.format}
+    | • {@code datetime}, {@code datetimetz}, {@code timestamp} → {@code column_types.timestamp.datetime_format}
+    | Published configs merge over these defaults per Laravel’s config merge (nested keys combine).
+    |
     */
     'column_types' => [
         'text' => [
@@ -120,6 +126,12 @@ return [
         */
         'date' => [
             'format' => 'Y-m-d',
+        ],
+        /*
+        | time — Used when the database column is {@code time}; see {@see \InEngine\TableUI\ColumnTypes\Primitives\TimestampColumn::isTimeOnly()}.
+        */
+        'time' => [
+            'format' => 'H:i:s',
         ],
     ],
 

@@ -78,6 +78,10 @@ final class ColumnInference
                 return new TimestampColumn($attributeKey, dateOnly: true);
             }
 
+            if ($t === 'time') {
+                return new TimestampColumn($attributeKey, timeOnly: true);
+            }
+
             return ColumnFactory::make($attributeKey, TimestampColumn::class);
         }
 

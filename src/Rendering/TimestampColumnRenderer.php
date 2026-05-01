@@ -6,12 +6,15 @@ use DateTimeInterface;
 use Illuminate\Support\Carbon;
 use InEngine\TableUI\ColumnTypes\Column;
 use InEngine\TableUI\ColumnTypes\Primitives\TimestampColumn;
+use InEngine\TableUI\Support\TableUiTimestampFormats;
 
 final class TimestampColumnRenderer extends AbstractColumnRenderer
 {
     public function renderCell(Column $column, mixed $value): string
     {
-        $datetimeFormat = self::resolveFormatString($column);
+        $datetimeFormat = $column instanceof TimestampColumn
+            ? TableUiTimestampFormats::phpFormatFor($column)
+            : self::fallbackDatetimeFormat();
 
         if ($value instanceof DateTimeInterface) {
             return e($value->format($datetimeFormat));
@@ -36,18 +39,12 @@ final class TimestampColumnRenderer extends AbstractColumnRenderer
         return e((string) $value);
     }
 
-    private static function resolveFormatString(Column $column): string
+    private static function fallbackDatetimeFormat(): string
     {
-        if ($column instanceof TimestampColumn && $column->isDateOnly()) {
-            $settings = config('tableui.column_types.date', []);
-            $settings = is_array($settings) ? $settings : [];
-
-            return (string) ($settings['format'] ?? 'Y-m-d');
-        }
-
         $settings = config('tableui.column_types.timestamp', []);
         $settings = is_array($settings) ? $settings : [];
+        $format = $settings['datetime_format'] ?? 'Y-m-d H:i:s';
 
-        return (string) ($settings['datetime_format'] ?? 'Y-m-d H:i:s');
+        return is_string($format) && trim($format) !== '' ? $format : 'Y-m-d H:i:s';
     }
 }
