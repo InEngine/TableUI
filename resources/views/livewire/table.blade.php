@@ -20,6 +20,7 @@
             @if ($multipleSelect && count($rows) > 0)
                 @include('tableui::components.table.bulk-toolbar')
             @endif
+            @include('tableui::components.table.filter-toolbar')
             <table class="table-ui__table">
                 @include('tableui::components.table.thead')
                 <tbody class="table-ui__tbody">

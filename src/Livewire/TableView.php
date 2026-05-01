@@ -8,6 +8,7 @@ use Illuminate\Support\Collection;
 use InEngine\TableUI\ActionTypes\Action;
 use InEngine\TableUI\ColumnTypes\Column;
 use InEngine\TableUI\ColumnTypes\ColumnFactory;
+use InEngine\TableUI\FilterDefinition;
 use InEngine\TableUI\Livewire\Concerns\ManagesBulkSelection;
 use InEngine\TableUI\Options;
 use InEngine\TableUI\Rendering\ColumnRendererRegistry;
@@ -90,6 +91,20 @@ class TableView extends Component
     public string $bulkActionsSelectId = '';
 
     /**
+     * Filter controls derived from {@see Table::filters()} in {@see mount()}.
+     *
+     * @var list<array{columnKey: string, label: string, type: string}>
+     */
+    public array $filterDefinitions = [];
+
+    /**
+     * Current filter inputs keyed by column key (see {@see FilterDefinition::$columnKey}).
+     *
+     * @var array<string, string>
+     */
+    public array $filterValues = [];
+
+    /**
      * @param  array<string>  $headers
      * @param  list<array<array-key, mixed>>  $rows
      */
@@ -164,6 +179,28 @@ class TableView extends Component
         }
 
         $this->emptyMessage = $emptyMessage ?? config('tableui.empty_message', 'No rows to display.');
+
+        $this->hydrateFiltersFromTable($table);
+    }
+
+    private function hydrateFiltersFromTable(Table $table): void
+    {
+        $filters = $table->filters();
+        if ($filters->isEmpty()) {
+            return;
+        }
+
+        foreach ($filters->definitions() as $definition) {
+            $this->filterDefinitions[] = [
+                'columnKey' => $definition->columnKey,
+                'label' => $definition->label,
+                'type' => $definition->type,
+            ];
+
+            if (! array_key_exists($definition->columnKey, $this->filterValues)) {
+                $this->filterValues[$definition->columnKey] = '';
+            }
+        }
     }
 
     /**
@@ -369,6 +406,14 @@ class TableView extends Component
      */
     public function getDisplayRowsProperty(): array
     {
+        return $this->applyFiltersToRows($this->sortedRows());
+    }
+
+    /**
+     * @return list<array<array-key, mixed>>
+     */
+    private function sortedRows(): array
+    {
         if ($this->sortBy === null) {
             return $this->rows;
         }
@@ -381,6 +426,44 @@ class TableView extends Component
             )
             ->values()
             ->all();
+    }
+
+    /**
+     * @param  list<array<array-key, mixed>>  $rows
+     * @return list<array<array-key, mixed>>
+     */
+    private function applyFiltersToRows(array $rows): array
+    {
+        if ($this->filterDefinitions === []) {
+            return $rows;
+        }
+
+        return array_values(array_filter(
+            $rows,
+            fn (array $row): bool => $this->rowMatchesActiveFilters($row)
+        ));
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $row
+     */
+    private function rowMatchesActiveFilters(array $row): bool
+    {
+        foreach ($this->filterDefinitions as $definition) {
+            $columnKey = $definition['columnKey'];
+            $needle = trim((string) ($this->filterValues[$columnKey] ?? ''));
+            if ($needle === '') {
+                continue;
+            }
+
+            $haystack = mb_strtolower((string) data_get($row, $columnKey, ''));
+
+            if (! str_contains($haystack, mb_strtolower($needle))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

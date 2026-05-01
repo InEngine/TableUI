@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Schema;
 use InEngine\TableUI\Support\LaravelColumnSchema;
 
 /**
- * Table domain object: a model collection plus optional explicit {@see Columns} and {@see Options}.
+ * Table domain object: a model collection plus optional explicit {@see Columns}, {@see Options}, {@see Actions}, and {@see Filters}.
  *
  * When {@code $options} is omitted or null, a new {@see Options} instance is created with its constructor defaults
  * (same for {@see fromCollection}).
@@ -23,17 +23,21 @@ class Table extends EloquentCollection
 
     private ?Actions $explicitActions = null;
 
+    private ?Filters $explicitFilters = null;
+
     private Options $options;
 
     /**
      * @param  EloquentCollection<int, Model>|list<Model>  $items
      * @param  ?Options  $options  When null, {@see Options} is instantiated with default flags and routes.
+     * @param  ?Filters  $filters  Optional substring filters for {@see TableView}.
      */
     public function __construct(
         EloquentCollection|array $items = [],
         ?Columns $columns = null,
         ?Options $options = null,
         ?Actions $actions = null,
+        ?Filters $filters = null,
     ) {
         if ($items instanceof EloquentCollection) {
             $items = $items->all();
@@ -43,16 +47,18 @@ class Table extends EloquentCollection
 
         $this->explicitColumns = $columns;
         $this->explicitActions = $actions;
+        $this->explicitFilters = $filters;
         $this->options = $options ?? new Options;
     }
 
     /**
      * @param  EloquentCollection<int, Model>|list<Model>  $items
      * @param  ?Options  $options  When null, {@see Options} is instantiated with default flags and routes.
+     * @param  ?Filters  $filters  Optional substring filters for {@see TableView}.
      */
-    public static function fromCollection(EloquentCollection|array $items, ?Columns $columns = null, ?Options $options = null, ?Actions $actions = null): static
+    public static function fromCollection(EloquentCollection|array $items, ?Columns $columns = null, ?Options $options = null, ?Actions $actions = null, ?Filters $filters = null): static
     {
-        return new static($items, $columns, $options, $actions);
+        return new static($items, $columns, $options, $actions, $filters);
     }
 
     /**
@@ -148,6 +154,19 @@ class Table extends EloquentCollection
     public function setActions(Actions $actions): void
     {
         $this->explicitActions = $actions;
+    }
+
+    /**
+     * Optional column filters (substring search). When not set explicitly, {@see Filters::empty()}.
+     */
+    public function filters(): Filters
+    {
+        return $this->explicitFilters ?? Filters::empty();
+    }
+
+    public function setFilters(Filters $filters): void
+    {
+        $this->explicitFilters = $filters;
     }
 
     /**

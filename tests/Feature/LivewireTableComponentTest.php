@@ -8,6 +8,8 @@ use InEngine\TableUI\ActionTypes\DeleteAction;
 use InEngine\TableUI\ActionTypes\ViewAction;
 use InEngine\TableUI\Columns;
 use InEngine\TableUI\ColumnTypes\Complex\MoneyColumn;
+use InEngine\TableUI\FilterDefinition;
+use InEngine\TableUI\Filters;
 use InEngine\TableUI\Livewire\TableView;
 use InEngine\TableUI\Options;
 use InEngine\TableUI\Table;
@@ -160,6 +162,28 @@ it('adds underlined or no-underlined on the table root from config tableui.under
 
     config()->set('tableui.underline_links', false);
     $assertWrapperClasses(false);
+});
+
+it('filters displayed rows by case-insensitive substring', function (): void {
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 1, 'user_name' => 'Ada Lovelace']);
+
+    $bob = new LivewireTableComponentTestModel;
+    $bob->forceFill(['id' => 2, 'user_name' => 'Bob']);
+
+    $table = new Table([$ada, $bob]);
+    $table->setFilters(Filters::make(
+        new FilterDefinition('user_name', 'Name'),
+    ));
+
+    Livewire::test(TableView::class, [
+        'table' => $table,
+    ])
+        ->assertSee('Ada Lovelace')
+        ->assertSee('Bob')
+        ->set('filterValues', ['user_name' => 'ada'])
+        ->assertSee('Ada Lovelace')
+        ->assertDontSee('Bob');
 });
 
 it('sorts rows by selected column and toggles direction', function (): void {
