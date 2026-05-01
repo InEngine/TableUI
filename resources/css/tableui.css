@@ -22,10 +22,15 @@
 /* Row striping utilities applied via Blade @class(...) when stripping is enabled. */
 @source inline("odd:bg-gray-50/90 dark:odd:bg-gray-900/45 odd:hover:bg-gray-100 dark:odd:hover:bg-gray-800/70");
 
-/* Bulk toolbar (select all, actions) + primary / secondary theme button */
+/* Toolbar: bulk (left) + filters (right); bulk controls + primary / secondary theme button */
 @source inline("table-ui__sheet");
-@source inline("table-ui__bulk-region");
-@source inline("table-ui__filter-region");
+@source inline("table-ui__toolbar");
+@source inline("table-ui__toolbar--filters-only");
+@source inline("table-ui__toolbar--bulk-only");
+@source inline("table-ui__toolbar--split");
+@source inline("table-ui__toolbar-bulk");
+@source inline("table-ui__toolbar-filters");
+@source inline("table-ui__bulk-controls");
 @source inline("table-ui__filter-field");
 @source inline("table-ui__filter-label");
 @source inline("table-ui__filter-input");
@@ -58,12 +63,32 @@
         @apply flex flex-col gap-4;
     }
 
-    .table-ui__bulk-region {
-        @apply flex flex-wrap items-center gap-3;
+    .table-ui__toolbar {
+        @apply flex w-full flex-wrap items-end gap-x-4 gap-y-3;
     }
 
-    .table-ui__filter-region {
-        @apply flex flex-wrap items-end gap-4;
+    .table-ui__toolbar--split {
+        @apply justify-between;
+    }
+
+    .table-ui__toolbar--bulk-only {
+        @apply justify-start;
+    }
+
+    .table-ui__toolbar--filters-only {
+        @apply justify-end;
+    }
+
+    .table-ui__toolbar-bulk {
+        @apply flex min-w-0 flex-shrink-0 flex-wrap items-center gap-3;
+    }
+
+    .table-ui__toolbar-filters {
+        @apply flex min-w-0 flex-shrink flex-wrap items-end justify-end gap-4;
+    }
+
+    .table-ui__bulk-controls {
+        @apply flex flex-wrap items-center gap-3;
     }
 
     .table-ui__filter-field {

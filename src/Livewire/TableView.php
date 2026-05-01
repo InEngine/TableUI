@@ -217,6 +217,14 @@ class TableView extends Component
     }
 
     /**
+     * Checkbox column + bulk toolbar only when {@see $multipleSelect} is true and at least one action has {@see Action::isBulk()}.
+     */
+    public function getShowRowSelectionProperty(): bool
+    {
+        return $this->multipleSelect && $this->hasBulkActionOptions;
+    }
+
+    /**
      * Resolved href for a row action snapshot, or null when using dispatch-only or missing target.
      *
      * @param  array{name: string, label: string, bulk: bool, target: ?string, serializedClosure: string, isButton: bool}  $snapshot

@@ -1,5 +1,5 @@
-{{-- Bulk selection toolbar (same Livewire scope as parent TableView). --}}
-<div class="table-ui__bulk-region" role="toolbar" aria-label="{{ __('Table toolbar') }}">
+{{-- Bulk selection controls (nested inside {@see toolbar}); primary + Actions select. --}}
+<div class="table-ui__bulk-controls">
     @if ($bulkActionSelection === '')
         <button
             type="button"

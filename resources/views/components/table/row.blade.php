@@ -1,4 +1,4 @@
-{{-- Single body row; include from TableView so Livewire + columnKeys/multipleSelect stay in scope. --}}
+{{-- Single body row; include from TableView so Livewire + columnKeys/showRowSelection stay in scope. --}}
 @php($rowKey = $this->rowKeyForRow($row))
 <tr
     @class([
@@ -7,7 +7,7 @@
     ])
     wire:key="table-ui-r-{{ $rowKey }}"
 >
-    @if ($multipleSelect)
+    @if ($this->showRowSelection)
         <td class="table-ui__td table-ui__td--select" wire:key="table-ui-r-{{ $rowKey }}-sel">
             <input
                 type="checkbox"

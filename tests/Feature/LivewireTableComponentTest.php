@@ -216,6 +216,30 @@ it('renders bulk toolbar and row checkboxes when multipleSelect is enabled', fun
         ->assertSeeHtml('type="checkbox"');
 });
 
+it('hides row selection and bulk UI when there are no bulk actions even if multipleSelect is true', function (): void {
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 1, 'user_name' => 'Ada']);
+
+    $table = new Table([$ada], null, new Options(
+        multipleSelect: true,
+        editable: false,
+        deletable: false,
+        detailable: false,
+        edit: '',
+        delete: '',
+        details: '',
+    ));
+    $table->setActions(Actions::empty());
+
+    $html = Livewire::test(TableView::class, [
+        'table' => $table,
+    ])->html();
+
+    expect($html)->not->toContain('type="checkbox"')
+        ->and($html)->not->toContain('table-ui__bulk-controls')
+        ->and($html)->not->toContain('table-ui__actions-select');
+});
+
 it('omits bulk controls when multipleSelect is disabled via options', function (): void {
     $ada = new LivewireTableComponentTestModel;
     $ada->forceFill(['id' => 1, 'user_name' => 'Ada']);

@@ -3,7 +3,7 @@
     $tableUiUnderlineLinks = filter_var(config('tableui.underline_links', false), FILTER_VALIDATE_BOOLEAN);
     $visibleColumnCount = max(count($headers), count($columnKeys), 1);
     $actionColumnCount = count($actionSnapshots);
-    $totalColspan = $visibleColumnCount + ($multipleSelect ? 1 : 0) + $actionColumnCount;
+    $totalColspan = $visibleColumnCount + ($this->showRowSelection ? 1 : 0) + $actionColumnCount;
 @endphp
 <div
     {{ $attributes->class([
@@ -17,10 +17,7 @@
         <p class="table-ui__empty" role="status">{{ $emptyMessage }}</p>
     @else
         <div class="table-ui__sheet">
-            @if ($multipleSelect && count($rows) > 0)
-                @include('tableui::components.table.bulk-toolbar')
-            @endif
-            @include('tableui::components.table.filter-toolbar')
+            @include('tableui::components.table.toolbar')
             <table class="table-ui__table">
                 @include('tableui::components.table.thead')
                 <tbody class="table-ui__tbody">

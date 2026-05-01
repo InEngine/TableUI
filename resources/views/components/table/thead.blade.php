@@ -1,7 +1,7 @@
 @if (count($headers) > 0)
     <thead class="table-ui__thead">
         <tr>
-            @if ($multipleSelect)
+            @if ($this->showRowSelection)
                 <th class="table-ui__th table-ui__th--select" scope="col">
                     <span class="sr-only">{{ __('Select rows') }}</span>
                 </th>
