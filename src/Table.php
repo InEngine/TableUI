@@ -144,11 +144,11 @@ class Table extends EloquentCollection
     }
 
     /**
-     * Row and bulk actions. When not set explicitly, derived from {@see options()} via {@see Actions::fromOptions()}.
+     * Row and bulk actions. When not set explicitly, defaults to {@see Actions::empty()}; attach actions with {@see setActions()}.
      */
     public function actions(): Actions
     {
-        return $this->explicitActions ?? Actions::fromOptions($this->options);
+        return $this->explicitActions ?? Actions::empty();
     }
 
     public function setActions(Actions $actions): void

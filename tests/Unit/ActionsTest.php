@@ -5,17 +5,14 @@ declare(strict_types=1);
 use InEngine\TableUI\Actions;
 use InEngine\TableUI\ActionTypes\DeleteAction;
 use InEngine\TableUI\ActionTypes\EditAction;
-use InEngine\TableUI\Options;
+use InEngine\TableUI\ActionTypes\ViewAction;
 
-it('builds from options with view edit delete order', function (): void {
-    $actions = Actions::fromOptions(new Options(
-        editable: true,
-        edit: '/e',
-        deletable: true,
-        delete: '/d',
-        detailable: true,
-        details: '/v',
-    ));
+it('holds view edit delete order with bulk only on delete', function (): void {
+    $actions = new Actions([
+        new ViewAction(target: '/v'),
+        new EditAction(target: '/e'),
+        new DeleteAction(target: '/d'),
+    ]);
 
     expect($actions->names())->toBe(['view', 'edit', 'delete'])
         ->and($actions->find('delete'))->toBeInstanceOf(DeleteAction::class)
@@ -24,18 +21,9 @@ it('builds from options with view edit delete order', function (): void {
         ->and($actions->onlyBulk()->names())->toBe(['delete']);
 });
 
-it('is empty when all action flags are off', function (): void {
-    $actions = Actions::fromOptions(new Options(
-        editable: false,
-        deletable: false,
-        detailable: false,
-        edit: '',
-        delete: '',
-        details: '',
-    ));
-
-    expect($actions->isEmpty())->toBeTrue()
-        ->and($actions->onlyBulk()->isEmpty())->toBeTrue();
+it('is empty when constructed empty', function (): void {
+    expect(Actions::empty()->isEmpty())->toBeTrue()
+        ->and(Actions::empty()->onlyBulk()->isEmpty())->toBeTrue();
 });
 
 it('resolves append id url for path targets', function (): void {

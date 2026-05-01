@@ -24,6 +24,14 @@ final class LivewireTableComponentTestModel extends Model
     public $timestamps = false;
 }
 
+function livewireTableWithBulkDelete(array $models): Table
+{
+    $table = new Table($models);
+    $table->setActions(new Actions([new DeleteAction(target: '/delete')]));
+
+    return $table;
+}
+
 it('renders empty message when there is no data', function (): void {
     Livewire::test(TableView::class, [
         'table' => new Table([]),
@@ -209,7 +217,7 @@ it('renders bulk toolbar and row checkboxes when multipleSelect is enabled', fun
     $ada->forceFill(['id' => 10, 'user_name' => 'Ada']);
 
     Livewire::test(TableView::class, [
-        'table' => new Table([$ada]),
+        'table' => livewireTableWithBulkDelete([$ada]),
         'multipleSelect' => true,
     ])
         ->assertSee(__('Select all'))
@@ -220,15 +228,7 @@ it('hides row selection and bulk UI when there are no bulk actions even if multi
     $ada = new LivewireTableComponentTestModel;
     $ada->forceFill(['id' => 1, 'user_name' => 'Ada']);
 
-    $table = new Table([$ada], null, new Options(
-        multipleSelect: true,
-        editable: false,
-        deletable: false,
-        detailable: false,
-        edit: '',
-        delete: '',
-        details: '',
-    ));
+    $table = new Table([$ada], null, new Options(multipleSelect: true));
     $table->setActions(Actions::empty());
 
     $html = Livewire::test(TableView::class, [
@@ -255,7 +255,7 @@ it('dispatches tableui-bulk-action when the primary action button is clicked aft
     $ada->forceFill(['id' => 10, 'user_name' => 'Ada']);
 
     Livewire::test(TableView::class, [
-        'table' => new Table([$ada]),
+        'table' => livewireTableWithBulkDelete([$ada]),
         'multipleSelect' => true,
     ])
         ->set('bulkActionSelection', 'delete')
@@ -270,7 +270,7 @@ it('shows Delete on the primary toolbar button when delete is chosen from the ac
     $ada->forceFill(['id' => 10, 'user_name' => 'Ada']);
 
     Livewire::test(TableView::class, [
-        'table' => new Table([$ada]),
+        'table' => livewireTableWithBulkDelete([$ada]),
         'multipleSelect' => true,
     ])
         ->set('bulkActionSelection', 'delete')
@@ -283,7 +283,7 @@ it('disables the bulk action button until at least one row is selected', functio
     $ada->forceFill(['id' => 10, 'user_name' => 'Ada']);
 
     $component = Livewire::test(TableView::class, [
-        'table' => new Table([$ada]),
+        'table' => livewireTableWithBulkDelete([$ada]),
         'multipleSelect' => true,
     ])
         ->set('bulkActionSelection', 'delete')
@@ -303,7 +303,7 @@ it('does not dispatch tableui-bulk-action when executeBulkAction is called with 
     $ada->forceFill(['id' => 10, 'user_name' => 'Ada']);
 
     Livewire::test(TableView::class, [
-        'table' => new Table([$ada]),
+        'table' => livewireTableWithBulkDelete([$ada]),
         'multipleSelect' => true,
     ])
         ->set('bulkActionSelection', 'delete')
@@ -312,17 +312,17 @@ it('does not dispatch tableui-bulk-action when executeBulkAction is called with 
         ->assertNotDispatched('tableui-bulk-action');
 });
 
-it('hides the actions dropdown when no option flags enable bulk actions', function (): void {
+it('hides the actions dropdown when no bulk actions exist', function (): void {
     $ada = new LivewireTableComponentTestModel;
     $ada->forceFill(['id' => 1, 'user_name' => 'Ada']);
 
+    $table = new Table([$ada], null, new Options(multipleSelect: true));
+    $table->setActions(new Actions([
+        new ViewAction(target: '/items'),
+    ]));
+
     $html = Livewire::test(TableView::class, [
-        'table' => new Table([$ada], null, new Options(
-            multipleSelect: true,
-            deletable: false,
-            editable: false,
-            detailable: false,
-        )),
+        'table' => $table,
     ])->html();
 
     expect($html)->not->toContain('table-ui__actions-select');
@@ -333,14 +333,7 @@ it('executes a row action closure on the server', function (): void {
     $ada->forceFill(['id' => 10, 'user_name' => 'Ada']);
 
     $GLOBALS['tableui_row_closure_test'] = null;
-    $table = new Table([$ada], null, new Options(
-        detailable: false,
-        editable: false,
-        deletable: false,
-        edit: '',
-        delete: '',
-        details: '',
-    ));
+    $table = new Table([$ada]);
     $table->setActions(new Actions([
         new ViewAction(target: static function (array $row): void {
             $GLOBALS['tableui_row_closure_test'] = $row;
@@ -363,15 +356,7 @@ it('executes a bulk action closure and does not dispatch tableui-bulk-action', f
     $ada->forceFill(['id' => 10, 'user_name' => 'Ada']);
 
     $GLOBALS['tableui_bulk_closure_test'] = null;
-    $table = new Table([$ada], null, new Options(
-        multipleSelect: true,
-        detailable: false,
-        editable: false,
-        deletable: false,
-        edit: '',
-        delete: '',
-        details: '',
-    ));
+    $table = new Table([$ada], null, new Options(multipleSelect: true));
     $table->setActions(new Actions([
         new DeleteAction(target: static function (array $rows): void {
             $GLOBALS['tableui_bulk_closure_test'] = $rows;
@@ -401,7 +386,7 @@ it('toggleSelectAll selects and clears all displayed row keys', function (): voi
     $bob->forceFill(['id' => 1, 'user_name' => 'Bob']);
 
     Livewire::test(TableView::class, [
-        'table' => new Table([$ada, $bob]),
+        'table' => livewireTableWithBulkDelete([$ada, $bob]),
         'multipleSelect' => true,
     ])
         ->call('toggleSelectAll')

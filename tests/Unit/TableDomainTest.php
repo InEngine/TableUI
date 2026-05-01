@@ -23,13 +23,11 @@ it('creates default Options when none is passed to constructor or fromCollection
     $expected = new Options;
 
     $viaConstructor = new Table([]);
-    expect($viaConstructor->options()->getEditable())->toBe($expected->getEditable())
-        ->and($viaConstructor->options()->getEdit())->toBe($expected->getEdit())
-        ->and($viaConstructor->options()->getLinked())->toBe($expected->getLinked());
+    expect($viaConstructor->options()->getLinked())->toBe($expected->getLinked())
+        ->and($viaConstructor->options()->getMultipleSelect())->toBe($expected->getMultipleSelect());
 
     $viaStatic = Table::fromCollection([]);
-    expect($viaStatic->options()->getEditable())->toBe($expected->getEditable())
-        ->and($viaStatic->options()->getDetails())->toBe($expected->getDetails());
+    expect($viaStatic->options()->getStripping())->toBe($expected->getStripping());
 });
 
 it('constructs from Table::fromCollection alias', function (): void {
@@ -70,11 +68,11 @@ it('mutates columns via setColumns', function (): void {
 });
 
 it('stores and replaces options via constructor and setter', function (): void {
-    $table = new Table(new EloquentCollection, null, new Options(editable: false));
+    $table = new Table(new EloquentCollection, null, new Options(multipleSelect: false));
 
-    expect($table->options()->getEditable())->toBeFalse();
+    expect($table->options()->getMultipleSelect())->toBeFalse();
 
-    $table->setOptions(new Options(editable: true));
+    $table->setOptions(new Options(multipleSelect: true));
 
-    expect($table->options()->getEditable())->toBeTrue();
+    expect($table->options()->getMultipleSelect())->toBeTrue();
 });

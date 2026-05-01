@@ -3,9 +3,6 @@
 namespace InEngine\TableUI;
 
 use InEngine\TableUI\ActionTypes\Action;
-use InEngine\TableUI\ActionTypes\DeleteAction;
-use InEngine\TableUI\ActionTypes\EditAction;
-use InEngine\TableUI\ActionTypes\ViewAction;
 
 /**
  * Ordered collection of {@see Action} definitions for row and bulk toolbars.
@@ -22,28 +19,6 @@ final class Actions
     public static function empty(): self
     {
         return new self([]);
-    }
-
-    /**
-     * Build defaults from legacy {@see Options} route flags and paths.
-     */
-    public static function fromOptions(Options $options): self
-    {
-        $items = [];
-
-        if ($options->getDetailable()) {
-            $items[] = new ViewAction(target: $options->getDetails());
-        }
-
-        if ($options->getEditable()) {
-            $items[] = new EditAction(target: $options->getEdit());
-        }
-
-        if ($options->getDeletable()) {
-            $items[] = new DeleteAction(target: $options->getDelete());
-        }
-
-        return new self($items);
     }
 
     /**
