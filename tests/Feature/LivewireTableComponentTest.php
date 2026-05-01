@@ -199,7 +199,7 @@ it('omits bulk controls when multipleSelect is disabled via options', function (
         ->assertDontSee(__('Select all'));
 });
 
-it('dispatches tableui-bulk-action when a bulk action is chosen', function (): void {
+it('dispatches tableui-bulk-action when the primary action button is clicked after choosing delete and rows are selected', function (): void {
     $ada = new LivewireTableComponentTestModel;
     $ada->forceFill(['id' => 10, 'user_name' => 'Ada']);
 
@@ -208,7 +208,57 @@ it('dispatches tableui-bulk-action when a bulk action is chosen', function (): v
         'multipleSelect' => true,
     ])
         ->set('bulkActionSelection', 'delete')
-        ->assertDispatched('tableui-bulk-action');
+        ->set('selectedRowKeys', ['id:10'])
+        ->call('executeBulkAction')
+        ->assertDispatched('tableui-bulk-action')
+        ->assertSet('bulkActionSelection', '');
+});
+
+it('shows Delete on the primary toolbar button when delete is chosen from the actions select', function (): void {
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 10, 'user_name' => 'Ada']);
+
+    Livewire::test(TableView::class, [
+        'table' => new Table([$ada]),
+        'multipleSelect' => true,
+    ])
+        ->set('bulkActionSelection', 'delete')
+        ->assertSee(__('Delete'))
+        ->assertDontSee(__('Select all'));
+});
+
+it('disables the bulk action button until at least one row is selected', function (): void {
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 10, 'user_name' => 'Ada']);
+
+    $component = Livewire::test(TableView::class, [
+        'table' => new Table([$ada]),
+        'multipleSelect' => true,
+    ])
+        ->set('bulkActionSelection', 'delete')
+        ->assertSet('isBulkActionButtonDisabled', true);
+
+    expect($component->html())->toMatch('/wire:click="executeBulkAction"[^>]*\bdisabled\b/');
+
+    $component
+        ->set('selectedRowKeys', ['id:10'])
+        ->assertSet('isBulkActionButtonDisabled', false);
+
+    expect($component->html())->not->toMatch('/wire:click="executeBulkAction"[^>]*\bdisabled\b/');
+});
+
+it('does not dispatch tableui-bulk-action when executeBulkAction is called with no rows selected', function (): void {
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 10, 'user_name' => 'Ada']);
+
+    Livewire::test(TableView::class, [
+        'table' => new Table([$ada]),
+        'multipleSelect' => true,
+    ])
+        ->set('bulkActionSelection', 'delete')
+        ->set('selectedRowKeys', [])
+        ->call('executeBulkAction')
+        ->assertNotDispatched('tableui-bulk-action');
 });
 
 it('hides the actions dropdown when no option flags enable bulk actions', function (): void {

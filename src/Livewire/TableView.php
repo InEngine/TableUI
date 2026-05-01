@@ -68,16 +68,12 @@ class TableView extends Component
     public array $selectedRowKeys = [];
 
     /**
-     * Mirrors {@see Table::options()} for bulk toolbar actions (delete / edit / details).
+     * Mirrors {@see Table::options()} for bulk toolbar delete action.
      */
     public bool $optionDeletable = false;
 
-    public bool $optionEditable = false;
-
-    public bool $optionDetailable = false;
-
     /**
-     * Current value of the bulk actions select; reset after {@see updatedBulkActionSelection()}.
+     * Current bulk action chosen from the actions select (e.g. {@code delete}). When non-empty, the primary toolbar button runs {@see executeBulkAction()} instead of {@see toggleSelectAll()}.
      */
     public string $bulkActionSelection = '';
 
@@ -108,8 +104,6 @@ class TableView extends Component
 
         $opts = $table->options();
         $this->optionDeletable = $opts->getDeletable();
-        $this->optionEditable = $opts->getEditable();
-        $this->optionDetailable = $opts->getDetailable();
 
         $this->bulkActionsSelectId = 'tableui-bulk-actions-'.bin2hex(random_bytes(4));
 
@@ -151,25 +145,49 @@ class TableView extends Component
     }
 
     /**
-     * Whether any bulk action (delete / edit / details) is enabled on {@see Options}.
+     * Whether bulk delete is enabled on {@see Options}.
      */
     public function getHasBulkActionOptionsProperty(): bool
     {
-        return $this->optionDeletable || $this->optionEditable || $this->optionDetailable;
+        return $this->optionDeletable;
     }
 
     /**
-     * Dispatches {@code tableui-bulk-action} with the chosen action name and current {@see $selectedRowKeys}, then resets the select.
+     * When a bulk action is active, the primary button is interactive only if at least one row is selected (checkbox or select all).
+     */
+    public function getIsBulkActionButtonDisabledProperty(): bool
+    {
+        if ($this->bulkActionSelection === '') {
+            return false;
+        }
+
+        return $this->selectedRowKeys === [];
+    }
+
+    /**
+     * Dispatches {@code tableui-bulk-action} with {@see $bulkActionSelection} and current {@see $selectedRowKeys}, then clears the selection mode.
      *
      * Host apps should listen for {@code tableui-bulk-action} (e.g. on the table component or via JS) to perform routing or API calls.
      */
-    public function updatedBulkActionSelection(mixed $value): void
+    public function executeBulkAction(): void
     {
-        if (! is_string($value) || $value === '') {
+        $action = $this->bulkActionSelection;
+
+        if ($action === '') {
             return;
         }
 
-        $this->dispatch('tableui-bulk-action', action: $value, keys: $this->selectedRowKeys);
+        if ($this->selectedRowKeys === []) {
+            return;
+        }
+
+        if ($action === 'delete' && ! $this->optionDeletable) {
+            $this->bulkActionSelection = '';
+
+            return;
+        }
+
+        $this->dispatch('tableui-bulk-action', action: $action, keys: $this->selectedRowKeys);
         $this->bulkActionSelection = '';
     }
 
