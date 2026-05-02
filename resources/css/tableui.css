@@ -80,31 +80,78 @@
     }
 }
 
+/*
+|--------------------------------------------------------------------------
+| Filter panel — View Transitions (Livewire wire:transition on filter tbody)
+|--------------------------------------------------------------------------
+|
+| Snappy slide + fade when the inline filter row is inserted or removed. Browsers without
+| startViewTransition fall back to an instant swap (Livewire). Reduced motion: Livewire’s
+| transition shim disables animations; we only define motion when the user allows it.
+|
+*/
+@media (prefers-reduced-motion: no-preference) {
+    ::view-transition-old(table-ui-filter-panel) {
+        animation: table-ui-filter-panel-out 190ms ease-in both;
+    }
+
+    ::view-transition-new(table-ui-filter-panel) {
+        animation: table-ui-filter-panel-in 230ms ease-out both;
+    }
+}
+
+@keyframes table-ui-filter-panel-in {
+    from {
+        opacity: 0;
+        transform: translateY(-0.375rem);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes table-ui-filter-panel-out {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(-0.375rem);
+    }
+}
+
 @layer components {
     /*
      * Theme: config tableui.theme.primary / secondary set --table-ui-* on .table-ui via Blade (Tailwind --color-* palette).
+     *
+     * Fills the host vertically when the parent establishes height (e.g. flex column + flex-1 / min-h-0, or h-full chain).
+     * flex-1 applies when .table-ui is a flex item; h-full when the parent has a definite height.
      */
     .table-ui {
-        @apply w-full min-w-0 text-gray-900 dark:text-gray-100;
+        @apply flex h-full min-h-0 w-full min-w-0 flex-1 flex-col text-gray-900 dark:text-gray-100;
     }
 
     /*
      * Scroll container around <table> only (toolbar stays visible). Overflow classes come from Blade.
-     * Full width + min-w-0 so flex parents can shrink this element; overflow-* then scrolls wide tables.
+     * flex-1 + min-h-0 lets this region absorb remaining height below the toolbar so rows scroll inside the shell.
      */
     .table-ui__scroll {
-        @apply min-h-0 min-w-0 w-full max-w-full;
+        @apply min-h-0 min-w-0 w-full max-w-full flex-1;
     }
 
     /*
      * Vertical stack: bulk toolbar region, then gap, then scroll region + table.
      */
     .table-ui__sheet {
-        @apply flex flex-col gap-4;
+        @apply flex min-h-0 flex-1 flex-col gap-4;
     }
 
     .table-ui__toolbar {
-        @apply flex w-full flex-wrap items-end gap-x-4 gap-y-3;
+        @apply flex w-full shrink-0 flex-wrap items-end gap-x-4 gap-y-3;
     }
 
     .table-ui__toolbar--split {

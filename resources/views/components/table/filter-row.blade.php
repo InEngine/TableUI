@@ -5,6 +5,7 @@
     class="table-ui__filter-row-tbody"
     id="{{ $bulkActionsSelectId }}-filter-panel"
     wire:key="table-ui-filter-panel-tbody"
+    wire:transition="table-ui-filter-panel"
 >
     <tr class="table-ui__filter-row">
         @if ($this->showRowSelection)

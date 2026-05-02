@@ -13,7 +13,7 @@ it('applies constructor defaults', function (): void {
         ->and($options->getEnableDefaultSort())->toBeTrue()
         ->and($options->getScrollbarHorizontal())->toBe('auto')
         ->and($options->getScrollbarVertical())->toBe('auto')
-        ->and($options->getVerticalMaxHeight())->toBe('min(70vh, 40rem)');
+        ->and($options->getVerticalMaxHeight())->toBeNull();
 });
 
 it('allows partial overrides via named constructor arguments', function (): void {

@@ -209,7 +209,8 @@ it('renders a Livewire filter trigger and shows the inline filter row after togg
         ->assertDontSeeHtml('table-ui__filter-row-tbody')
         ->call('toggleFiltersPanel')
         ->assertSet('filtersPanelOpen', true)
-        ->assertSeeHtml('table-ui__filter-row-tbody');
+        ->assertSeeHtml('table-ui__filter-row-tbody')
+        ->assertSeeHtml('wire:transition="table-ui-filter-panel"');
 });
 
 it('filters displayed rows by case-insensitive substring', function (): void {

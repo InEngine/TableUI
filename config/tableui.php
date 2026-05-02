@@ -73,18 +73,19 @@ return [
     | Override per {@see \InEngine\TableUI\Table} via {@see \InEngine\TableUI\Options}, or per Livewire mount
     | {@code scrollbarHorizontal} / {@code scrollbarVertical} / {@code verticalMaxHeight}.
     |
-    | vertical_max_height — CSS length applied as {@code max-height} on the scroll wrapper around the {@code <table>}
-    | (toolbar stays outside). Required for vertical scrollbars: without it, the box grows with rows and
-    | {@code overflow-y} never overflows. Use any valid CSS length, e.g. {@code 24rem}, {@code 50vh}, or
-    | {@code min(70vh, 40rem)}. Set to {@code null} for no cap (table grows naturally; rely on page scroll,
-    | or constrain height only via your layout / flex + {@code min-h-0} on ancestors).
+    | vertical_max_height — Optional CSS {@code max-height} on the scroll wrapper (toolbar stays outside).
+    | Default {@code null}: height comes from layout — {@code .table-ui} / sheet / scroll use flex so the table
+    | fills a bounded parent ({@code h-full}, {@code min-h-0}, flex column + {@code flex-1} on the Livewire root).
+    | Set an explicit length (e.g. {@code min(70vh, 40rem)}) when you want a fixed cap instead of filling the host.
     |
     */
     'scrollbars' => [
         'horizontal' => 'auto',
         'vertical' => 'auto',
-        'vertical_max_height' => 'min(70vh, 40rem)',
+        'vertical_max_height' => null,
     ],
+
+    'pagination' => 25,
 
     /*
     |--------------------------------------------------------------------------
