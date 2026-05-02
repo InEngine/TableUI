@@ -37,13 +37,20 @@
 @source inline("table-ui__filter-input--narrow");
 @source inline("table-ui__filter-input--datetime");
 @source inline("table-ui__filter-range");
+@source inline("table-ui__filter-autocomplete");
+@source inline("table-ui__filter-autocomplete-panel");
 @source inline("table-ui__filter-select");
 @source inline("table-ui__filter-trigger");
-@source inline("table-ui__filter-overlay");
-@source inline("table-ui__filter-panel");
-@source inline("table-ui__filter-panel-body");
-@source inline("table-ui__filter-panel-close");
-@source inline("table-ui__filter-panel-fields");
+@source inline("table-ui__filter-count-badge");
+@source inline("table-ui__filter-clear");
+@source inline("table-ui__filter-clear-actions");
+@source inline("table-ui__filter-clear-actions-inner");
+@source inline("table-ui__filter-clear-span");
+@source inline("table-ui__filter-row--clear-only");
+@source inline("table-ui__filter-row-tbody");
+@source inline("table-ui__filter-row");
+@source inline("table-ui__td--filter");
+@source inline("table-ui__td--filter-spacer");
 @source inline("table-ui__bulk-actions");
 @source inline("table-ui__actions-select");
 @source inline("table-ui__select-all");
@@ -103,6 +110,22 @@
         @apply flex min-w-0 flex-shrink flex-wrap items-end justify-end gap-4;
     }
 
+    /*
+     * Active filter count on the Filters button: filled circle using theme primary (see {@see TableUiTheme}).
+     */
+    .table-ui__filter-count-badge {
+        @apply inline-flex min-h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-xs font-semibold tabular-nums leading-none text-white;
+        background-color: var(--table-ui-primary, theme(colors.gray.600));
+    }
+
+    .table-ui__filter-clear-actions {
+        @apply align-top py-2;
+    }
+
+    .table-ui__filter-clear-actions-inner {
+        @apply flex justify-end;
+    }
+
     .table-ui__bulk-controls {
         @apply flex flex-wrap items-center gap-3;
     }
@@ -133,6 +156,47 @@
 
     .table-ui__filter-select {
         @apply w-full min-w-[10rem] rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-sm text-gray-900 shadow-sm focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-gray-500/40;
+    }
+
+    /*
+     * Inline filter strip: one tbody directly under the header, cells align with data columns.
+     */
+    .table-ui__filter-row-tbody {
+        border-bottom-color: color-mix(in oklab, var(--table-ui-primary, theme(colors.gray.300)) 45%, transparent);
+        @apply border-b bg-gray-50/90 dark:border-gray-700 dark:bg-gray-900/40;
+    }
+
+    .table-ui__filter-row {
+        @apply align-top;
+    }
+
+    .table-ui__td--filter {
+        @apply min-w-0 align-top py-2;
+    }
+
+    .table-ui__td--filter-spacer {
+        @apply py-2;
+    }
+
+    .table-ui__td--filter .table-ui__filter-field {
+        @apply min-w-0 max-w-full;
+    }
+
+    .table-ui__td--filter .table-ui__filter-range {
+        @apply max-w-full min-w-0 flex-col flex-wrap items-stretch gap-1.5;
+    }
+
+    .table-ui__td--filter .table-ui__filter-input {
+        @apply min-w-0;
+    }
+
+    .table-ui__td--filter .table-ui__filter-input--narrow,
+    .table-ui__td--filter .table-ui__filter-input--datetime {
+        @apply min-w-0 w-full flex-none;
+    }
+
+    .table-ui__td--filter .table-ui__filter-select {
+        @apply min-w-0;
     }
 
     .table-ui__bulk-actions {

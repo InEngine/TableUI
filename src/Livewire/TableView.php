@@ -14,7 +14,11 @@ use InEngine\TableUI\Livewire\Concerns\ManagesBulkSelection;
 use InEngine\TableUI\Options;
 use InEngine\TableUI\Rendering\ColumnRendererRegistry;
 use InEngine\TableUI\Support\SerializableClosurePayload;
+use InEngine\TableUI\Support\TableUiEmailFilterInputFormatter;
+use InEngine\TableUI\Support\TableUiFilterAutocompleteSuggestions;
+use InEngine\TableUI\Support\TableUiFilterColumnBounds;
 use InEngine\TableUI\Support\TableUiFilterMatcher;
+use InEngine\TableUI\Support\TableUiPhoneFilterInputFormatter;
 use InEngine\TableUI\Table;
 use InEngine\TableUI\TableServiceProvider;
 use Livewire\Component;
@@ -200,14 +204,195 @@ class TableView extends Component
             ];
 
             if (! array_key_exists($definition->columnKey, $this->filterValues)) {
-                $this->filterValues[$definition->columnKey] = $this->initialFilterStateForDefinition($definition);
+                $ftype = FilterType::tryFrom($definition->type) ?? FilterType::Text;
+
+                if ($ftype === FilterType::Date || $ftype === FilterType::Datetime) {
+                    $this->filterValues[$definition->columnKey] = $this->defaultTemporalFilterStateForDefinition([
+                        'columnKey' => $definition->columnKey,
+                        'type' => $definition->type,
+                    ]);
+                } else {
+                    $this->filterValues[$definition->columnKey] = $this->initialFilterStateForType($definition->type);
+                }
             }
         }
     }
 
-    private function initialFilterStateForDefinition(FilterDefinition $definition): mixed
+    /**
+     * Reset every filter input to its neutral value (same shapes as {@see hydrateFiltersFromTable()}).
+     */
+    public function clearAllFilters(): void
     {
-        return match ($definition->type) {
+        $next = $this->filterValues;
+
+        foreach ($this->filterDefinitions as $definition) {
+            $ftype = FilterType::tryFrom($definition['type'] ?? '') ?? FilterType::Text;
+
+            if ($ftype === FilterType::Date || $ftype === FilterType::Datetime) {
+                $next[$definition['columnKey']] = $this->defaultTemporalFilterStateForDefinition($definition);
+            } else {
+                $next[$definition['columnKey']] = $this->initialFilterStateForType($definition['type']);
+            }
+        }
+
+        $this->filterValues = $next;
+    }
+
+    /**
+     * Apply phone/email display formatting when {@see $filterValues} changes (Livewire hook).
+     */
+    public function updatedFilterValues(): void
+    {
+        $this->applyFormattedFilterInputs();
+    }
+
+    /**
+     * Pretty-print phone and email filter fields as the user types (see package formatters).
+     */
+    private function applyFormattedFilterInputs(): void
+    {
+        $next = $this->filterValues;
+        $changed = false;
+
+        foreach ($this->filterDefinitions as $definition) {
+            $key = $definition['columnKey'];
+            $type = FilterType::tryFrom($definition['type'] ?? '') ?? FilterType::Text;
+
+            $current = $next[$key] ?? '';
+
+            if (! is_string($current)) {
+                continue;
+            }
+
+            $formatted = match ($type) {
+                FilterType::Phone => TableUiPhoneFilterInputFormatter::format($current),
+                FilterType::Email => TableUiEmailFilterInputFormatter::format($current),
+                default => null,
+            };
+
+            if ($formatted !== null && $formatted !== $current) {
+                $next[$key] = $formatted;
+                $changed = true;
+            }
+        }
+
+        if ($changed) {
+            $this->filterValues = $next;
+        }
+    }
+
+    /**
+     * Number of filters that currently narrow the result set (see {@see TableUiFilterMatcher::isFilterActive()}).
+     */
+    public function getActiveFilterCountProperty(): int
+    {
+        $boundsByKey = $this->filterTemporalBounds;
+        $count = 0;
+
+        foreach ($this->filterDefinitions as $definition) {
+            $state = $this->filterValues[$definition['columnKey']] ?? null;
+            $enriched = $definition;
+            $key = $definition['columnKey'];
+
+            if (array_key_exists($key, $boundsByKey)) {
+                $enriched['temporalBounds'] = $boundsByKey[$key];
+            }
+
+            if (TableUiFilterMatcher::isFilterActive($enriched, $state)) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
+    /**
+     * Min/max for date and datetime filter columns from {@see $rows} (for defaults, HTML min/max, neutral counts).
+     *
+     * @return array<string, array{min: string, max: string}>
+     */
+    public function getFilterTemporalBoundsProperty(): array
+    {
+        $out = [];
+
+        foreach ($this->filterDefinitions as $definition) {
+            $type = FilterType::tryFrom($definition['type'] ?? '') ?? FilterType::Text;
+
+            if ($type !== FilterType::Date && $type !== FilterType::Datetime) {
+                continue;
+            }
+
+            $key = $definition['columnKey'];
+            $bounds = TableUiFilterColumnBounds::forColumn($key, $definition['type'], $this->rows);
+
+            if ($bounds !== null) {
+                $out[$key] = $bounds;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param  array{columnKey: string, type: string}  $definition
+     * @return array{from: string, to: string}
+     */
+    private function defaultTemporalFilterStateForDefinition(array $definition): array
+    {
+        $bounds = TableUiFilterColumnBounds::forColumn(
+            $definition['columnKey'],
+            $definition['type'],
+            $this->rows
+        );
+
+        if ($bounds !== null) {
+            return ['from' => $bounds['min'], 'to' => $bounds['max']];
+        }
+
+        return ['from' => '', 'to' => ''];
+    }
+
+    /**
+     * Distinct suggestion strings per filter column from {@see $rows}. Replace or augment when paginating:
+     * suggestions should follow the same row payload (or an API) you use for body cells.
+     *
+     * @return array<string, list<string>>
+     */
+    public function getFilterAutocompleteOptionsProperty(): array
+    {
+        if (! filter_var(config('tableui.filters.autocomplete_enabled', true), FILTER_VALIDATE_BOOLEAN)) {
+            return [];
+        }
+
+        $max = max(1, (int) config('tableui.filters.autocomplete_max_per_column', 100));
+        $out = [];
+
+        foreach ($this->filterDefinitions as $definition) {
+            $type = FilterType::tryFrom($definition['type'] ?? '') ?? FilterType::Text;
+
+            if ($type === FilterType::Boolean || $type === FilterType::Enum) {
+                $out[$definition['columnKey']] = [];
+
+                continue;
+            }
+
+            $out[$definition['columnKey']] = TableUiFilterAutocompleteSuggestions::distinctForColumn(
+                $definition['columnKey'],
+                $definition,
+                $this->rows,
+                $max
+            );
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return array{min: string, max: string}|array{from: string, to: string}|string
+     */
+    private function initialFilterStateForType(string $type): mixed
+    {
+        return match ($type) {
             FilterType::Number->value, FilterType::Money->value => ['min' => '', 'max' => ''],
             FilterType::Date->value, FilterType::Datetime->value, FilterType::Time->value => ['from' => '', 'to' => ''],
             default => '',

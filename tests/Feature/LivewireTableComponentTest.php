@@ -10,6 +10,7 @@ use InEngine\TableUI\Columns;
 use InEngine\TableUI\ColumnTypes\Complex\MoneyColumn;
 use InEngine\TableUI\FilterDefinition;
 use InEngine\TableUI\Filters;
+use InEngine\TableUI\FilterType;
 use InEngine\TableUI\Livewire\TableView;
 use InEngine\TableUI\Options;
 use InEngine\TableUI\Table;
@@ -185,7 +186,7 @@ it('adds underlined or no-underlined on the table root from config tableui.under
     $assertWrapperClasses(false);
 });
 
-it('renders a Livewire filter trigger and shows the overlay after toggleFiltersPanel', function (): void {
+it('renders a Livewire filter trigger and shows the inline filter row after toggleFiltersPanel', function (): void {
     $ada = new LivewireTableComponentTestModel;
     $ada->forceFill(['id' => 1, 'user_name' => 'Ada']);
 
@@ -193,10 +194,10 @@ it('renders a Livewire filter trigger and shows the overlay after toggleFiltersP
         'table' => new Table([$ada]),
     ])
         ->assertSeeHtml('table-ui__filter-trigger')
-        ->assertDontSeeHtml('table-ui__filter-overlay')
+        ->assertDontSeeHtml('table-ui__filter-row-tbody')
         ->call('toggleFiltersPanel')
         ->assertSet('filtersPanelOpen', true)
-        ->assertSeeHtml('table-ui__filter-overlay');
+        ->assertSeeHtml('table-ui__filter-row-tbody');
 });
 
 it('filters displayed rows by case-insensitive substring', function (): void {
@@ -219,6 +220,81 @@ it('filters displayed rows by case-insensitive substring', function (): void {
         ->set('filterValues', ['user_name' => 'ada'])
         ->assertSee('Ada Lovelace')
         ->assertDontSee('Bob');
+});
+
+it('renders combobox autocomplete panel tied to typeable filter inputs', function (): void {
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 1, 'user_name' => 'Ada']);
+
+    $bob = new LivewireTableComponentTestModel;
+    $bob->forceFill(['id' => 2, 'user_name' => 'Bob']);
+
+    $table = new Table([$ada, $bob]);
+    $table->setFilters(Filters::make(
+        new FilterDefinition('user_name', 'Name'),
+    ));
+
+    $html = Livewire::test(TableView::class, [
+        'table' => $table,
+    ])
+        ->call('toggleFiltersPanel')
+        ->html();
+
+    expect($html)->toContain('table-ui__filter-autocomplete')
+        ->and($html)->toContain('table-ui__filter-autocomplete-panel')
+        ->and($html)->toContain('\u0022Ada\u0022')
+        ->and($html)->toContain('\u0022Bob\u0022');
+});
+
+it('defaults date filters to row min/max, constrains inputs, and keeps neutral active count', function (): void {
+    $filters = Filters::make(
+        new FilterDefinition('event_date', 'Event', FilterType::Date),
+    );
+
+    Livewire::test(TableView::class, [
+        'table' => new Table([], filters: $filters),
+        'headers' => ['Event'],
+        'rows' => [
+            ['event_date' => '2024-02-01'],
+            ['event_date' => '2024-01-05'],
+        ],
+    ])
+        ->call('toggleFiltersPanel')
+        ->assertSet('filterValues.event_date.from', '2024-01-05')
+        ->assertSet('filterValues.event_date.to', '2024-02-01')
+        ->assertSet('activeFilterCount', 0)
+        ->assertSeeHtml('min="2024-01-05"')
+        ->assertSeeHtml('max="2024-02-01"');
+});
+
+it('exposes active filter count, clear-all control, and resets filters', function (): void {
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 1, 'user_name' => 'Ada']);
+
+    $bob = new LivewireTableComponentTestModel;
+    $bob->forceFill(['id' => 2, 'user_name' => 'Bob']);
+
+    $table = new Table([$ada, $bob]);
+    $table->setFilters(Filters::make(
+        new FilterDefinition('user_name', 'Name'),
+    ));
+
+    Livewire::test(TableView::class, [
+        'table' => $table,
+    ])
+        ->assertSet('activeFilterCount', 0)
+        ->assertDontSeeHtml('table-ui__filter-clear')
+        ->call('toggleFiltersPanel')
+        ->assertSet('filtersPanelOpen', true)
+        ->assertSeeHtml('table-ui__filter-clear')
+        ->assertSee(__('Clear Filters'))
+        ->set('filterValues', ['user_name' => 'ada'])
+        ->assertSet('activeFilterCount', 1)
+        ->call('clearAllFilters')
+        ->assertSet('activeFilterCount', 0)
+        ->assertSet('filterValues.user_name', '')
+        ->assertSeeHtml('table-ui__filter-clear')
+        ->assertSee('Bob');
 });
 
 it('sorts rows by selected column and toggles direction', function (): void {

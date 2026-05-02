@@ -8,6 +8,8 @@ namespace InEngine\TableUI;
 enum FilterType: string
 {
     case Text = 'text';
+    case Phone = 'phone';
+    case Email = 'email';
     case Number = 'number';
     case Money = 'money';
     case Boolean = 'boolean';

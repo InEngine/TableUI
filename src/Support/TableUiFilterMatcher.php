@@ -11,8 +11,85 @@ use InEngine\TableUI\FilterType;
 final class TableUiFilterMatcher
 {
     /**
+     * Default single-label gTLD/ccTLD tokens used when the filter value has no "." or "@".
+     * Matching uses the host's last DNS label only (see {@see matchesEmail()}).
+     *
+     * @var list<string>
+     */
+    private const DEFAULT_EMAIL_TLD_LABELS = [
+        'com', 'org', 'net', 'edu', 'gov', 'mil', 'int',
+        'io', 'ai', 'co', 'uk', 'de', 'fr', 'us', 'ca', 'au', 'nz',
+        'jp', 'cn', 'in', 'br', 'mx', 'ru', 'es', 'it', 'nl', 'se',
+        'no', 'dk', 'fi', 'ch', 'at', 'be', 'pl', 'cz', 'kr', 'tw',
+        'hk', 'sg', 'my', 'th', 'vn', 'id', 'ph', 'ae', 'sa', 'il',
+        'za', 'ar', 'cl', 'pe', 've', 'ec', 'uy', 'pt', 'gr', 'tr',
+        'ro', 'hu', 'bg', 'hr', 'si', 'sk', 'lt', 'lv', 'ee', 'is',
+        'ie', 'lu', 'mt', 'cy', 'li', 'gg', 'je', 'im',
+        'xyz', 'app', 'dev', 'tech', 'blog', 'shop', 'store', 'online',
+        'site', 'cloud', 'email', 'mail', 'info', 'biz', 'name', 'pro',
+        'mobi', 'jobs', 'museum', 'aero', 'asia', 'cat', 'tel', 'xxx',
+        'arpa', 'travel',
+    ];
+
+    /**
+     * Whether the user has set a narrowing value for this filter (non-empty text; boolean/enum not "all"; any bound on ranges).
+     *
+     * @param  array{columnKey: string, label: string, type: string, enumOptions?: array<string, string>|null, moneyDivisor?: int|null, temporalBounds?: array{min: string, max: string}|null}  $definition  Snapshot from {@see TableView::$filterDefinitions}.
+     * @param  mixed  $state  Same shape as {@see matches()}.
+     */
+    public static function isFilterActive(array $definition, mixed $state): bool
+    {
+        $type = FilterType::tryFrom($definition['type'] ?? '') ?? FilterType::Text;
+
+        return match ($type) {
+            FilterType::Text, FilterType::Enum, FilterType::Phone, FilterType::Email => trim(is_string($state) ? $state : '') !== '',
+            FilterType::Boolean => is_string($state) && $state !== '',
+            FilterType::Number, FilterType::Money => self::rangeHasBounds(self::coerceRangeState($state)),
+            FilterType::Date, FilterType::Datetime => self::fromToTemporalFilterActive($definition, self::coerceFromToState($state)),
+            FilterType::Time => self::fromToHasBounds(self::coerceFromToState($state)),
+        };
+    }
+
+    /**
+     * @param  array{min: string, max: string}  $range
+     */
+    private static function rangeHasBounds(array $range): bool
+    {
+        return $range['min'] !== '' || $range['max'] !== '';
+    }
+
+    /**
+     * @param  array{from: string, to: string}  $range
+     */
+    private static function fromToHasBounds(array $range): bool
+    {
+        return $range['from'] !== '' || $range['to'] !== '';
+    }
+
+    /**
+     * Date/datetime filters seeded to the column's min/max row range are "inactive" for toolbar counts.
+     *
+     * @param  array{temporalBounds?: array{min: string, max: string}|null}  $definition
+     * @param  array{from: string, to: string}  $range
+     */
+    private static function fromToTemporalFilterActive(array $definition, array $range): bool
+    {
+        if ($range['from'] === '' && $range['to'] === '') {
+            return false;
+        }
+
+        $bounds = $definition['temporalBounds'] ?? null;
+
+        if (is_array($bounds) && ($bounds['min'] ?? '') !== '' && ($bounds['max'] ?? '') !== '') {
+            return $range['from'] !== $bounds['min'] || $range['to'] !== $bounds['max'];
+        }
+
+        return self::fromToHasBounds($range);
+    }
+
+    /**
      * @param  array<array-key, mixed>  $row
-     * @param  array{columnKey: string, label: string, type: string, enumOptions?: array<string, string>|null, moneyDivisor?: int|null}  $definition  Snapshot from {@see TableView::$filterDefinitions}.
+     * @param  array{columnKey: string, label: string, type: string, enumOptions?: array<string, string>|null, moneyDivisor?: int|null, temporalBounds?: array{min: string, max: string}|null}  $definition  Snapshot from {@see TableView::$filterDefinitions}.
      * @param  mixed  $state  Scalar string for text/boolean/enum; {@code ['min','max']} or {@code ['from','to']} for range types.
      */
     public static function matches(array $row, array $definition, mixed $state): bool
@@ -24,6 +101,8 @@ final class TableUiFilterMatcher
 
         return match ($type) {
             FilterType::Text, FilterType::Enum => self::matchesTextOrEnum($raw, $state, $type),
+            FilterType::Phone => self::matchesPhone($raw, is_string($state) ? $state : ''),
+            FilterType::Email => self::matchesEmail($raw, is_string($state) ? $state : ''),
             FilterType::Boolean => self::matchesBoolean($raw, is_string($state) ? $state : ''),
             FilterType::Number => self::matchesNumberRange($raw, self::coerceRangeState($state)),
             FilterType::Money => self::matchesMoneyRange(
@@ -51,6 +130,122 @@ final class TableUiFilterMatcher
         $haystack = mb_strtolower((string) $raw);
 
         return str_contains($haystack, mb_strtolower($needle));
+    }
+
+    private static function matchesPhone(mixed $raw, string $state): bool
+    {
+        $needleDigits = PhoneDisplayFormatter::normalize($state);
+
+        if ($needleDigits === null || $needleDigits === '') {
+            return true;
+        }
+
+        $hayDigits = PhoneDisplayFormatter::normalize((string) $raw);
+
+        if ($hayDigits === null || $hayDigits === '') {
+            return false;
+        }
+
+        return str_contains($hayDigits, $needleDigits);
+    }
+
+    private static function matchesEmail(mixed $raw, string $state): bool
+    {
+        $needle = trim(mb_strtolower($state));
+
+        if ($needle === '') {
+            return true;
+        }
+
+        $needle = str_replace(' ', '', $needle);
+        $hay = str_replace(' ', '', mb_strtolower((string) $raw));
+
+        $firstAt = strpos($hay, '@');
+        if ($firstAt === false) {
+            return str_contains($hay, $needle);
+        }
+
+        $domain = substr($hay, $firstAt + 1);
+
+        if (self::matchesEmailByDomainOrTldNeedle($needle, $domain)) {
+            return true;
+        }
+
+        if (in_array($needle, self::mergedEmailTldLabels(), true)) {
+            return false;
+        }
+
+        return str_contains($hay, $needle);
+    }
+
+    /**
+     * Structured filters: "@host.tld", ".tld" / ".co.uk", "host.tld", or a bare known TLD label (last DNS label only).
+     */
+    private static function matchesEmailByDomainOrTldNeedle(string $needle, string $domain): bool
+    {
+        if ($needle === '' || $domain === '') {
+            return false;
+        }
+
+        if (str_contains($needle, '@')) {
+            $domainNeedle = substr($needle, strrpos($needle, '@') + 1);
+            $domainNeedle = strtolower(ltrim($domainNeedle, '@'));
+
+            return $domainNeedle !== ''
+                && ($domain === $domainNeedle || str_ends_with($domain, '.'.$domainNeedle));
+        }
+
+        if (str_starts_with($needle, '.')) {
+            $suffix = substr($needle, 1);
+
+            return $suffix !== '' && str_ends_with($domain, $suffix);
+        }
+
+        if (str_contains($needle, '.')) {
+            return $domain === $needle || str_ends_with($domain, '.'.$needle) || str_ends_with($domain, $needle);
+        }
+
+        if (in_array($needle, self::mergedEmailTldLabels(), true)) {
+            return self::emailDomainLastLabel($domain) === $needle;
+        }
+
+        return false;
+    }
+
+    private static function emailDomainLastLabel(string $domain): string
+    {
+        $domain = strtolower($domain);
+        $pos = strrpos($domain, '.');
+
+        return $pos === false ? $domain : substr($domain, $pos + 1);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function mergedEmailTldLabels(): array
+    {
+        $extra = config('tableui.filters.email_extra_tld_labels', []);
+
+        if (! is_array($extra)) {
+            return self::DEFAULT_EMAIL_TLD_LABELS;
+        }
+
+        $merged = self::DEFAULT_EMAIL_TLD_LABELS;
+
+        foreach ($extra as $label) {
+            if (! is_string($label)) {
+                continue;
+            }
+
+            $t = strtolower(trim($label));
+
+            if ($t !== '' && ! in_array($t, $merged, true)) {
+                $merged[] = $t;
+            }
+        }
+
+        return $merged;
     }
 
     private static function matchesBoolean(mixed $raw, string $selected): bool

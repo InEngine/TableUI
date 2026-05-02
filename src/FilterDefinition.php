@@ -3,7 +3,9 @@
 namespace InEngine\TableUI;
 
 use InEngine\TableUI\ColumnTypes\Column;
+use InEngine\TableUI\ColumnTypes\Complex\EmailColumn;
 use InEngine\TableUI\ColumnTypes\Complex\MoneyColumn;
+use InEngine\TableUI\ColumnTypes\Complex\PhoneColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\BooleanColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\EnumColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\NumberColumn;
@@ -42,6 +44,14 @@ final class FilterDefinition
 
         if ($column instanceof BooleanColumn) {
             return new self($key, $label, FilterType::Boolean);
+        }
+
+        if ($column instanceof PhoneColumn) {
+            return new self($key, $label, FilterType::Phone);
+        }
+
+        if ($column instanceof EmailColumn) {
+            return new self($key, $label, FilterType::Email);
         }
 
         if ($column instanceof MoneyColumn) {

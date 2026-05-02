@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use InEngine\TableUI\ColumnTypes\Complex\EmailColumn;
 use InEngine\TableUI\ColumnTypes\Complex\MoneyColumn;
+use InEngine\TableUI\ColumnTypes\Complex\PhoneColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\BooleanColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\EnumColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\IdColumn;
@@ -28,4 +30,7 @@ it('maps column classes to filter types', function (): void {
 
     expect(FilterDefinition::forColumn(new EnumColumn('status'), ['draft' => 'Draft'])->type)->toBe(FilterType::Enum->value)
         ->and(FilterDefinition::forColumn(new EnumColumn('status'), ['draft' => 'Draft'])->enumOptions)->toBe(['draft' => 'Draft']);
+
+    expect(FilterDefinition::forColumn(new PhoneColumn('phone'))->type)->toBe(FilterType::Phone->value)
+        ->and(FilterDefinition::forColumn(new EmailColumn('email'))->type)->toBe(FilterType::Email->value);
 });

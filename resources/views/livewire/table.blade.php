@@ -13,31 +13,30 @@
         'no-underlined' => ! $tableUiUnderlineLinks,
     ]) }}
     @if($tableUiThemeStyle !== '') style="{{ $tableUiThemeStyle }}" @endif
+    wire:keydown.escape.window="closeFiltersPanel"
 >
     @if (count($headers) === 0 && count($rows) === 0)
         <p class="table-ui__empty" role="status">{{ $emptyMessage }}</p>
     @else
         <div class="table-ui__sheet">
             @include('tableui::components.table.toolbar')
-            <div class="relative">
-                @if ($hasFilterPanel)
-                    @include('tableui::components.table.filter-overlay')
+            <table class="table-ui__table w-full">
+                @include('tableui::components.table.thead')
+                @if ($hasFilterPanel && $filtersPanelOpen && count($columnKeys) > 0)
+                    @include('tableui::components.table.filter-row')
                 @endif
-                <table class="table-ui__table relative z-0 w-full">
-                    @include('tableui::components.table.thead')
-                    <tbody class="table-ui__tbody">
-                        @forelse ($this->displayRows as $rowIndex => $row)
-                            @include('tableui::components.table.row')
-                        @empty
-                            <tr>
-                                <td class="table-ui__td" colspan="{{ $totalColspan }}">
-                                    {{ $emptyMessage }}
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                <tbody class="table-ui__tbody">
+                    @forelse ($this->displayRows as $rowIndex => $row)
+                        @include('tableui::components.table.row')
+                    @empty
+                        <tr>
+                            <td class="table-ui__td" colspan="{{ $totalColspan }}">
+                                {{ $emptyMessage }}
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     @endif
 </div>

@@ -15,6 +15,31 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Filters (combobox autocomplete)
+    |--------------------------------------------------------------------------
+    |
+    | Typeable filter inputs use an Alpine combobox with suggestions built from distinct values in the current
+    | {@see \InEngine\TableUI\Livewire\TableView::$rows} payload. When you add server-side pagination,
+    | refresh {@code rows} (or replace the suggestion builder) so options stay aligned with loaded data.
+    |
+    | Email filters treat "@domain.tld", ".tld", "domain.tld", and bare common TLD tokens (see package defaults)
+    | specially so values like "com" match the domain suffix only (not substrings inside the local part).
+    | Append ASCII punycode labels if needed via {@code email_extra_tld_labels}.
+    |
+    */
+    'filters' => [
+        'autocomplete_enabled' => true,
+        'autocomplete_max_per_column' => 100,
+
+        /*
+        | Extra registrar / ccTLD / gTLD labels merged into the built-in list used when an email filter
+        | value is a single DNS label (no "@", no ".") — matching is against the host's last label only.
+        */
+        'email_extra_tld_labels' => [],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Theme (Tailwind colors)
     |--------------------------------------------------------------------------
     |
@@ -109,6 +134,18 @@ return [
             'decimals' => 2,
             'prefix' => '$',
             'suffix' => '',
+        ],
+        /*
+        | phone — Filter input for {@see \InEngine\TableUI\ColumnTypes\Complex\PhoneColumn}: NANP display when {@code default_country_code} is {@code 1}.
+        */
+        'phone' => [
+            'default_country_code' => '1',
+        ],
+        /*
+        | email — Filter input for {@see \InEngine\TableUI\ColumnTypes\Complex\EmailColumn}: inserts {@code .} before a bare TLD in {@code auto_dot_tlds} when the domain has no dot.
+        */
+        'email' => [
+            'auto_dot_tlds' => ['com', 'org', 'net', 'edu', 'gov', 'io', 'co', 'uk', 'us', 'ca', 'de', 'fr'],
         ],
         'boolean' => [
             'show_false' => true,
