@@ -3,6 +3,7 @@
 namespace InEngine\TableUI;
 
 use InEngine\TableUI\ColumnTypes\Primitives\EnumColumn;
+use InEngine\TableUI\FilterTypes\FilterDefinition;
 
 /**
  * Ordered filter definitions attached to a {@see Table}.

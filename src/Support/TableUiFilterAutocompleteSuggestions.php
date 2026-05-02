@@ -3,7 +3,7 @@
 namespace InEngine\TableUI\Support;
 
 use Carbon\Carbon;
-use InEngine\TableUI\FilterType;
+use InEngine\TableUI\FilterTypes\FilterType;
 use InEngine\TableUI\Livewire\TableView;
 
 /**

@@ -8,8 +8,8 @@ use Illuminate\Support\Collection;
 use InEngine\TableUI\ActionTypes\Action;
 use InEngine\TableUI\ColumnTypes\Column;
 use InEngine\TableUI\ColumnTypes\ColumnFactory;
-use InEngine\TableUI\FilterDefinition;
-use InEngine\TableUI\FilterType;
+use InEngine\TableUI\FilterTypes\FilterDefinition;
+use InEngine\TableUI\FilterTypes\FilterType;
 use InEngine\TableUI\Livewire\Concerns\ManagesBulkSelection;
 use InEngine\TableUI\Options;
 use InEngine\TableUI\Rendering\ColumnRendererRegistry;
@@ -99,7 +99,7 @@ class TableView extends Component
     public array $filterDefinitions = [];
 
     /**
-     * Current filter inputs keyed by column key (see {@see FilterDefinition::$columnKey}). Scalar strings for text/boolean/enum; nested arrays for ranges.
+     * Current filter inputs keyed by column key (see {@see \InEngine\TableUI\FilterTypes\FilterDefinition::$columnKey}). Scalar strings for text/boolean/enum; nested arrays for ranges.
      *
      * @var array<string, mixed>
      */

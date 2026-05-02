@@ -170,7 +170,7 @@ class Table extends EloquentCollection
 
     /**
      * Column filters for {@see TableView}. When not set explicitly, {@see Filters::inferFromTable()} builds one control per
-     * column (typed via {@see FilterDefinition::forColumn()}); enum options are filled from distinct row values when possible.
+     * column (typed via {@see \InEngine\TableUI\FilterTypes\FilterDefinition::forColumn()}); enum options are filled from distinct row values when possible.
      * Pass {@see Filters::empty()} to disable the toolbar.
      */
     public function filters(): Filters

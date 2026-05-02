@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use InEngine\TableUI\FilterType;
+use InEngine\TableUI\FilterTypes\FilterType;
 use InEngine\TableUI\Support\TableUiFilterMatcher;
 
 it('matches text by substring', function (): void {

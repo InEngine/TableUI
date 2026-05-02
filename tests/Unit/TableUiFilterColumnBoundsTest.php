@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use InEngine\TableUI\FilterType;
+use InEngine\TableUI\FilterTypes\FilterType;
 use InEngine\TableUI\Support\TableUiFilterColumnBounds;
 
 it('computes date column bounds from rows', function (): void {

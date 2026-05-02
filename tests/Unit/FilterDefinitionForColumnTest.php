@@ -11,8 +11,8 @@ use InEngine\TableUI\ColumnTypes\Primitives\IdColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\NumberColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\StringColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\TimestampColumn;
-use InEngine\TableUI\FilterDefinition;
-use InEngine\TableUI\FilterType;
+use InEngine\TableUI\FilterTypes\FilterDefinition;
+use InEngine\TableUI\FilterTypes\FilterType;
 
 it('maps column classes to filter types', function (): void {
     expect(FilterDefinition::forColumn(new StringColumn('title'))->type)->toBe(FilterType::Text->value)

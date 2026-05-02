@@ -1,6 +1,6 @@
 <?php
 
-namespace InEngine\TableUI;
+namespace InEngine\TableUI\FilterTypes;
 
 use InEngine\TableUI\ColumnTypes\Column;
 use InEngine\TableUI\ColumnTypes\Complex\EmailColumn;
@@ -12,7 +12,7 @@ use InEngine\TableUI\ColumnTypes\Primitives\NumberColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\TimestampColumn;
 
 /**
- * Declares one filter control for {@see Livewire\TableView} (applied client-side to sorted rows).
+ * Declares one filter control for {@see \InEngine\TableUI\Livewire\TableView} (applied client-side to sorted rows).
  */
 final class FilterDefinition
 {
@@ -33,7 +33,7 @@ final class FilterDefinition
     }
 
     /**
-     * Map a column definition to the closest filter type (see {@see Filters::forColumns()}).
+     * Map a column definition to the closest filter type (see {@see \InEngine\TableUI\Filters::forColumns()}).
      *
      * @param  array<string, string>|null  $enumOptions  When provided for {@see EnumColumn}, builds a select; otherwise enum columns fall back to {@see FilterType::Text}.
      */

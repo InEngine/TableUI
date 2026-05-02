@@ -1,9 +1,9 @@
 <?php
 
-namespace InEngine\TableUI;
+namespace InEngine\TableUI\FilterTypes;
 
 /**
- * Filter widget + matching semantics for {@see FilterDefinition} (aligned with {@see ColumnTypes\Column} families).
+ * Filter widget + matching semantics for {@see FilterDefinition} (aligned with {@see \InEngine\TableUI\ColumnTypes\Column} families).
  */
 enum FilterType: string
 {

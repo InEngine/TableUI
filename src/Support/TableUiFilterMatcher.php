@@ -3,7 +3,7 @@
 namespace InEngine\TableUI\Support;
 
 use Carbon\Carbon;
-use InEngine\TableUI\FilterType;
+use InEngine\TableUI\FilterTypes\FilterType;
 
 /**
  * Client-side (sorted) row filtering used by {@see \InEngine\TableUI\Livewire\TableView}.

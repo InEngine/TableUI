@@ -3,7 +3,7 @@
 namespace InEngine\TableUI\Support;
 
 use Carbon\Carbon;
-use InEngine\TableUI\FilterType;
+use InEngine\TableUI\FilterTypes\FilterType;
 
 /**
  * Min/max values for date and datetime filter columns derived from the current row payload.

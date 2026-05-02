@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use InEngine\TableUI\FilterDefinition;
+use InEngine\TableUI\FilterTypes\FilterDefinition;
 use InEngine\TableUI\Filters;
 
 it('supports empty filters', function (): void {

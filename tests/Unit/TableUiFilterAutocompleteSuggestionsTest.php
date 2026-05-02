@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use InEngine\TableUI\FilterType;
+use InEngine\TableUI\FilterTypes\FilterType;
 use InEngine\TableUI\Support\TableUiFilterAutocompleteSuggestions;
 
 it('builds distinct text suggestions capped by max', function (): void {
