@@ -17,6 +17,7 @@ final class TableUiConfigValidator
     public static function validateOrThrow(): void
     {
         self::assertThemeShape();
+        self::assertScrollbarsShape();
         self::assertColumnTypesShape();
         self::assertFiltersShape();
 
@@ -207,6 +208,49 @@ final class TableUiConfigValidator
                 if (! is_string($side[$key])) {
                     throw new InvalidArgumentException("tableui.column_types.boolean.{$branch}.{$key} must be a string.");
                 }
+            }
+        }
+    }
+
+    private static function assertScrollbarsShape(): void
+    {
+        $scrollbars = config('tableui.scrollbars');
+
+        if ($scrollbars === null) {
+            return;
+        }
+
+        if (! is_array($scrollbars)) {
+            throw new InvalidArgumentException('tableui.scrollbars must be an array when present.');
+        }
+
+        foreach (['horizontal', 'vertical'] as $axis) {
+            if (! array_key_exists($axis, $scrollbars)) {
+                continue;
+            }
+
+            $value = $scrollbars[$axis];
+
+            if (is_bool($value)) {
+                continue;
+            }
+
+            if (! is_string($value)) {
+                throw new InvalidArgumentException("tableui.scrollbars.{$axis} must be a string or boolean when present.");
+            }
+
+            $normalized = strtolower(trim($value));
+
+            if (! in_array($normalized, ['auto', 'true', 'false'], true)) {
+                throw new InvalidArgumentException("tableui.scrollbars.{$axis} must be \"auto\", \"true\", or \"false\".");
+            }
+        }
+
+        if (array_key_exists('vertical_max_height', $scrollbars)) {
+            $cap = $scrollbars['vertical_max_height'];
+
+            if ($cap !== null && ! is_string($cap)) {
+                throw new InvalidArgumentException('tableui.scrollbars.vertical_max_height must be a string or null when present.');
             }
         }
     }

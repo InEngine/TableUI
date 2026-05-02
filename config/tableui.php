@@ -61,6 +61,33 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Table scrollbars (overflow)
+    |--------------------------------------------------------------------------
+    |
+    | Controls native overflow on the scroll wrapper around the <table> (toolbar stays outside).
+    | Each axis accepts:
+    | • "auto" — browser shows a scrollbar only when content overflows that axis (Tailwind overflow-*-auto).
+    | • true or "true" — scrollbar track is always shown for that axis (overflow-*-scroll).
+    | • false or "false" — overflow is clipped; no scrollbar on that axis (overflow-*-hidden).
+    |
+    | Override per {@see \InEngine\TableUI\Table} via {@see \InEngine\TableUI\Options}, or per Livewire mount
+    | {@code scrollbarHorizontal} / {@code scrollbarVertical} / {@code verticalMaxHeight}.
+    |
+    | vertical_max_height — CSS length applied as {@code max-height} on the scroll wrapper around the {@code <table>}
+    | (toolbar stays outside). Required for vertical scrollbars: without it, the box grows with rows and
+    | {@code overflow-y} never overflows. Use any valid CSS length, e.g. {@code 24rem}, {@code 50vh}, or
+    | {@code min(70vh, 40rem)}. Set to {@code null} for no cap (table grows naturally; rely on page scroll,
+    | or constrain height only via your layout / flex + {@code min-h-0} on ancestors).
+    |
+    */
+    'scrollbars' => [
+        'horizontal' => 'auto',
+        'vertical' => 'auto',
+        'vertical_max_height' => 'min(70vh, 40rem)',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Link underline (email & phone columns)
     |--------------------------------------------------------------------------
     |

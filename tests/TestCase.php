@@ -24,6 +24,10 @@ class TestCase extends Orchestra
         $tableuiDefaults = require dirname(__DIR__).'/config/tableui.php';
         config()->set('tableui.theme', $tableuiDefaults['theme'] ?? []);
         config()->set('tableui.column_types', $tableuiDefaults['column_types']);
+        config()->set('tableui.scrollbars', $tableuiDefaults['scrollbars'] ?? [
+            'horizontal' => 'auto',
+            'vertical' => 'auto',
+        ]);
 
         $this->app->forgetInstance(ColumnRendererRegistry::class);
     }

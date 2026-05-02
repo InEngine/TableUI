@@ -5,6 +5,16 @@
     $actionColumnCount = count($this->visibleRowActionSnapshots);
     $totalColspan = $visibleColumnCount + ($this->showRowSelection ? 1 : 0) + $actionColumnCount;
     $hasFilterPanel = count($filterDefinitions) > 0;
+    $tableUiScrollX = match ($this->scrollbarHorizontal) {
+        'true' => 'overflow-x-scroll',
+        'false' => 'overflow-x-hidden',
+        default => 'overflow-x-auto',
+    };
+    $tableUiScrollY = match ($this->scrollbarVertical) {
+        'true' => 'overflow-y-scroll',
+        'false' => 'overflow-y-hidden',
+        default => 'overflow-y-auto',
+    };
 @endphp
 <div
     {{ $attributes->class([
@@ -20,23 +30,28 @@
     @else
         <div class="table-ui__sheet">
             @include('tableui::components.table.toolbar')
-            <table class="table-ui__table w-full">
-                @include('tableui::components.table.thead')
-                @if ($hasFilterPanel && $filtersPanelOpen && count($columnKeys) > 0)
-                    @include('tableui::components.table.filter-row')
-                @endif
-                <tbody class="table-ui__tbody">
-                    @forelse ($this->displayRows as $rowIndex => $row)
-                        @include('tableui::components.table.row')
-                    @empty
-                        <tr>
-                            <td class="table-ui__td" colspan="{{ $totalColspan }}">
-                                {{ $emptyMessage }}
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+            <div
+                @class(['table-ui__scroll', 'min-w-0', 'min-h-0', $tableUiScrollX, $tableUiScrollY])
+                @if(filled($this->verticalMaxHeight)) style="max-height: {{ e($this->verticalMaxHeight) }};" @endif
+            >
+                <table class="table-ui__table">
+                    @include('tableui::components.table.thead')
+                    @if ($hasFilterPanel && $filtersPanelOpen && count($columnKeys) > 0)
+                        @include('tableui::components.table.filter-row')
+                    @endif
+                    <tbody class="table-ui__tbody">
+                        @forelse ($this->displayRows as $rowIndex => $row)
+                            @include('tableui::components.table.row')
+                        @empty
+                            <tr>
+                                <td class="table-ui__td" colspan="{{ $totalColspan }}">
+                                    {{ $emptyMessage }}
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
     @endif
 </div>

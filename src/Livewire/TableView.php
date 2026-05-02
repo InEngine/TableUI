@@ -68,6 +68,25 @@ class TableView extends Component
     public bool $stripping = true;
 
     /**
+     * Scroll overflow mode for the table wrapper axis — {@code auto}, {@code true} (always scroll), or {@code false} (hidden).
+     * Mirrors {@see Options::getScrollbarHorizontal()} unless overridden in {@see mount()}.
+     *
+     * @var 'auto'|'true'|'false'
+     */
+    public string $scrollbarHorizontal = 'auto';
+
+    /**
+     * @var 'auto'|'true'|'false'
+     */
+    public string $scrollbarVertical = 'auto';
+
+    /**
+     * CSS {@code max-height} on the table scroll wrapper — enables vertical overflow when rows exceed this box.
+     * Mirrors {@see Options::getVerticalMaxHeight()} unless overridden in {@see mount()}.
+     */
+    public ?string $verticalMaxHeight = null;
+
+    /**
      * Stable keys for checked rows (see {@see rowKey()}), aligned with {@see wire:model} on checkboxes.
      *
      * @var list<string>
@@ -99,7 +118,7 @@ class TableView extends Component
     public array $filterDefinitions = [];
 
     /**
-     * Current filter inputs keyed by column key (see {@see \InEngine\TableUI\FilterTypes\FilterDefinition::$columnKey}). Scalar strings for text/boolean/enum; nested arrays for ranges.
+     * Current filter inputs keyed by column key (see {@see FilterDefinition::$columnKey}). Scalar strings for text/boolean/enum; nested arrays for ranges.
      *
      * @var array<string, mixed>
      */
@@ -122,10 +141,25 @@ class TableView extends Component
         string $sortDirection = 'asc',
         ?string $emptyMessage = null,
         ?bool $stripping = null,
+        string|bool|null $scrollbarHorizontal = null,
+        string|bool|null $scrollbarVertical = null,
+        ?string $verticalMaxHeight = null,
     ): void {
         $table ??= new Table([]);
 
         $this->stripping = $stripping ?? $table->options()->getStripping();
+
+        $this->scrollbarHorizontal = $scrollbarHorizontal !== null
+            ? Options::normalizeScrollbarMode($scrollbarHorizontal)
+            : $table->options()->getScrollbarHorizontal();
+
+        $this->scrollbarVertical = $scrollbarVertical !== null
+            ? Options::normalizeScrollbarMode($scrollbarVertical)
+            : $table->options()->getScrollbarVertical();
+
+        $this->verticalMaxHeight = $verticalMaxHeight !== null
+            ? Options::normalizeVerticalMaxHeight($verticalMaxHeight)
+            : $table->options()->getVerticalMaxHeight();
 
         $this->bulkActionsSelectId = 'tableui-bulk-actions-'.bin2hex(random_bytes(4));
 

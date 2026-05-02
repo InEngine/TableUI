@@ -61,6 +61,18 @@ it('registers the tableui.table alias when Livewire is present', function (): vo
     expect(Livewire::exists('tableui.table'))->toBeTrue();
 });
 
+it('applies scrollbar overflow classes from table options', function (): void {
+    $model = new LivewireTableComponentTestModel;
+    $model->forceFill(['id' => 1, 'user_name' => 'Ada']);
+
+    Livewire::test(TableView::class, [
+        'table' => new Table([$model], null, new Options(scrollbarHorizontal: true, scrollbarVertical: false)),
+    ])
+        ->assertSeeHtml('table-ui__scroll')
+        ->assertSeeHtml('overflow-x-scroll')
+        ->assertSeeHtml('overflow-y-hidden');
+});
+
 it('sets stripping from table options and allows overriding via mount', function (): void {
     $model = new LivewireTableComponentTestModel;
     $model->forceFill(['id' => 1]);
