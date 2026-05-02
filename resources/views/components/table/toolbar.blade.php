@@ -1,6 +1,6 @@
 {{-- Unified toolbar: bulk controls (left), filters (right). Only rendered when at least one side has content. --}}
 @php
-    $showBulkToolbar = $multipleSelect && $this->hasBulkActionOptions && count($rows) > 0;
+    $showBulkToolbar = $this->hasBulkActionOptions && count($rows) > 0;
     $hasFilters = count($filterDefinitions) > 0;
 @endphp
 @if ($showBulkToolbar || $hasFilters)
@@ -21,7 +21,7 @@
         @endif
         @if ($hasFilters)
             <div class="table-ui__toolbar-filters">
-                @include('tableui::components.table.filter-toolbar')
+                @include('tableui::components.table.filter-trigger')
             </div>
         @endif
     </div>

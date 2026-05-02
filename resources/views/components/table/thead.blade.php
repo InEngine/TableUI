@@ -17,7 +17,7 @@
                     </button>
                 </th>
             @endforeach
-            @foreach ($actionSnapshots as $actionIndex => $actionSnap)
+            @foreach ($this->visibleRowActionSnapshots as $actionIndex => $actionSnap)
                 <th
                     class="table-ui__th table-ui__th--action"
                     scope="col"

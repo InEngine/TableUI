@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use InEngine\TableUI\Columns;
 use InEngine\TableUI\ColumnTypes\Column;
 use InEngine\TableUI\ColumnTypes\Complex\EmailColumn;
+use InEngine\TableUI\Filters;
 use InEngine\TableUI\Options;
 use InEngine\TableUI\Table;
 
@@ -23,8 +24,7 @@ it('creates default Options when none is passed to constructor or fromCollection
     $expected = new Options;
 
     $viaConstructor = new Table([]);
-    expect($viaConstructor->options()->getLinked())->toBe($expected->getLinked())
-        ->and($viaConstructor->options()->getMultipleSelect())->toBe($expected->getMultipleSelect());
+    expect($viaConstructor->options()->getStripping())->toBe($expected->getStripping());
 
     $viaStatic = Table::fromCollection([]);
     expect($viaStatic->options()->getStripping())->toBe($expected->getStripping());
@@ -68,11 +68,61 @@ it('mutates columns via setColumns', function (): void {
 });
 
 it('stores and replaces options via constructor and setter', function (): void {
-    $table = new Table(new EloquentCollection, null, new Options(multipleSelect: false));
+    $table = new Table(new EloquentCollection, null, new Options(stripping: false));
 
-    expect($table->options()->getMultipleSelect())->toBeFalse();
+    expect($table->options()->getStripping())->toBeFalse();
 
-    $table->setOptions(new Options(multipleSelect: true));
+    $table->setOptions(new Options(stripping: true));
 
-    expect($table->options()->getMultipleSelect())->toBeTrue();
+    expect($table->options()->getStripping())->toBeTrue();
+});
+
+it('defaults actions to view edit delete row_link with delete bulk-only when models are present', function (): void {
+    $model = new TableDomainTestModel;
+    $model->forceFill(['id' => 42]);
+
+    $table = new Table([$model]);
+    $actions = $table->actions();
+
+    expect($actions->names())->toBe(['row_link', 'view', 'edit', 'delete'])
+        ->and($actions->find('delete')->isBulk())->toBeTrue()
+        ->and($actions->find('view')->isBulk())->toBeFalse()
+        ->and($actions->find('row_link')->showInRowActionsColumn())->toBeFalse()
+        ->and($actions->find('view')->urlForRow(['id' => 42]))->toBe('/TableDomainTestModel/42/view')
+        ->and($actions->find('edit')->urlForRow(['id' => 42]))->toBe('/TableDomainTestModel/42/edit')
+        ->and($actions->find('delete')->urlForRow(['id' => 42]))->toBe('/TableDomainTestModel/42/delete');
+});
+
+it('uses empty actions by default when the collection has no models', function (): void {
+    expect((new Table([]))->actions()->isEmpty())->toBeTrue();
+});
+
+it('defaults filters from inferFromTable with one definition per column when filters are not set', function (): void {
+    $model = new TableDomainTestModel;
+    $model->forceFill(['id' => 1, 'email' => 'a@b.com']);
+
+    $table = new Table([$model]);
+
+    $columnKeys = $table->columns()->all();
+    $filterKeys = array_map(
+        static fn ($d) => $d->columnKey,
+        $table->filters()->definitions(),
+    );
+
+    expect($table->filters()->isEmpty())->toBeFalse()
+        ->and($filterKeys)->toBe($columnKeys);
+});
+
+it('has no default filters when the table collection is empty', function (): void {
+    expect((new Table([]))->filters()->isEmpty())->toBeTrue();
+});
+
+it('uses explicit Filters::empty() when setFilters was called', function (): void {
+    $model = new TableDomainTestModel;
+    $model->forceFill(['id' => 1]);
+
+    $table = new Table([$model]);
+    $table->setFilters(Filters::empty());
+
+    expect($table->filters()->isEmpty())->toBeTrue();
 });

@@ -3,12 +3,16 @@
 <tr
     @class([
         'table-ui__tr',
+        'table-ui__tr--row-link cursor-pointer' => $this->hasRowLinkAction,
         'odd:bg-gray-50/90 dark:odd:bg-gray-900/45 odd:hover:bg-gray-100 dark:odd:hover:bg-gray-800/70' => $stripping,
     ])
     wire:key="table-ui-r-{{ $rowKey }}"
+    @if ($this->hasRowLinkAction)
+        wire:click="navigateRowLink({{ json_encode($rowKey) }})"
+    @endif
 >
     @if ($this->showRowSelection)
-        <td class="table-ui__td table-ui__td--select" wire:key="table-ui-r-{{ $rowKey }}-sel">
+        <td class="table-ui__td table-ui__td--select" wire:click.stop wire:key="table-ui-r-{{ $rowKey }}-sel">
             <input
                 type="checkbox"
                 class="table-ui__checkbox"
@@ -23,11 +27,12 @@
             {!! $this->renderCellForRow($row, $cellIndex) !!}
         </td>
     @endforeach
-    @foreach ($actionSnapshots as $actionIndex => $snap)
+    @foreach ($this->visibleRowActionSnapshots as $actionIndex => $snap)
         @php($href = $this->rowActionHref($snap, $row))
         @php($useButton = $snap['isButton'] ?? true)
         <td
             class="table-ui__td table-ui__td--action"
+            wire:click.stop
             wire:key="table-ui-r-{{ $rowKey }}-a-{{ $actionIndex }}"
         >
             @if ($href !== null)

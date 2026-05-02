@@ -13,6 +13,12 @@ use InEngine\TableUI\Support\LaravelColumnSchema;
  * When {@code $options} is omitted or null, a new {@see Options} instance is created with its constructor defaults
  * (same for {@see fromCollection}).
  *
+ * When {@code $actions} is omitted or null, {@see actions()} returns {@see DefaultTableActions::forTable()} for non-empty
+ * Eloquent collections (view, edit, delete, and a non-column {@see ActionTypes\RowLinkAction}); pass {@see Actions::empty()} to disable.
+ *
+ * When {@code $filters} is omitted or null, {@see filters()} returns {@see Filters::inferFromTable()} (one filter per column).
+ * Pass {@see Filters::empty()} to hide filters.
+ *
  * Pass models only for inferred columns, or provide {@see Columns} for full control. Use {@see fromCollection} for a fluent entry point.
  *
  * @extends EloquentCollection<int, Model>
@@ -30,7 +36,8 @@ class Table extends EloquentCollection
     /**
      * @param  EloquentCollection<int, Model>|list<Model>  $items
      * @param  ?Options  $options  When null, {@see Options} is instantiated with default flags and routes.
-     * @param  ?Filters  $filters  Optional substring filters for {@see TableView}.
+     * @param  ?Actions  $actions  When null, {@see actions()} uses {@see DefaultTableActions::forTable()} for model-backed tables.
+     * @param  ?Filters  $filters  When null, {@see filters()} uses {@see Filters::inferFromTable()}.
      */
     public function __construct(
         EloquentCollection|array $items = [],
@@ -54,7 +61,8 @@ class Table extends EloquentCollection
     /**
      * @param  EloquentCollection<int, Model>|list<Model>  $items
      * @param  ?Options  $options  When null, {@see Options} is instantiated with default flags and routes.
-     * @param  ?Filters  $filters  Optional substring filters for {@see TableView}.
+     * @param  ?Actions  $actions  When null, {@see actions()} uses {@see DefaultTableActions::forTable()} for model-backed tables.
+     * @param  ?Filters  $filters  When null, {@see filters()} uses {@see Filters::inferFromTable()}.
      */
     public static function fromCollection(EloquentCollection|array $items, ?Columns $columns = null, ?Options $options = null, ?Actions $actions = null, ?Filters $filters = null): static
     {
@@ -144,11 +152,15 @@ class Table extends EloquentCollection
     }
 
     /**
-     * Row and bulk actions. When not set explicitly, defaults to {@see Actions::empty()}; attach actions with {@see setActions()}.
+     * Row and bulk actions. When not set explicitly, {@see DefaultTableActions::forTable()} supplies view, edit, delete (delete bulk-only), and a {@see ActionTypes\RowLinkAction} for whole-row navigation when the collection contains at least one {@see Model}.
      */
     public function actions(): Actions
     {
-        return $this->explicitActions ?? Actions::empty();
+        if ($this->explicitActions !== null) {
+            return $this->explicitActions;
+        }
+
+        return DefaultTableActions::forTable($this);
     }
 
     public function setActions(Actions $actions): void
@@ -157,11 +169,17 @@ class Table extends EloquentCollection
     }
 
     /**
-     * Optional column filters (substring search). When not set explicitly, {@see Filters::empty()}.
+     * Column filters for {@see TableView}. When not set explicitly, {@see Filters::inferFromTable()} builds one control per
+     * column (typed via {@see FilterDefinition::forColumn()}); enum options are filled from distinct row values when possible.
+     * Pass {@see Filters::empty()} to disable the toolbar.
      */
     public function filters(): Filters
     {
-        return $this->explicitFilters ?? Filters::empty();
+        if ($this->explicitFilters !== null) {
+            return $this->explicitFilters;
+        }
+
+        return Filters::inferFromTable($this);
     }
 
     public function setFilters(Filters $filters): void

@@ -1,0 +1,46 @@
+<?php
+
+namespace InEngine\TableUI;
+
+use Illuminate\Database\Eloquent\Model;
+use InEngine\TableUI\ActionTypes\DeleteAction;
+use InEngine\TableUI\ActionTypes\EditAction;
+use InEngine\TableUI\ActionTypes\RowLinkAction;
+use InEngine\TableUI\ActionTypes\ViewAction;
+
+/**
+ * Builds the package default row/bulk actions for domain tables backed by Eloquent models.
+ *
+ * Targets follow {@code /{ShortClassName}/{id}/{action}} using {@see Action::resolveUrlFromStringTarget()} ({@code {id}} replacement).
+ */
+final class DefaultTableActions
+{
+    /**
+     * View, edit, and delete row actions plus a {@see RowLinkAction} that mirrors the view URL for whole-row clicks.
+     * Only {@see DeleteAction} is bulk-capable. Returns {@see Actions::empty()} when the table has no model rows.
+     */
+    public static function forTable(Table $table): Actions
+    {
+        $first = $table->first();
+
+        if (! $first instanceof Model) {
+            return Actions::empty();
+        }
+
+        $segment = class_basename($first);
+
+        return new Actions([
+            new RowLinkAction(target: self::path($segment, 'view')),
+            new ViewAction(target: self::path($segment, 'view')),
+            new EditAction(target: self::path($segment, 'edit')),
+            new DeleteAction(target: self::path($segment, 'delete')),
+        ]);
+    }
+
+    private static function path(string $resourceSegment, string $actionName): string
+    {
+        $segment = trim($resourceSegment, '/');
+
+        return '/'.$segment.'/{id}/'.$actionName;
+    }
+}

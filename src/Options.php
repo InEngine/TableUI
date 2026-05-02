@@ -5,13 +5,11 @@ namespace InEngine\TableUI;
 use InvalidArgumentException;
 
 /**
- * Table presentation options (layout, sorting). Row/bulk behaviour is defined with {@see Actions} on {@see Table}.
+ * Table presentation options (layout, sorting). Row/bulk behavior is defined with {@see Actions} on {@see Table}.
  */
 final class Options
 {
     /**
-     * @param  bool  $multipleSelect  Default: true — enables bulk UI **when** {@see Table::actions()} includes at least one bulk action.
-     * @param  bool  $linked  Default: true
      * @param  bool  $stripping  Default: true
      * @param  ?string  $defaultSortColumn  When non-null and present on the table, used as initial sort column (also works for legacy headers/rows). When null, {@see TableView} infers {@code id} or the first column only for non-empty domain {@see Table} payloads.
      * @param  string  $defaultSortDirection  Initial sort direction when a default column applies: {@code asc} or {@code desc}.
@@ -20,8 +18,6 @@ final class Options
      * @throws InvalidArgumentException When {@see defaultSortDirection} is not asc/desc.
      */
     public function __construct(
-        private bool $multipleSelect = true,
-        private bool $linked = true,
         private bool $stripping = true,
         private ?string $defaultSortColumn = null,
         private string $defaultSortDirection = 'asc',
@@ -31,24 +27,16 @@ final class Options
         $this->defaultSortDirection = strtolower($defaultSortDirection) === 'desc' ? 'desc' : 'asc';
     }
 
-    public function getMultipleSelect(): bool
+    /**
+     * @throws InvalidArgumentException
+     */
+    private function assertDefaultSortDirection(string $direction): void
     {
-        return $this->multipleSelect;
-    }
+        $normalized = strtolower(trim($direction));
 
-    public function setMultipleSelect(bool $multipleSelect): void
-    {
-        $this->multipleSelect = $multipleSelect;
-    }
-
-    public function getLinked(): bool
-    {
-        return $this->linked;
-    }
-
-    public function setLinked(bool $linked): void
-    {
-        $this->linked = $linked;
+        if (! in_array($normalized, ['asc', 'desc'], true)) {
+            throw new InvalidArgumentException('defaultSortDirection must be "asc" or "desc".');
+        }
     }
 
     public function getStripping(): bool
@@ -96,17 +84,5 @@ final class Options
     public function setEnableDefaultSort(bool $enableDefaultSort): void
     {
         $this->enableDefaultSort = $enableDefaultSort;
-    }
-
-    /**
-     * @throws InvalidArgumentException
-     */
-    private function assertDefaultSortDirection(string $direction): void
-    {
-        $normalized = strtolower(trim($direction));
-
-        if (! in_array($normalized, ['asc', 'desc'], true)) {
-            throw new InvalidArgumentException('defaultSortDirection must be "asc" or "desc".');
-        }
     }
 }

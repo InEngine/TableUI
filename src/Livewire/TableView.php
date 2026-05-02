@@ -9,10 +9,12 @@ use InEngine\TableUI\ActionTypes\Action;
 use InEngine\TableUI\ColumnTypes\Column;
 use InEngine\TableUI\ColumnTypes\ColumnFactory;
 use InEngine\TableUI\FilterDefinition;
+use InEngine\TableUI\FilterType;
 use InEngine\TableUI\Livewire\Concerns\ManagesBulkSelection;
 use InEngine\TableUI\Options;
 use InEngine\TableUI\Rendering\ColumnRendererRegistry;
 use InEngine\TableUI\Support\SerializableClosurePayload;
+use InEngine\TableUI\Support\TableUiFilterMatcher;
 use InEngine\TableUI\Table;
 use InEngine\TableUI\TableServiceProvider;
 use Livewire\Component;
@@ -62,11 +64,6 @@ class TableView extends Component
     public bool $stripping = true;
 
     /**
-     * When true, show a leading selection column and bulk toolbar. Mirrors {@see Table::options()} unless overridden in {@see mount()}.
-     */
-    public bool $multipleSelect = false;
-
-    /**
      * Stable keys for checked rows (see {@see rowKey()}), aligned with {@see wire:model} on checkboxes.
      *
      * @var list<string>
@@ -76,7 +73,7 @@ class TableView extends Component
     /**
      * Serialized {@see Action} definitions for row links + bulk toolbar (built in {@see mount()}).
      *
-     * @var list<array{name: string, label: string, bulk: bool, target: ?string, serializedClosure: string, isButton: bool}>
+     * @var list<array{name: string, label: string, bulk: bool, target: ?string, serializedClosure: string, isButton: bool, showInRowColumn: bool}>
      */
     public array $actionSnapshots = [];
 
@@ -93,16 +90,21 @@ class TableView extends Component
     /**
      * Filter controls derived from {@see Table::filters()} in {@see mount()}.
      *
-     * @var list<array{columnKey: string, label: string, type: string}>
+     * @var list<array{columnKey: string, label: string, type: string, enumOptions: ?array<string, string>, moneyDivisor: ?int}>
      */
     public array $filterDefinitions = [];
 
     /**
-     * Current filter inputs keyed by column key (see {@see FilterDefinition::$columnKey}).
+     * Current filter inputs keyed by column key (see {@see FilterDefinition::$columnKey}). Scalar strings for text/boolean/enum; nested arrays for ranges.
      *
-     * @var array<string, string>
+     * @var array<string, mixed>
      */
     public array $filterValues = [];
+
+    /**
+     * Whether the filter overlay is visible (driven by Livewire so the toggle works without Alpine.js).
+     */
+    public bool $filtersPanelOpen = false;
 
     /**
      * @param  array<string>  $headers
@@ -116,13 +118,10 @@ class TableView extends Component
         string $sortDirection = 'asc',
         ?string $emptyMessage = null,
         ?bool $stripping = null,
-        ?bool $multipleSelect = null,
     ): void {
         $table ??= new Table([]);
 
         $this->stripping = $stripping ?? $table->options()->getStripping();
-
-        $this->multipleSelect = $multipleSelect ?? $table->options()->getMultipleSelect();
 
         $this->bulkActionsSelectId = 'tableui-bulk-actions-'.bin2hex(random_bytes(4));
 
@@ -139,6 +138,7 @@ class TableView extends Component
                         ? SerializableClosurePayload::encode($target)
                         : '',
                     'isButton' => $action->isButton(),
+                    'showInRowColumn' => $action->showInRowActionsColumn(),
                 ];
             },
             $table->actions()->items()
@@ -195,18 +195,29 @@ class TableView extends Component
                 'columnKey' => $definition->columnKey,
                 'label' => $definition->label,
                 'type' => $definition->type,
+                'enumOptions' => $definition->enumOptions,
+                'moneyDivisor' => $definition->moneyDivisor,
             ];
 
             if (! array_key_exists($definition->columnKey, $this->filterValues)) {
-                $this->filterValues[$definition->columnKey] = '';
+                $this->filterValues[$definition->columnKey] = $this->initialFilterStateForDefinition($definition);
             }
         }
+    }
+
+    private function initialFilterStateForDefinition(FilterDefinition $definition): mixed
+    {
+        return match ($definition->type) {
+            FilterType::Number->value, FilterType::Money->value => ['min' => '', 'max' => ''],
+            FilterType::Date->value, FilterType::Datetime->value, FilterType::Time->value => ['from' => '', 'to' => ''],
+            default => '',
+        };
     }
 
     /**
      * Snapshots for actions with {@code bulk: true} (toolbar select options).
      *
-     * @return list<array{name: string, label: string, bulk: bool, target: ?string, serializedClosure: string, isButton: bool}>
+     * @return list<array{name: string, label: string, bulk: bool, target: ?string, serializedClosure: string, isButton: bool, showInRowColumn: bool}>
      */
     public function getBulkActionSnapshotsProperty(): array
     {
@@ -217,17 +228,75 @@ class TableView extends Component
     }
 
     /**
-     * Checkbox column + bulk toolbar only when {@see $multipleSelect} is true and at least one action has {@see Action::isBulk()}.
+     * Checkbox column + bulk toolbar when {@see Table::actions()} is non-empty and at least one action has {@see Action::isBulk()}.
      */
     public function getShowRowSelectionProperty(): bool
     {
-        return $this->multipleSelect && $this->hasBulkActionOptions;
+        return $this->hasBulkActionOptions;
+    }
+
+    /**
+     * Row-action columns exclude metadata-only actions such as {@see ActionTypes\RowLinkAction}.
+     *
+     * @return list<array{name: string, label: string, bulk: bool, target: ?string, serializedClosure: string, isButton: bool, showInRowColumn: bool}>
+     */
+    public function getVisibleRowActionSnapshotsProperty(): array
+    {
+        return array_values(array_filter(
+            $this->actionSnapshots,
+            static fn (array $snapshot): bool => ($snapshot['showInRowColumn'] ?? true) === true
+        ));
+    }
+
+    /**
+     * True when a {@code row_link} action is registered (whole-row click navigation).
+     */
+    public function getHasRowLinkActionProperty(): bool
+    {
+        foreach ($this->actionSnapshots as $snapshot) {
+            if (($snapshot['name'] ?? '') === 'row_link') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Invoked from the body row when {@see $hasRowLinkAction}: redirects for string targets, runs closures / dispatches like {@see runRowAction()} otherwise.
+     */
+    public function navigateRowLink(string $rowKey): void
+    {
+        $snapshot = $this->actionSnapshotFor('row_link');
+        if ($snapshot === null) {
+            return;
+        }
+
+        $row = $this->rowDataForKey($rowKey);
+        if ($row === null) {
+            return;
+        }
+
+        if (($snapshot['serializedClosure'] ?? '') !== '') {
+            $this->runRowAction('row_link', $rowKey);
+
+            return;
+        }
+
+        $href = $this->rowActionHref($snapshot, $row);
+        if ($href !== null) {
+            $this->redirect($href);
+
+            return;
+        }
+
+        $this->dispatch('tableui-row-action', action: 'row_link', key: $rowKey);
     }
 
     /**
      * Resolved href for a row action snapshot, or null when using dispatch-only or missing target.
      *
-     * @param  array{name: string, label: string, bulk: bool, target: ?string, serializedClosure: string, isButton: bool}  $snapshot
+     * @param  array{name: string, label: string, bulk: bool, target: ?string, serializedClosure: string, isButton: bool, showInRowColumn: bool}  $snapshot
      * @param  array<array-key, mixed>  $row
      */
     public function rowActionHref(array $snapshot, array $row): ?string
@@ -250,6 +319,7 @@ class TableView extends Component
             'delete' => 'btn-delete',
             'view' => 'btn-view',
             'edit', 'update' => 'btn-edit',
+            'row_link' => 'btn-neutral',
             default => 'btn-neutral',
         };
 
@@ -315,7 +385,7 @@ class TableView extends Component
     }
 
     /**
-     * @return array{name: string, label: string, bulk: bool, target: ?string, serializedClosure: string, isButton: bool}|null
+     * @return array{name: string, label: string, bulk: bool, target: ?string, serializedClosure: string, isButton: bool, showInRowColumn: bool}|null
      */
     private function actionSnapshotFor(string $actionName): ?array
     {
@@ -459,19 +529,34 @@ class TableView extends Component
     {
         foreach ($this->filterDefinitions as $definition) {
             $columnKey = $definition['columnKey'];
-            $needle = trim((string) ($this->filterValues[$columnKey] ?? ''));
-            if ($needle === '') {
-                continue;
-            }
+            $state = $this->filterValues[$columnKey] ?? null;
 
-            $haystack = mb_strtolower((string) data_get($row, $columnKey, ''));
-
-            if (! str_contains($haystack, mb_strtolower($needle))) {
+            if (! TableUiFilterMatcher::matches($row, $definition, $state)) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    /**
+     * Toggle the filter dropdown overlay (no-op when there are no filter definitions).
+     */
+    public function toggleFiltersPanel(): void
+    {
+        if ($this->filterDefinitions === []) {
+            return;
+        }
+
+        $this->filtersPanelOpen = ! $this->filtersPanelOpen;
+    }
+
+    /**
+     * Close the filter overlay (e.g. backdrop, close button, or Escape while the overlay is focused).
+     */
+    public function closeFiltersPanel(): void
+    {
+        $this->filtersPanelOpen = false;
     }
 
     /**

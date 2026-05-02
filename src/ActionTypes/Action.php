@@ -56,6 +56,14 @@ abstract class Action
     }
 
     /**
+     * When false, the action is omitted from the trailing row-action columns (e.g. {@see RowLinkAction} drives whole-row navigation only).
+     */
+    public function showInRowActionsColumn(): bool
+    {
+        return true;
+    }
+
+    /**
      * @return string|Closure|null
      */
     public function getTarget(): string|Closure|null
