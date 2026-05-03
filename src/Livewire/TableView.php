@@ -18,6 +18,7 @@ use InEngine\TableUI\Support\TableUiEmailFilterInputFormatter;
 use InEngine\TableUI\Support\TableUiFilterAutocompleteSuggestions;
 use InEngine\TableUI\Support\TableUiFilterColumnBounds;
 use InEngine\TableUI\Support\TableUiFilterMatcher;
+use InEngine\TableUI\Support\TableUiPaginationWindow;
 use InEngine\TableUI\Support\TableUiPhoneFilterInputFormatter;
 use InEngine\TableUI\Table;
 use InEngine\TableUI\TableServiceProvider;
@@ -87,6 +88,26 @@ class TableView extends Component
     public ?string $verticalMaxHeight = null;
 
     /**
+     * Rows per page for client-side pagination ({@code 0} = disabled). From {@see Options} or Livewire {@see mount()} {@code perPage}.
+     * Intentionally untyped: Livewire may hydrate numeric strings from snapshots; {@see hydrate()} normalizes to int.
+     *
+     * @var int
+     */
+    public $paginationPerPage = 0;
+
+    /**
+     * Copy of {@see $paginationPerPage} set in {@see mount()} so {@see hydrate()} can recover when snapshots omit or null the live value.
+     */
+    public int $paginationPerPageMount = 0;
+
+    /**
+     * Current page (1-based) when pagination is active.
+     *
+     * @var int
+     */
+    public $paginationPage = 1;
+
+    /**
      * Stable keys for checked rows (see {@see rowKey()}), aligned with {@see wire:model} on checkboxes.
      *
      * @var list<string>
@@ -132,6 +153,7 @@ class TableView extends Component
     /**
      * @param  array<string>  $headers
      * @param  list<array<array-key, mixed>>  $rows
+     * @param  int|string|null  $perPage  Livewire/Blade often passes numeric strings; omitted uses {@see Table::options()}.
      */
     public function mount(
         ?Table $table = null,
@@ -144,6 +166,7 @@ class TableView extends Component
         string|bool|null $scrollbarHorizontal = null,
         string|bool|null $scrollbarVertical = null,
         ?string $verticalMaxHeight = null,
+        int|string|null $perPage = null,
     ): void {
         $table ??= new Table([]);
 
@@ -160,6 +183,9 @@ class TableView extends Component
         $this->verticalMaxHeight = $verticalMaxHeight !== null
             ? Options::normalizeVerticalMaxHeight($verticalMaxHeight)
             : $table->options()->getVerticalMaxHeight();
+
+        $this->paginationPerPage = self::resolvePaginationPerPage($perPage, $table->options());
+        $this->paginationPerPageMount = $this->paginationPerPage;
 
         $this->bulkActionsSelectId = 'tableui-bulk-actions-'.bin2hex(random_bytes(4));
 
@@ -219,6 +245,66 @@ class TableView extends Component
         $this->emptyMessage = $emptyMessage ?? config('tableui.empty_message', 'No rows to display.');
 
         $this->hydrateFiltersFromTable($table);
+
+        $this->clampPaginationPage();
+    }
+
+    /**
+     * Keeps pagination integers when Livewire hydrates from requests or snapshots (numeric strings).
+     */
+    public function hydrate(): void
+    {
+        $this->normalizeHydratedPaginationPerPage();
+
+        $this->paginationPage = max(1, (int) ($this->paginationPage ?? 1));
+    }
+
+    /**
+     * Casting {@see $paginationPerPage} with {@code (int)} turns {@code null} into {@code 0}, which incorrectly disables pagination.
+     * Invalid or empty hydrated values fall back to the mount-time value (config or {@see Options}).
+     */
+    private function normalizeHydratedPaginationPerPage(): void
+    {
+        $raw = $this->paginationPerPage;
+
+        if ($raw === null || is_bool($raw)) {
+            $this->paginationPerPage = $this->paginationPerPageMount;
+
+            return;
+        }
+
+        if (is_string($raw)) {
+            $trimmed = trim($raw);
+            if ($trimmed === '') {
+                $this->paginationPerPage = $this->paginationPerPageMount;
+
+                return;
+            }
+            $raw = $trimmed;
+        }
+
+        if (! is_numeric($raw)) {
+            $this->paginationPerPage = $this->paginationPerPageMount;
+
+            return;
+        }
+
+        $this->paginationPerPage = max(0, (int) $raw);
+    }
+
+    /**
+     * When Livewire passes a numeric {@code perPage}, it overrides {@see Table::options()} for this component only.
+     * Otherwise use {@see Options::getPerPage()} (from {@code config('tableui.pagination')} or {@see Options} constructor).
+     *
+     * @param  mixed  $mountPerPage
+     */
+    private static function resolvePaginationPerPage(mixed $mountPerPage, Options $options): int
+    {
+        if ($mountPerPage !== null && $mountPerPage !== '' && is_numeric($mountPerPage)) {
+            return Options::resolvePerPage($mountPerPage);
+        }
+
+        return $options->getPerPage();
     }
 
     private function hydrateFiltersFromTable(Table $table): void
@@ -270,6 +356,8 @@ class TableView extends Component
         }
 
         $this->filterValues = $next;
+
+        $this->clampPaginationPage();
     }
 
     /**
@@ -278,6 +366,8 @@ class TableView extends Component
     public function updatedFilterValues(): void
     {
         $this->applyFormattedFilterInputs();
+
+        $this->clampPaginationPage();
     }
 
     /**
@@ -690,12 +780,39 @@ class TableView extends Component
 
         if ($this->sortBy === $column) {
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortBy = $column;
+            $this->sortDirection = 'asc';
+        }
 
+        $this->clampPaginationPage();
+    }
+
+    public function gotoPaginationPage(int|string $page): void
+    {
+        if (! is_numeric($page)) {
             return;
         }
 
-        $this->sortBy = $column;
-        $this->sortDirection = 'asc';
+        $page = (int) $page;
+
+        if ($page < 1) {
+            return;
+        }
+
+        $this->paginationPage = $page;
+
+        $this->clampPaginationPage();
+    }
+
+    public function previousPaginationPage(): void
+    {
+        $this->paginationPage = max(1, $this->paginationPage - 1);
+    }
+
+    public function nextPaginationPage(): void
+    {
+        $this->paginationPage = min($this->paginationTotalPages, $this->paginationPage + 1);
     }
 
     /**
@@ -703,7 +820,90 @@ class TableView extends Component
      */
     public function getDisplayRowsProperty(): array
     {
-        return $this->applyFiltersToRows($this->sortedRows());
+        $filtered = $this->applyFiltersToRows($this->sortedRows());
+
+        if ($this->paginationPerPage <= 0 || count($filtered) <= $this->paginationPerPage) {
+            return $filtered;
+        }
+
+        $totalPages = max(1, (int) ceil(count($filtered) / $this->paginationPerPage));
+        $page = max(1, min($this->paginationPage, $totalPages));
+
+        return array_slice($filtered, ($page - 1) * $this->paginationPerPage, $this->paginationPerPage);
+    }
+
+    /**
+     * True when the pager should render (filtered row count exceeds page size).
+     */
+    public function getPaginationShouldShowProperty(): bool
+    {
+        if ($this->paginationPerPage <= 0) {
+            return false;
+        }
+
+        $filteredCount = count($this->applyFiltersToRows($this->sortedRows()));
+
+        return $filteredCount > $this->paginationPerPage;
+    }
+
+    public function getPaginationTotalPagesProperty(): int
+    {
+        if ($this->paginationPerPage <= 0) {
+            return 1;
+        }
+
+        $filteredCount = count($this->applyFiltersToRows($this->sortedRows()));
+
+        return max(1, (int) ceil($filteredCount / $this->paginationPerPage));
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function getPaginationVisiblePagesProperty(): array
+    {
+        if (! $this->paginationShouldShow) {
+            return [];
+        }
+
+        return TableUiPaginationWindow::visiblePages(
+            $this->paginationPage,
+            $this->paginationTotalPages,
+            5
+        );
+    }
+
+    public function getPaginationHasPreviousProperty(): bool
+    {
+        return $this->paginationShouldShow && $this->paginationPage > 1;
+    }
+
+    public function getPaginationHasNextProperty(): bool
+    {
+        return $this->paginationShouldShow && $this->paginationPage < $this->paginationTotalPages;
+    }
+
+    /**
+     * Keeps {@see $paginationPage} within range after filters, sort, or explicit navigation.
+     */
+    private function clampPaginationPage(): void
+    {
+        if ($this->paginationPerPage <= 0) {
+            $this->paginationPage = 1;
+
+            return;
+        }
+
+        $filteredCount = count($this->applyFiltersToRows($this->sortedRows()));
+
+        if ($filteredCount <= $this->paginationPerPage) {
+            $this->paginationPage = 1;
+
+            return;
+        }
+
+        $totalPages = max(1, (int) ceil($filteredCount / $this->paginationPerPage));
+        $this->paginationPage = max(1, min($this->paginationPage, $totalPages));
     }
 
     /**

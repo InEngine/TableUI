@@ -52,6 +52,7 @@
                     </tbody>
                 </table>
             </div>
+            @include('tableui::components.table.pagination')
         </div>
     @endif
 </div>

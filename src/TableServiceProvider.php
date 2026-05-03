@@ -22,6 +22,8 @@ class TableServiceProvider extends PackageServiceProvider
      */
     public function packageBooted(): void
     {
+        $this->loadTranslationsFrom(__DIR__.'/../lang', 'tableui');
+
         $this->publishes([
             __DIR__.'/../resources/css/tableui.css' => resource_path('css/vendor/tableui.css'),
         ], 'tableui-css');

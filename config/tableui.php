@@ -85,7 +85,24 @@ return [
         'vertical_max_height' => null,
     ],
 
-    'pagination' => 25,
+    /*
+    |--------------------------------------------------------------------------
+    | Pagination (client-side)
+    |--------------------------------------------------------------------------
+    |
+    | Rows per page for the Livewire table body when the filtered result set is larger than this value.
+    | The pager sits below the scroll area (bottom-right). Override per {@see \InEngine\TableUI\Options::setPerPage()}
+    | / {@see \InEngine\TableUI\Livewire\TableView} mount argument {@code perPage}.
+    |
+    | • Integer {@code >= 1} — page size; navigation appears only when filtered rows {@code >} this number
+    |   (sorting and filters both apply before counting).
+    | • {@code 0} — disable pagination (show every row; no pager).
+    |
+    | {@see \InEngine\TableUI\Options} accepts {@code perPage: null} to use this config value, or any non-negative
+    | integer (including numeric strings) to override for that table only.
+    |
+    */
+    'pagination' => 10,
 
     /*
     |--------------------------------------------------------------------------

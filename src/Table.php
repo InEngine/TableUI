@@ -11,7 +11,8 @@ use InEngine\TableUI\Support\LaravelColumnSchema;
  * Table domain object: a model collection plus optional explicit {@see Columns}, {@see Options}, {@see Actions}, and {@see Filters}.
  *
  * When {@code $options} is omitted or null, a new {@see Options} instance is created with its constructor defaults
- * (same for {@see fromCollection}).
+ * (same for {@see fromCollection}). Pagination rows-per-page defaults from {@code config('tableui.pagination')}
+ * unless you pass {@see Options} with an explicit {@code perPage}.
  *
  * When {@code $actions} is omitted or null, {@see actions()} returns {@see DefaultTableActions::forTable()} for non-empty
  * Eloquent collections (view, edit, delete, and a non-column {@see ActionTypes\RowLinkAction}); pass {@see Actions::empty()} to disable.
@@ -170,7 +171,7 @@ class Table extends EloquentCollection
 
     /**
      * Column filters for {@see TableView}. When not set explicitly, {@see Filters::inferFromTable()} builds one control per
-     * column (typed via {@see \InEngine\TableUI\FilterTypes\FilterDefinition::forColumn()}); enum options are filled from distinct row values when possible.
+     * column (typed via {@see FilterDefinition::forColumn()}); enum options are filled from distinct row values when possible.
      * Pass {@see Filters::empty()} to disable the toolbar.
      */
     public function filters(): Filters

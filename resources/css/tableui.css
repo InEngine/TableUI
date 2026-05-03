@@ -52,6 +52,9 @@
 @source inline("table-ui__td--filter");
 @source inline("table-ui__td--filter-spacer");
 @source inline("table-ui__bulk-actions");
+@source inline("table-ui__bulk-selection-count");
+@source inline("table-ui__bulk-selection-count-number");
+@source inline("table-ui__bulk-selection-count-suffix");
 @source inline("table-ui__actions-select");
 @source inline("table-ui__select-all");
 @source inline("table-ui__checkbox");
@@ -73,6 +76,15 @@
 @source inline("overflow-y-auto");
 @source inline("overflow-y-scroll");
 @source inline("overflow-y-hidden");
+
+/* Pagination below the table (Blade partial + Livewire actions). */
+@source inline("table-ui__pagination");
+@source inline("table-ui__pagination-inner");
+@source inline("table-ui__pagination-nav");
+@source inline("table-ui__pagination-nav--prev");
+@source inline("table-ui__pagination-nav--next");
+@source inline("table-ui__pagination-page");
+@source inline("table-ui__pagination-page--current");
 
 @layer base {
     [x-cloak] {
@@ -175,6 +187,31 @@
     }
 
     /*
+     * Pagination: sits below the scroll wrapper, aligned bottom-right (same sheet column as toolbar/table).
+     */
+    .table-ui__pagination {
+        @apply flex w-full shrink-0 justify-end;
+    }
+
+    .table-ui__pagination-inner {
+        @apply inline-flex items-center gap-1;
+    }
+
+    .table-ui__pagination-nav {
+        @apply inline-flex min-h-9 min-w-9 cursor-pointer items-center justify-center rounded-md border border-gray-300 bg-white px-2 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-200 dark:hover:bg-gray-900;
+    }
+
+    .table-ui__pagination-page {
+        @apply inline-flex min-h-9 min-w-9 cursor-pointer items-center justify-center rounded-md border border-gray-300 bg-white px-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-200 dark:hover:bg-gray-900;
+    }
+
+    .table-ui__pagination-page--current {
+        @apply bg-gray-50 dark:bg-gray-900;
+        border-color: var(--table-ui-primary, theme(colors.gray.600));
+        color: var(--table-ui-primary, theme(colors.gray.600));
+    }
+
+    /*
      * Active filter count on the Filters button: filled circle using theme primary (see {@see TableUiTheme}).
      */
     .table-ui__filter-count-badge {
@@ -264,7 +301,20 @@
     }
 
     .table-ui__bulk-actions {
-        @apply flex items-center;
+        @apply flex items-center gap-2;
+    }
+
+    .table-ui__bulk-selection-count {
+        @apply shrink-0 whitespace-nowrap text-sm tabular-nums;
+    }
+
+    .table-ui__bulk-selection-count-number {
+        font-weight: 600;
+        color: var(--table-ui-primary, theme(colors.gray.600));
+    }
+
+    .table-ui__bulk-selection-count-suffix {
+        @apply font-medium text-gray-600 dark:text-gray-400;
     }
 
     .table-ui__actions-select {

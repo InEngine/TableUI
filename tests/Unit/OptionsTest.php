@@ -13,7 +13,8 @@ it('applies constructor defaults', function (): void {
         ->and($options->getEnableDefaultSort())->toBeTrue()
         ->and($options->getScrollbarHorizontal())->toBe('auto')
         ->and($options->getScrollbarVertical())->toBe('auto')
-        ->and($options->getVerticalMaxHeight())->toBeNull();
+        ->and($options->getVerticalMaxHeight())->toBeNull()
+        ->and($options->getPerPage())->toBe((int) config('tableui.pagination', 25));
 });
 
 it('allows partial overrides via named constructor arguments', function (): void {
@@ -77,6 +78,37 @@ it('allows vertical_max_height override via constructor', function (): void {
     $options = new Options(verticalMaxHeight: '50vh');
 
     expect($options->getVerticalMaxHeight())->toBe('50vh');
+});
+
+it('loads per_page from config when omitted', function (): void {
+    config()->set('tableui.pagination', 15);
+
+    expect((new Options)->getPerPage())->toBe(15);
+});
+
+it('allows per_page zero to disable pagination via constructor', function (): void {
+    expect((new Options(perPage: 0))->getPerPage())->toBe(0);
+});
+
+it('coerces numeric strings for per_page from resolvePerPage and constructor', function (): void {
+    config()->set('tableui.pagination', 25);
+
+    expect(Options::resolvePerPage('10'))->toBe(10)
+        ->and(Options::resolvePerPage('  14  '))->toBe(14)
+        ->and((new Options(perPage: '12'))->getPerPage())->toBe(12);
+});
+
+it('allows setPerPage with numeric strings', function (): void {
+    $options = new Options(perPage: 5);
+
+    $options->setPerPage('30');
+
+    expect($options->getPerPage())->toBe(30);
+});
+
+it('rejects non-numeric per_page values', function (): void {
+    expect(fn (): Options => new Options(perPage: 'abc'))
+        ->toThrow(InvalidArgumentException::class);
 });
 
 it('normalizes vertical max height whitespace via setter', function (): void {

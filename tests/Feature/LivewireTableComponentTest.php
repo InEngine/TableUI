@@ -494,3 +494,131 @@ it('toggleSelectAll selects and clears all displayed row keys', function (): voi
         ->call('toggleSelectAll')
         ->assertSet('selectedRowKeys', []);
 });
+
+it('renders pagination below the table when rows exceed per page', function (): void {
+    $rows = array_map(
+        static fn (int $i): array => [sprintf('User-%03d', $i), 'Role'],
+        range(1, 30)
+    );
+
+    Livewire::test(TableView::class, [
+        'table' => new Table([], null, new Options(perPage: 10)),
+        'headers' => ['Name', 'Role'],
+        'rows' => $rows,
+    ])
+        ->assertSeeHtml('table-ui__pagination')
+        ->assertSee('User-001')
+        ->assertDontSee('User-011')
+        ->call('gotoPaginationPage', 2)
+        ->assertSee('User-011')
+        ->assertDontSee('User-001');
+});
+
+it('uses config pagination when Options uses defaults and Livewire omits perPage', function (): void {
+    config()->set('tableui.pagination', 7);
+
+    $rows = array_map(
+        static fn (int $i): array => [sprintf('User-%03d', $i), 'Role'],
+        range(1, 15)
+    );
+
+    Livewire::test(TableView::class, [
+        'table' => new Table([], null, new Options),
+        'headers' => ['Name', 'Role'],
+        'rows' => $rows,
+    ])
+        ->assertSet('paginationPerPage', 7)
+        ->assertSet('paginationPerPageMount', 7)
+        ->assertSee('User-001')
+        ->assertSee('User-007')
+        ->assertDontSee('User-008')
+        ->call('gotoPaginationPage', 2)
+        ->assertSee('User-008')
+        ->assertSet('paginationPerPage', 7);
+});
+
+it('uses Options perPage over config when Table passes explicit Options', function (): void {
+    config()->set('tableui.pagination', 50);
+
+    $rows = array_map(
+        static fn (int $i): array => [sprintf('User-%03d', $i), 'Role'],
+        range(1, 12)
+    );
+
+    Livewire::test(TableView::class, [
+        'table' => new Table([], null, new Options(perPage: 3)),
+        'headers' => ['Name', 'Role'],
+        'rows' => $rows,
+    ])
+        ->assertSet('paginationPerPage', 3)
+        ->assertSet('paginationPerPageMount', 3)
+        ->assertSee('User-001')
+        ->assertSee('User-003')
+        ->assertDontSee('User-004');
+});
+
+it('does not render pagination when disabled or when rows fit in one page', function (): void {
+    $few = array_map(
+        static fn (int $i): array => [sprintf('U-%d', $i), 'R'],
+        range(1, 5)
+    );
+
+    Livewire::test(TableView::class, [
+        'table' => new Table([], null, new Options(perPage: 10)),
+        'headers' => ['N', 'R'],
+        'rows' => $few,
+    ])->assertDontSeeHtml('table-ui__pagination');
+
+    $many = array_map(
+        static fn (int $i): array => [sprintf('U-%d', $i), 'R'],
+        range(1, 20)
+    );
+
+    Livewire::test(TableView::class, [
+        'table' => new Table([]),
+        'headers' => ['N', 'R'],
+        'rows' => $many,
+        'perPage' => 0,
+    ])->assertDontSeeHtml('table-ui__pagination');
+});
+
+it('shows selected row count to the right of bulk actions when more than one row is selected', function (): void {
+    $a = new LivewireTableComponentTestModel;
+    $a->forceFill(['id' => 1, 'user_name' => 'Ada']);
+
+    $b = new LivewireTableComponentTestModel;
+    $b->forceFill(['id' => 2, 'user_name' => 'Bob']);
+
+    $c = new LivewireTableComponentTestModel;
+    $c->forceFill(['id' => 3, 'user_name' => 'Carol']);
+
+    Livewire::test(TableView::class, [
+        'table' => livewireTableWithBulkDelete([$a, $b, $c]),
+    ])
+        ->assertDontSeeHtml('table-ui__bulk-selection-count')
+        ->set('selectedRowKeys', ['id:1'])
+        ->assertDontSeeHtml('table-ui__bulk-selection-count')
+        ->set('selectedRowKeys', ['id:1', 'id:2'])
+        ->assertSeeHtml('table-ui__bulk-selection-count')
+        ->assertSee(__(':count selected', ['count' => 2]));
+});
+
+it('hides pagination when filters reduce the row count to within per page', function (): void {
+    $rows = array_map(
+        static fn (int $i): array => [sprintf('User-%03d', $i), 'Role'],
+        range(1, 30)
+    );
+
+    $table = new Table([], null, new Options(perPage: 10));
+    $table->setFilters(Filters::make(new FilterDefinition('0', 'Name')));
+
+    Livewire::test(TableView::class, [
+        'table' => $table,
+        'headers' => ['Name', 'Role'],
+        'rows' => $rows,
+    ])
+        ->assertSeeHtml('table-ui__pagination')
+        ->set('filterValues', ['0' => 'User-001'])
+        ->assertDontSeeHtml('table-ui__pagination')
+        ->assertSee('User-001');
+});

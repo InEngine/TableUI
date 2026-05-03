@@ -18,6 +18,7 @@ final class TableUiConfigValidator
     {
         self::assertThemeShape();
         self::assertScrollbarsShape();
+        self::assertPaginationShape();
         self::assertColumnTypesShape();
         self::assertFiltersShape();
 
@@ -252,6 +253,19 @@ final class TableUiConfigValidator
             if ($cap !== null && ! is_string($cap)) {
                 throw new InvalidArgumentException('tableui.scrollbars.vertical_max_height must be a string or null when present.');
             }
+        }
+    }
+
+    private static function assertPaginationShape(): void
+    {
+        if (! config()->has('tableui.pagination')) {
+            return;
+        }
+
+        $pagination = config('tableui.pagination');
+
+        if (! is_numeric($pagination) || (int) $pagination < 0) {
+            throw new InvalidArgumentException('tableui.pagination must be a non-negative integer.');
         }
     }
 

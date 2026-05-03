@@ -35,6 +35,14 @@
                     <option value="{{ $snap['name'] }}">{{ $snap['label'] }}</option>
                 @endforeach
             </select>
+            @if (count($this->selectedRowKeys) > 1)
+                @php($bulkSelectedCount = count($this->selectedRowKeys))
+                @php($bulkSelectionLabel = __(':count selected', ['count' => $bulkSelectedCount]))
+                @php($bulkSelectionSuffix = \Illuminate\Support\Str::substr($bulkSelectionLabel, \Illuminate\Support\Str::length((string) $bulkSelectedCount)))
+                <span class="table-ui__bulk-selection-count" aria-live="polite">
+                    <span class="table-ui__bulk-selection-count-number">{{ $bulkSelectedCount }}</span><span class="table-ui__bulk-selection-count-suffix">{{ $bulkSelectionSuffix }}</span>
+                </span>
+            @endif
         </div>
     @endif
 </div>

@@ -5,7 +5,7 @@ namespace InEngine\TableUI;
 use InvalidArgumentException;
 
 /**
- * Table presentation options (layout, sorting). Row/bulk behavior is defined with {@see Actions} on {@see Table}.
+ * Table presentation options (layout, sorting, pagination). Row/bulk behavior is defined with {@see Actions} on {@see Table}.
  */
 final class Options
 {
@@ -27,6 +27,11 @@ final class Options
     private ?string $verticalMaxHeight;
 
     /**
+     * Rows per page for client-side pagination; {@code 0} disables the pager (show all rows).
+     */
+    private int $perPage;
+
+    /**
      * @param  bool  $stripping  Default: true
      * @param  ?string  $defaultSortColumn  When non-null and present on the table, used as initial sort column (also works for legacy headers/rows). When null, {@see TableView} infers {@code id} or the first column only for non-empty domain {@see Table} payloads.
      * @param  string  $defaultSortDirection  Initial sort direction when a default column applies: {@code asc} or {@code desc}.
@@ -34,6 +39,7 @@ final class Options
      * @param  string|bool|null  $scrollbarHorizontal  {@code null} uses {@code config('tableui.scrollbars.horizontal')}. Accepts {@code auto}, bool, or {@code "true"}/{@code "false"} strings.
      * @param  string|bool|null  $scrollbarVertical  {@code null} uses {@code config('tableui.scrollbars.vertical')}.
      * @param  string|null  $verticalMaxHeight  {@code null} uses {@code config('tableui.scrollbars.vertical_max_height')}; empty string treated as uncapped.
+     * @param  mixed  $perPage  {@code null} uses {@code config('tableui.pagination')} (package/app default). Any non-negative integer overrides (numeric strings coerced).
      *
      * @throws InvalidArgumentException When {@see defaultSortDirection} is not asc/desc, or scrollbar modes are invalid.
      */
@@ -45,6 +51,7 @@ final class Options
         string|bool|null $scrollbarHorizontal = null,
         string|bool|null $scrollbarVertical = null,
         ?string $verticalMaxHeight = null,
+        mixed $perPage = null,
     ) {
         $this->assertDefaultSortDirection($defaultSortDirection);
         $this->defaultSortDirection = strtolower($defaultSortDirection) === 'desc' ? 'desc' : 'asc';
@@ -55,6 +62,61 @@ final class Options
         $this->verticalMaxHeight = self::normalizeVerticalMaxHeight(
             $verticalMaxHeight ?? ($scrollConfig['vertical_max_height'] ?? null)
         );
+        $this->perPage = self::resolvePerPage($perPage);
+    }
+
+    /**
+     * Resolves rows-per-page: {@code null} or empty uses {@code config('tableui.pagination')}; otherwise any non-negative integer ({@code int}, numeric string, numeric {@code float}) overrides.
+     *
+     * @throws InvalidArgumentException When the value cannot be coerced to a non-negative integer.
+     */
+    public static function resolvePerPage(mixed $explicit): int
+    {
+        if ($explicit === null) {
+            return self::perPageFromConfig();
+        }
+
+        if ($explicit === '') {
+            return self::perPageFromConfig();
+        }
+
+        if (is_string($explicit)) {
+            $explicit = trim($explicit);
+            if ($explicit === '') {
+                return self::perPageFromConfig();
+            }
+        }
+
+        if (is_bool($explicit)) {
+            throw new InvalidArgumentException('perPage cannot be a boolean.');
+        }
+
+        if (! is_numeric($explicit)) {
+            throw new InvalidArgumentException('perPage must be a non-negative integer.');
+        }
+
+        $n = (int) $explicit;
+
+        if ($n < 0) {
+            throw new InvalidArgumentException('perPage must be zero or positive.');
+        }
+
+        return $n;
+    }
+
+    /**
+     * Package/app default from {@code config('tableui.pagination')}.
+     */
+    private static function perPageFromConfig(): int
+    {
+        $raw = config('tableui.pagination', 25);
+        $n = (int) $raw;
+
+        if ($n < 0) {
+            throw new InvalidArgumentException('config tableui.pagination must be zero or positive.');
+        }
+
+        return $n;
     }
 
     /**
@@ -135,6 +197,21 @@ final class Options
     public function setVerticalMaxHeight(?string $verticalMaxHeight): void
     {
         $this->verticalMaxHeight = self::normalizeVerticalMaxHeight($verticalMaxHeight);
+    }
+
+    public function getPerPage(): int
+    {
+        return $this->perPage;
+    }
+
+    /**
+     * @param  mixed  $perPage  Same rules as {@see resolvePerPage()} including {@code null} (reload from config).
+     *
+     * @throws InvalidArgumentException
+     */
+    public function setPerPage(mixed $perPage): void
+    {
+        $this->perPage = self::resolvePerPage($perPage);
     }
 
     /**

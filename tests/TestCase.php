@@ -28,6 +28,7 @@ class TestCase extends Orchestra
             'horizontal' => 'auto',
             'vertical' => 'auto',
         ]);
+        config()->set('tableui.pagination', $tableuiDefaults['pagination'] ?? 25);
 
         $this->app->forgetInstance(ColumnRendererRegistry::class);
     }
