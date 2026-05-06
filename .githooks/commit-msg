@@ -1,0 +1,21 @@
+#!/usr/bin/env sh
+# Removes IDE-injected Cursor co-author trailers (workspace policy: single author
+# unless the user explicitly adds Co-authored-by). Enable with:
+#   git config core.hooksPath .githooks
+#
+# Hook runs after the message is composed; --no-verify skips this hook.
+
+msg_file=${1:?}
+
+if ! test -f "$msg_file"; then
+    exit 0
+fi
+
+tmp=$(mktemp) || exit 0
+if ! sed '/^Co-authored-by: Cursor/d' "$msg_file" > "$tmp"; then
+    rm -f "$tmp"
+    exit 0
+fi
+
+mv "$tmp" "$msg_file"
+exit 0
