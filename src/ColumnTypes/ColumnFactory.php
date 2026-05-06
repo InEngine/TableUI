@@ -23,8 +23,9 @@ final class ColumnFactory
 {
     /**
      * @param  class-string<Column>  $columnClass
+     * @param  string|null  $dualCanonicalKey  Second argument for {@see DualColumn} when reconstructing from {@see TableView} snapshots.
      */
-    public static function make(string $attributeKey, string $columnClass): Column
+    public static function make(string $attributeKey, string $columnClass, ?string $dualCanonicalKey = null): Column
     {
         $allowed = RegisteredColumnTypes::mergedColumnClasses();
 
@@ -42,11 +43,20 @@ final class ColumnFactory
             NumberColumn::class => new NumberColumn($attributeKey),
             IdColumn::class => new IdColumn($attributeKey),
             EmailColumn::class => new EmailColumn($attributeKey),
-            DualColumn::class => new DualColumn($attributeKey),
+            DualColumn::class => self::makeDualColumn($attributeKey, $dualCanonicalKey),
             MoneyColumn::class => new MoneyColumn($attributeKey),
             PhoneColumn::class => new PhoneColumn($attributeKey),
             default => self::makeCustomColumn($attributeKey, $columnClass),
         };
+    }
+
+    private static function makeDualColumn(string $displayKey, ?string $canonicalKey): DualColumn
+    {
+        if ($canonicalKey !== null && $canonicalKey !== '' && $canonicalKey !== $displayKey) {
+            return new DualColumn($displayKey, $canonicalKey);
+        }
+
+        return new DualColumn($displayKey);
     }
 
     /**

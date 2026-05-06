@@ -54,6 +54,14 @@ class TableView extends Component
     public array $columnTypeClasses = [];
 
     /**
+     * Parallel to {@see $columnKeys}: canonical attribute key for {@see DualColumn} definitions, null for other columns.
+     * Used when reconstructing columns from snapshots (see {@see ColumnFactory::make()}).
+     *
+     * @var list<string|null>
+     */
+    public array $dualColumnDataKeys = [];
+
+    /**
      * @var list<array<array-key, mixed>>
      */
     public array $rows = [];
@@ -135,7 +143,7 @@ class TableView extends Component
     /**
      * Filter controls derived from {@see Table::filters()} in {@see mount()}.
      *
-     * @var list<array{columnKey: string, label: string, type: string, enumOptions: ?array<string, string>, moneyDivisor: ?int}>
+     * @var list<array{columnKey: string, label: string, type: string, enumOptions: ?array<string, string>, moneyDivisor: ?int, textMatch?: 'substring'|'exact'}>
      */
     public array $filterDefinitions = [];
 
@@ -224,11 +232,13 @@ class TableView extends Component
                 static fn (): string => Column::class,
                 $this->columnKeys
             );
+            $this->dualColumnDataKeys = array_fill(0, count($this->columnKeys), null);
         } else {
             $this->headers = [];
             $this->rows = [];
             $this->columnKeys = [];
             $this->columnTypeClasses = [];
+            $this->dualColumnDataKeys = [];
         }
 
         if ($sortBy !== null && in_array($sortBy, $this->columnKeys, true)) {
@@ -316,12 +326,22 @@ class TableView extends Component
         }
 
         foreach ($filters->definitions() as $definition) {
+            $columnIndex = array_search($definition->columnKey, $this->columnKeys, true);
+            $columnClass = Column::class;
+
+            if ($columnIndex !== false) {
+                $columnClass = $this->columnTypeClasses[$columnIndex] ?? Column::class;
+            }
+
+            $textMatch = $columnClass === DualColumn::class ? 'exact' : 'substring';
+
             $this->filterDefinitions[] = [
                 'columnKey' => $definition->columnKey,
                 'label' => $definition->label,
                 'type' => $definition->type,
                 'enumOptions' => $definition->enumOptions,
                 'moneyDivisor' => $definition->moneyDivisor,
+                'textMatch' => $textMatch,
             ];
 
             if (! array_key_exists($definition->columnKey, $this->filterValues)) {
@@ -767,7 +787,8 @@ class TableView extends Component
         }
 
         $className = $this->columnTypeClasses[$columnIndex] ?? Column::class;
-        $column = ColumnFactory::make($key, $className);
+        $dualKey = $this->dualColumnDataKeys[$columnIndex] ?? null;
+        $column = ColumnFactory::make($key, $className, $dualKey);
         $value = data_get($row, $key);
 
         return $registry->rendererFor($column)->renderCell($column, $value);
@@ -1018,6 +1039,10 @@ class TableView extends Component
             static fn (Column $column): string => get_class($column),
             $columns->items()
         );
+        $this->dualColumnDataKeys = array_map(
+            static fn (Column $column): ?string => $column instanceof DualColumn ? $column->dataKey() : null,
+            $columns->items()
+        );
         $this->rows = $table
             ->map(fn (Model $model): array => $model->only($requiredRowKeys))
             ->values()
@@ -1053,7 +1078,8 @@ class TableView extends Component
                 continue;
             }
 
-            $column = ColumnFactory::make($key, $className);
+            $dualKey = $this->dualColumnDataKeys[$index] ?? null;
+            $column = ColumnFactory::make($key, $className, $dualKey);
 
             if (! $column instanceof DualColumn) {
                 continue;

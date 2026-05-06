@@ -13,6 +13,30 @@ it('matches text by substring', function (): void {
         ->and(TableUiFilterMatcher::matches(['name' => 'Ada'], $def, ''))->toBeTrue();
 });
 
+it('matches text by case-insensitive exact value when textMatch is exact', function (): void {
+    $def = [
+        'columnKey' => 'hid',
+        'label' => 'HID',
+        'type' => FilterType::Text->value,
+        'enumOptions' => null,
+        'moneyDivisor' => null,
+        'textMatch' => 'exact',
+    ];
+
+    expect(TableUiFilterMatcher::matches(['hid' => 100], $def, '100'))->toBeTrue()
+        ->and(TableUiFilterMatcher::matches(['hid' => 200], $def, '100'))->toBeFalse()
+        ->and(TableUiFilterMatcher::matches(['hid' => '100'], $def, '100'))->toBeTrue()
+        ->and(TableUiFilterMatcher::matches(['hid' => 100], $def, 100))->toBeTrue();
+});
+
+it('treats non-string scalar filter state as active and matches text (Livewire numeric hydration)', function (): void {
+    $def = ['columnKey' => 'name', 'label' => 'Name', 'type' => FilterType::Text->value, 'enumOptions' => null, 'moneyDivisor' => null];
+
+    expect(TableUiFilterMatcher::isFilterActive($def, 42))->toBeTrue()
+        ->and(TableUiFilterMatcher::matches(['name' => 'User 42'], $def, 42))->toBeTrue()
+        ->and(TableUiFilterMatcher::matches(['name' => 'User 99'], $def, 42))->toBeFalse();
+});
+
 it('matches boolean selection', function (): void {
     $def = ['columnKey' => 'active', 'label' => 'Active', 'type' => FilterType::Boolean->value, 'enumOptions' => null, 'moneyDivisor' => null];
 

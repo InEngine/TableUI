@@ -34,7 +34,7 @@ final class TableUiFilterMatcher
     /**
      * Whether the user has set a narrowing value for this filter (non-empty text; boolean/enum not "all"; any bound on ranges).
      *
-     * @param  array{columnKey: string, label: string, type: string, enumOptions?: array<string, string>|null, moneyDivisor?: int|null, temporalBounds?: array{min: string, max: string}|null}  $definition  Snapshot from {@see TableView::$filterDefinitions}.
+     * @param  array{columnKey: string, label: string, type: string, enumOptions?: array<string, string>|null, moneyDivisor?: int|null, temporalBounds?: array{min: string, max: string}|null, textMatch?: 'substring'|'exact'}  $definition  Snapshot from {@see TableView::$filterDefinitions}.
      * @param  mixed  $state  Same shape as {@see matches()}.
      */
     public static function isFilterActive(array $definition, mixed $state): bool
@@ -42,7 +42,7 @@ final class TableUiFilterMatcher
         $type = FilterType::tryFrom($definition['type'] ?? '') ?? FilterType::Text;
 
         return match ($type) {
-            FilterType::Text, FilterType::Enum, FilterType::Phone, FilterType::Email => trim(is_string($state) ? $state : '') !== '',
+            FilterType::Text, FilterType::Enum, FilterType::Phone, FilterType::Email => self::coerceTextLikeFilterNeedle($state) !== '',
             FilterType::Boolean => is_string($state) && $state !== '',
             FilterType::Number, FilterType::Money => self::rangeHasBounds(self::coerceRangeState($state)),
             FilterType::Date, FilterType::Datetime => self::fromToTemporalFilterActive($definition, self::coerceFromToState($state)),
@@ -89,7 +89,7 @@ final class TableUiFilterMatcher
 
     /**
      * @param  array<array-key, mixed>  $row
-     * @param  array{columnKey: string, label: string, type: string, enumOptions?: array<string, string>|null, moneyDivisor?: int|null, temporalBounds?: array{min: string, max: string}|null}  $definition  Snapshot from {@see TableView::$filterDefinitions}.
+     * @param  array{columnKey: string, label: string, type: string, enumOptions?: array<string, string>|null, moneyDivisor?: int|null, temporalBounds?: array{min: string, max: string}|null, textMatch?: 'substring'|'exact'}  $definition  Snapshot from {@see TableView::$filterDefinitions}.
      * @param  mixed  $state  Scalar string for text/boolean/enum; {@code ['min','max']} or {@code ['from','to']} for range types.
      */
     public static function matches(array $row, array $definition, mixed $state): bool
@@ -98,11 +98,12 @@ final class TableUiFilterMatcher
         $type = FilterType::tryFrom($definition['type'] ?? '') ?? FilterType::Text;
 
         $raw = data_get($row, $key);
+        $textMatch = ($definition['textMatch'] ?? 'substring') === 'exact' ? 'exact' : 'substring';
 
         return match ($type) {
-            FilterType::Text, FilterType::Enum => self::matchesTextOrEnum($raw, $state, $type),
-            FilterType::Phone => self::matchesPhone($raw, is_string($state) ? $state : ''),
-            FilterType::Email => self::matchesEmail($raw, is_string($state) ? $state : ''),
+            FilterType::Text, FilterType::Enum => self::matchesTextOrEnum($raw, $state, $type, $textMatch),
+            FilterType::Phone => self::matchesPhone($raw, self::coerceTextLikeFilterNeedle($state)),
+            FilterType::Email => self::matchesEmail($raw, self::coerceTextLikeFilterNeedle($state)),
             FilterType::Boolean => self::matchesBoolean($raw, is_string($state) ? $state : ''),
             FilterType::Number => self::matchesNumberRange($raw, self::coerceRangeState($state)),
             FilterType::Money => self::matchesMoneyRange(
@@ -116,15 +117,43 @@ final class TableUiFilterMatcher
         };
     }
 
-    private static function matchesTextOrEnum(mixed $raw, mixed $state, FilterType $type): bool
+    /**
+     * Livewire often hydrates filter inputs as int/float (e.g. numeric HID); only accepting strings left the needle empty so every row matched.
+     */
+    private static function coerceTextLikeFilterNeedle(mixed $state): string
     {
-        $needle = is_string($state) ? trim($state) : '';
+        if ($state === null) {
+            return '';
+        }
+
+        if (is_bool($state)) {
+            return $state ? '1' : '0';
+        }
+
+        if (is_array($state)) {
+            return '';
+        }
+
+        if (is_object($state)) {
+            return $state instanceof \Stringable ? trim((string) $state) : '';
+        }
+
+        return trim((string) $state);
+    }
+
+    private static function matchesTextOrEnum(mixed $raw, mixed $state, FilterType $type, string $textMatch = 'substring'): bool
+    {
+        $needle = self::coerceTextLikeFilterNeedle($state);
         if ($needle === '') {
             return true;
         }
 
         if ($type === FilterType::Enum) {
             return (string) $raw === $needle;
+        }
+
+        if ($textMatch === 'exact') {
+            return mb_strtolower((string) $raw) === mb_strtolower($needle);
         }
 
         $haystack = mb_strtolower((string) $raw);

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use InEngine\TableUI\ColumnTypes\Complex\DualColumn;
 use InEngine\TableUI\ColumnTypes\Complex\EmailColumn;
 use InEngine\TableUI\ColumnTypes\Complex\MoneyColumn;
 use InEngine\TableUI\ColumnTypes\Complex\PhoneColumn;
@@ -35,6 +36,11 @@ it('maps column classes to filter types', function (): void {
 
     expect(FilterDefinition::forColumn(new PhoneColumn('phone'))->type)->toBe(FilterType::Phone->value)
         ->and(FilterDefinition::forColumn(new EmailColumn('email'))->type)->toBe(FilterType::Email->value);
+
+    $dualFilter = FilterDefinition::forColumn(new DualColumn('hid', 'id'));
+
+    expect($dualFilter->columnKey)->toBe('hid')
+        ->and($dualFilter->type)->toBe(FilterType::Text->value);
 });
 
 it('uses config-registered filter definition providers for custom columns', function (): void {

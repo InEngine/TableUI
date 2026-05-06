@@ -7,6 +7,7 @@ use InEngine\TableUI\Actions;
 use InEngine\TableUI\ActionTypes\DeleteAction;
 use InEngine\TableUI\ActionTypes\ViewAction;
 use InEngine\TableUI\Columns;
+use InEngine\TableUI\ColumnTypes\Column;
 use InEngine\TableUI\ColumnTypes\Complex\DualColumn;
 use InEngine\TableUI\ColumnTypes\Complex\MoneyColumn;
 use InEngine\TableUI\Filters;
@@ -137,6 +138,32 @@ it('uses dual display keys for sorting while preserving canonical keys for row a
         ->assertSeeInOrder(['100', '200'])
         ->call('navigateRowLink', 'id:10')
         ->assertRedirect('/LivewireTableComponentTestModel/10/view');
+});
+
+it('filters DualColumn rows by display key using exact match semantics', function (): void {
+    $first = new LivewireTableComponentTestModel;
+    $first->forceFill(['id' => 10, 'hid' => 200, 'slug' => 'alpha']);
+
+    $second = new LivewireTableComponentTestModel;
+    $second->forceFill(['id' => 20, 'hid' => 100, 'slug' => 'beta']);
+
+    $table = new Table([$first, $second], new Columns([
+        new DualColumn('hid', 'id'),
+        new Column('slug'),
+    ]));
+    $table->setFilters(Filters::inferFromTable($table));
+
+    Livewire::test(TableView::class, [
+        'table' => $table,
+    ])
+        ->assertSee('alpha')
+        ->assertSee('beta')
+        ->set('filterValues', ['hid' => '100'])
+        ->assertSee('beta')
+        ->assertDontSee('alpha')
+        ->set('filterValues.hid', 100)
+        ->assertSee('beta')
+        ->assertDontSee('alpha');
 });
 
 it('does not apply inferred default sort when enableDefaultSort is false', function (): void {
