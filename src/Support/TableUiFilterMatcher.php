@@ -42,7 +42,9 @@ final class TableUiFilterMatcher
         $type = FilterType::tryFrom($definition['type'] ?? '') ?? FilterType::Text;
 
         return match ($type) {
-            FilterType::Text, FilterType::Phone, FilterType::Email => self::coerceTextLikeFilterNeedle($state) !== '',
+            FilterType::Text, FilterType::Phone, FilterType::Email => ($definition['allowMultiple'] ?? false)
+                ? self::isTextLikeMultiNeedleActive($state)
+                : (self::coerceTextLikeFilterNeedle($state) !== ''),
             FilterType::Enum => self::isEnumFilterActive($state),
             FilterType::Boolean => is_string($state) && $state !== '',
             FilterType::Number, FilterType::Money => self::rangeHasBounds(self::coerceRangeState($state)),
@@ -102,10 +104,10 @@ final class TableUiFilterMatcher
         $textMatch = ($definition['textMatch'] ?? 'substring') === 'exact' ? 'exact' : 'substring';
 
         return match ($type) {
-            FilterType::Text => self::matchesText($raw, $state, $textMatch),
+            FilterType::Text => self::matchesText($raw, $state, $textMatch, ($definition['allowMultiple'] ?? false)),
             FilterType::Enum => self::matchesEnum($raw, $state),
-            FilterType::Phone => self::matchesPhone($raw, self::coerceTextLikeFilterNeedle($state)),
-            FilterType::Email => self::matchesEmail($raw, self::coerceTextLikeFilterNeedle($state)),
+            FilterType::Phone => self::matchesPhone($raw, $state, ($definition['allowMultiple'] ?? false)),
+            FilterType::Email => self::matchesEmail($raw, $state, ($definition['allowMultiple'] ?? false)),
             FilterType::Boolean => self::matchesBoolean($raw, is_string($state) ? $state : ''),
             FilterType::Number => self::matchesNumberRange($raw, self::coerceRangeState($state)),
             FilterType::Money => self::matchesMoneyRange(
@@ -141,6 +143,21 @@ final class TableUiFilterMatcher
         }
 
         return trim((string) $state);
+    }
+
+    private static function isTextLikeMultiNeedleActive(mixed $state): bool
+    {
+        if (! is_array($state)) {
+            return self::coerceTextLikeFilterNeedle($state) !== '';
+        }
+
+        foreach ($state as $item) {
+            if (self::coerceTextLikeFilterNeedle($item) !== '') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static function isEnumFilterActive(mixed $state): bool
@@ -179,9 +196,38 @@ final class TableUiFilterMatcher
         return (string) $raw === $needle;
     }
 
-    private static function matchesText(mixed $raw, mixed $state, string $textMatch): bool
+    private static function matchesText(mixed $raw, mixed $state, string $textMatch, bool $allowMultiple): bool
     {
+        if ($allowMultiple && is_array($state)) {
+            if ($state === []) {
+                return true;
+            }
+
+            $anyNeedle = false;
+
+            foreach ($state as $item) {
+                $needle = self::coerceTextLikeFilterNeedle($item);
+
+                if ($needle === '') {
+                    continue;
+                }
+
+                $anyNeedle = true;
+
+                if ($textMatch === 'exact') {
+                    if (mb_strtolower((string) $raw) === mb_strtolower($needle)) {
+                        return true;
+                    }
+                } elseif (str_contains(mb_strtolower((string) $raw), mb_strtolower($needle))) {
+                    return true;
+                }
+            }
+
+            return ! $anyNeedle;
+        }
+
         $needle = self::coerceTextLikeFilterNeedle($state);
+
         if ($needle === '') {
             return true;
         }
@@ -195,9 +241,41 @@ final class TableUiFilterMatcher
         return str_contains($haystack, mb_strtolower($needle));
     }
 
-    private static function matchesPhone(mixed $raw, string $state): bool
+    private static function matchesPhone(mixed $raw, mixed $state, bool $allowMultiple): bool
     {
-        $needleDigits = PhoneDisplayFormatter::normalize($state);
+        if ($allowMultiple && is_array($state)) {
+            if ($state === []) {
+                return true;
+            }
+
+            $anyNeedle = false;
+
+            foreach ($state as $item) {
+                $needle = self::coerceTextLikeFilterNeedle($item);
+
+                if ($needle === '') {
+                    continue;
+                }
+
+                $anyNeedle = true;
+
+                if (self::matchesPhoneScalar($raw, $needle)) {
+                    return true;
+                }
+            }
+
+            return ! $anyNeedle;
+        }
+
+        return self::matchesPhoneScalar($raw, self::coerceTextLikeFilterNeedle($state));
+    }
+
+    /**
+     * Single needle: substring match on normalized digit strings.
+     */
+    private static function matchesPhoneScalar(mixed $raw, string $needle): bool
+    {
+        $needleDigits = PhoneDisplayFormatter::normalize($needle);
 
         if ($needleDigits === null || $needleDigits === '') {
             return true;
@@ -212,10 +290,37 @@ final class TableUiFilterMatcher
         return str_contains($hayDigits, $needleDigits);
     }
 
-    private static function matchesEmail(mixed $raw, string $state): bool
+    private static function matchesEmail(mixed $raw, mixed $state, bool $allowMultiple): bool
     {
-        $needle = trim(mb_strtolower($state));
+        if ($allowMultiple && is_array($state)) {
+            if ($state === []) {
+                return true;
+            }
 
+            $anyNeedle = false;
+
+            foreach ($state as $item) {
+                $needle = trim(mb_strtolower(self::coerceTextLikeFilterNeedle($item)));
+
+                if ($needle === '') {
+                    continue;
+                }
+
+                $anyNeedle = true;
+
+                if (self::matchesEmailScalar($raw, $needle)) {
+                    return true;
+                }
+            }
+
+            return ! $anyNeedle;
+        }
+
+        return self::matchesEmailScalar($raw, trim(mb_strtolower(self::coerceTextLikeFilterNeedle($state))));
+    }
+
+    private static function matchesEmailScalar(mixed $raw, string $needle): bool
+    {
         if ($needle === '') {
             return true;
         }
@@ -224,6 +329,7 @@ final class TableUiFilterMatcher
         $hay = str_replace(' ', '', mb_strtolower((string) $raw));
 
         $firstAt = strpos($hay, '@');
+
         if ($firstAt === false) {
             return str_contains($hay, $needle);
         }

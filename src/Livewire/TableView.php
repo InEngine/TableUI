@@ -355,6 +355,8 @@ class TableView extends Component
                     ]);
                 } elseif ($ftype === FilterType::Enum && $definition->allowMultiple) {
                     $this->filterValues[$definition->columnKey] = [];
+                } elseif (self::filterDefinitionUsesTextLikeMulti($ftype, $definition)) {
+                    $this->filterValues[$definition->columnKey] = [];
                 } else {
                     $this->filterValues[$definition->columnKey] = $this->initialFilterStateForType($definition->type);
                 }
@@ -376,6 +378,8 @@ class TableView extends Component
                 $next[$definition['columnKey']] = $this->defaultTemporalFilterStateForDefinition($definition);
             } elseif ($ftype === FilterType::Enum && ($definition['allowMultiple'] ?? false)) {
                 $next[$definition['columnKey']] = [];
+            } elseif (self::filterUsesTextLikeMulti($ftype, $definition)) {
+                $next[$definition['columnKey']] = [];
             } else {
                 $next[$definition['columnKey']] = $this->initialFilterStateForType($definition['type']);
             }
@@ -391,6 +395,8 @@ class TableView extends Component
      */
     public function updatedFilterValues(): void
     {
+        $this->normalizeTextLikeMultiFilterShapes();
+
         $this->applyFormattedFilterInputs();
 
         $this->clampPaginationPage();
@@ -407,6 +413,33 @@ class TableView extends Component
         foreach ($this->filterDefinitions as $definition) {
             $key = $definition['columnKey'];
             $type = FilterType::tryFrom($definition['type'] ?? '') ?? FilterType::Text;
+
+            if (($definition['allowMultiple'] ?? false) && in_array($type, [FilterType::Text, FilterType::Phone, FilterType::Email], true)) {
+                $current = $next[$key] ?? [];
+
+                if (! is_array($current)) {
+                    continue;
+                }
+
+                foreach ($current as $i => $item) {
+                    if (! is_string($item)) {
+                        continue;
+                    }
+
+                    $formatted = match ($type) {
+                        FilterType::Phone => TableUiPhoneFilterInputFormatter::format($item),
+                        FilterType::Email => TableUiEmailFilterInputFormatter::format($item),
+                        default => null,
+                    };
+
+                    if ($formatted !== null && $formatted !== $item) {
+                        $next[$key][$i] = $formatted;
+                        $changed = true;
+                    }
+                }
+
+                continue;
+            }
 
             $current = $next[$key] ?? '';
 
@@ -429,6 +462,68 @@ class TableView extends Component
         if ($changed) {
             $this->filterValues = $next;
         }
+    }
+
+    /**
+     * Coerce legacy scalar filter state to a list when the filter is configured for multiselect text-like inputs.
+     */
+    private function normalizeTextLikeMultiFilterShapes(): void
+    {
+        $next = $this->filterValues;
+        $changed = false;
+
+        foreach ($this->filterDefinitions as $definition) {
+            $type = FilterType::tryFrom($definition['type'] ?? '') ?? FilterType::Text;
+
+            if (! self::filterUsesTextLikeMulti($type, $definition)) {
+                continue;
+            }
+
+            $key = $definition['columnKey'];
+
+            if (! array_key_exists($key, $next)) {
+                continue;
+            }
+
+            $v = $next[$key];
+
+            if (is_array($v)) {
+                continue;
+            }
+
+            if ($v === null || $v === '') {
+                $next[$key] = [];
+            } else {
+                $next[$key] = [(string) $v];
+            }
+
+            $changed = true;
+        }
+
+        if ($changed) {
+            $this->filterValues = $next;
+        }
+    }
+
+    /**
+     * @param  array{columnKey: string, type: string, allowMultiple?: bool}  $definition
+     */
+    private static function filterUsesTextLikeMulti(FilterType $type, array $definition): bool
+    {
+        if (! ($definition['allowMultiple'] ?? false)) {
+            return false;
+        }
+
+        return in_array($type, [FilterType::Text, FilterType::Phone, FilterType::Email], true);
+    }
+
+    private static function filterDefinitionUsesTextLikeMulti(FilterType $type, FilterDefinition $definition): bool
+    {
+        if (! $definition->allowMultiple) {
+            return false;
+        }
+
+        return in_array($type, [FilterType::Text, FilterType::Phone, FilterType::Email], true);
     }
 
     /**
@@ -510,9 +605,7 @@ class TableView extends Component
      */
     public function getFilterAutocompleteOptionsProperty(): array
     {
-        if (! filter_var(config('tableui.filters.autocomplete_enabled', true), FILTER_VALIDATE_BOOLEAN)) {
-            return [];
-        }
+        $autocompleteEnabled = filter_var(config('tableui.filters.autocomplete_enabled', true), FILTER_VALIDATE_BOOLEAN);
 
         $max = max(1, (int) config('tableui.filters.autocomplete_max_per_column', 100));
         $out = [];
@@ -521,6 +614,16 @@ class TableView extends Component
             $type = FilterType::tryFrom($definition['type'] ?? '') ?? FilterType::Text;
 
             if ($type === FilterType::Boolean || $type === FilterType::Enum) {
+                $out[$definition['columnKey']] = [];
+
+                continue;
+            }
+
+            $needsSuggestions = $autocompleteEnabled
+                || (($definition['allowMultiple'] ?? false)
+                    && in_array($type, [FilterType::Text, FilterType::Phone, FilterType::Email], true));
+
+            if (! $needsSuggestions) {
                 $out[$definition['columnKey']] = [];
 
                 continue;

@@ -18,7 +18,10 @@ use InEngine\TableUI\Tests\Fixtures\SkuColumn;
 use InEngine\TableUI\Tests\Fixtures\SkuFilterDefinitionProvider;
 
 it('maps column classes to filter types', function (): void {
+    config()->set('tableui.filters.text_like_allow_multiple', true);
+
     expect(FilterDefinition::forColumn(new StringColumn('title'))->type)->toBe(FilterType::Text->value)
+        ->and(FilterDefinition::forColumn(new StringColumn('title'))->allowMultiple)->toBeTrue()
         ->and(FilterDefinition::forColumn(new IdColumn('uuid'))->type)->toBe(FilterType::Text->value)
         ->and(FilterDefinition::forColumn(new BooleanColumn('active'))->type)->toBe(FilterType::Boolean->value)
         ->and(FilterDefinition::forColumn(new NumberColumn('qty'))->type)->toBe(FilterType::Number->value)
@@ -46,12 +49,21 @@ it('maps column classes to filter types', function (): void {
     config()->set('tableui.filters.enum_allow_multiple', true);
 
     expect(FilterDefinition::forColumn(new PhoneColumn('phone'))->type)->toBe(FilterType::Phone->value)
-        ->and(FilterDefinition::forColumn(new EmailColumn('email'))->type)->toBe(FilterType::Email->value);
+        ->and(FilterDefinition::forColumn(new PhoneColumn('phone'))->allowMultiple)->toBeTrue()
+        ->and(FilterDefinition::forColumn(new EmailColumn('email'))->type)->toBe(FilterType::Email->value)
+        ->and(FilterDefinition::forColumn(new EmailColumn('email'))->allowMultiple)->toBeTrue();
 
     $dualFilter = FilterDefinition::forColumn(new DualColumn('hid', 'id'));
 
     expect($dualFilter->columnKey)->toBe('hid')
-        ->and($dualFilter->type)->toBe(FilterType::Text->value);
+        ->and($dualFilter->type)->toBe(FilterType::Text->value)
+        ->and($dualFilter->allowMultiple)->toBeTrue();
+
+    config()->set('tableui.filters.text_like_allow_multiple', false);
+
+    expect(FilterDefinition::forColumn(new StringColumn('sku'))->allowMultiple)->toBeFalse();
+
+    config()->set('tableui.filters.text_like_allow_multiple', true);
 });
 
 it('uses config-registered filter definition providers for custom columns', function (): void {

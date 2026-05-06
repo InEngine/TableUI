@@ -11,6 +11,7 @@ use InEngine\TableUI\ColumnTypes\Column;
 use InEngine\TableUI\ColumnTypes\Complex\DualColumn;
 use InEngine\TableUI\ColumnTypes\Complex\MoneyColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\EnumColumn;
+use InEngine\TableUI\ColumnTypes\Primitives\StringColumn;
 use InEngine\TableUI\Filters;
 use InEngine\TableUI\FilterTypes\FilterDefinition;
 use InEngine\TableUI\FilterTypes\FilterType;
@@ -193,6 +194,38 @@ it('renders multiselect checkboxes for enum filters when enum_allow_multiple is 
 
     expect(count($component->instance()->displayRows))->toBe(1)
         ->and($component->instance()->displayRows[0]['slug'])->toBe('row-draft');
+});
+
+it('filters string columns with OR semantics when text-like multiselect is enabled', function (): void {
+    config()->set('tableui.filters.text_like_allow_multiple', true);
+
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 1, 'user_name' => 'Ada']);
+
+    $bob = new LivewireTableComponentTestModel;
+    $bob->forceFill(['id' => 2, 'user_name' => 'Bob']);
+
+    $table = new Table([$ada, $bob], new Columns([
+        new StringColumn('user_name'),
+    ]));
+    $table->setFilters(Filters::inferFromTable($table));
+
+    $component = Livewire::test(TableView::class, [
+        'table' => $table,
+    ])
+        ->call('toggleFiltersPanel')
+        ->assertSeeHtml('table-ui__filter-enum-multi')
+        ->set('filterValues.user_name', ['Ada', 'Bob']);
+
+    expect($component->instance()->displayRows)->toHaveCount(2);
+
+    $component
+        ->set('filterValues.user_name', ['Ada'])
+        ->assertSet('activeFilterCount', 1);
+
+    $rows = $component->instance()->displayRows;
+    expect($rows)->toHaveCount(1)
+        ->and($rows[0]['user_name'])->toBe('Ada');
 });
 
 it('does not apply inferred default sort when enableDefaultSort is false', function (): void {

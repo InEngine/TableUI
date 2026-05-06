@@ -8,6 +8,7 @@
 @php($tb = $this->filterTemporalBounds[$columnKey] ?? null)
 @php($tbMin = $tb['min'] ?? null)
 @php($tbMax = $tb['max'] ?? null)
+@php($allowMulti = $def['allowMultiple'] ?? false)
 <div class="table-ui__filter-field" wire:key="table-ui-filter-{{ $filterIndex }}-{{ $columnKey }}">
     <span class="table-ui__filter-label" id="{{ $fid }}-label">{{ $def['label'] }}</span>
 
@@ -221,69 +222,84 @@
                 @endforeach
             </select>
         @endif
+    @elseif ($type === 'phone' && $allowMulti)
+        @include('tableui::components.table.filter-distinct-multiselect', [
+            'wireModelPath' => 'filterValues.'.$columnKey,
+            'fieldId' => $fid,
+            'ariaLabelledby' => $fid.'-label',
+            'acOpts' => $acOpts,
+        ])
+    @elseif ($type === 'phone' && $hasAc)
+        @include('tableui::components.table.filter-autocomplete-combobox', [
+            'wireModelPath' => 'filterValues.'.$columnKey,
+            'fieldId' => $fid,
+            'suggestions' => $acOpts,
+            'inputType' => 'tel',
+            'inputmode' => 'tel',
+            'ariaLabelledby' => $fid.'-label',
+            'extraInputClass' => 'table-ui__filter-input',
+        ])
     @elseif ($type === 'phone')
-        @if ($hasAc)
-            @include('tableui::components.table.filter-autocomplete-combobox', [
-                'wireModelPath' => 'filterValues.'.$columnKey,
-                'fieldId' => $fid,
-                'suggestions' => $acOpts,
-                'inputType' => 'tel',
-                'inputmode' => 'tel',
-                'ariaLabelledby' => $fid.'-label',
-                'extraInputClass' => 'table-ui__filter-input',
-            ])
-        @else
-            <input
-                id="{{ $fid }}"
-                type="tel"
-                inputmode="tel"
-                autocomplete="off"
-                class="table-ui__filter-input"
-                aria-labelledby="{{ $fid }}-label"
-                wire:model.live="filterValues.{{ $columnKey }}"
-            />
-        @endif
+        <input
+            id="{{ $fid }}"
+            type="tel"
+            inputmode="tel"
+            autocomplete="off"
+            class="table-ui__filter-input"
+            aria-labelledby="{{ $fid }}-label"
+            wire:model.live="filterValues.{{ $columnKey }}"
+        />
+    @elseif ($type === 'email' && $allowMulti)
+        @include('tableui::components.table.filter-distinct-multiselect', [
+            'wireModelPath' => 'filterValues.'.$columnKey,
+            'fieldId' => $fid,
+            'ariaLabelledby' => $fid.'-label',
+            'acOpts' => $acOpts,
+        ])
+    @elseif ($type === 'email' && $hasAc)
+        @include('tableui::components.table.filter-autocomplete-combobox', [
+            'wireModelPath' => 'filterValues.'.$columnKey,
+            'fieldId' => $fid,
+            'suggestions' => $acOpts,
+            'inputType' => 'email',
+            'inputmode' => 'email',
+            'ariaLabelledby' => $fid.'-label',
+            'extraInputClass' => 'table-ui__filter-input',
+        ])
     @elseif ($type === 'email')
-        @if ($hasAc)
-            @include('tableui::components.table.filter-autocomplete-combobox', [
-                'wireModelPath' => 'filterValues.'.$columnKey,
-                'fieldId' => $fid,
-                'suggestions' => $acOpts,
-                'inputType' => 'email',
-                'inputmode' => 'email',
-                'ariaLabelledby' => $fid.'-label',
-                'extraInputClass' => 'table-ui__filter-input',
-            ])
-        @else
-            <input
-                id="{{ $fid }}"
-                type="email"
-                inputmode="email"
-                autocomplete="off"
-                class="table-ui__filter-input"
-                aria-labelledby="{{ $fid }}-label"
-                wire:model.live="filterValues.{{ $columnKey }}"
-            />
-        @endif
+        <input
+            id="{{ $fid }}"
+            type="email"
+            inputmode="email"
+            autocomplete="off"
+            class="table-ui__filter-input"
+            aria-labelledby="{{ $fid }}-label"
+            wire:model.live="filterValues.{{ $columnKey }}"
+        />
+    @elseif ($allowMulti)
+        @include('tableui::components.table.filter-distinct-multiselect', [
+            'wireModelPath' => 'filterValues.'.$columnKey,
+            'fieldId' => $fid,
+            'ariaLabelledby' => $fid.'-label',
+            'acOpts' => $acOpts,
+        ])
+    @elseif ($hasAc)
+        @include('tableui::components.table.filter-autocomplete-combobox', [
+            'wireModelPath' => 'filterValues.'.$columnKey,
+            'fieldId' => $fid,
+            'suggestions' => $acOpts,
+            'inputType' => 'search',
+            'ariaLabelledby' => $fid.'-label',
+            'extraInputClass' => 'table-ui__filter-input',
+        ])
     @else
-        @if ($hasAc)
-            @include('tableui::components.table.filter-autocomplete-combobox', [
-                'wireModelPath' => 'filterValues.'.$columnKey,
-                'fieldId' => $fid,
-                'suggestions' => $acOpts,
-                'inputType' => 'search',
-                'ariaLabelledby' => $fid.'-label',
-                'extraInputClass' => 'table-ui__filter-input',
-            ])
-        @else
-            <input
-                id="{{ $fid }}"
-                type="search"
-                autocomplete="off"
-                class="table-ui__filter-input"
-                aria-labelledby="{{ $fid }}-label"
-                wire:model.live.debounce.300ms="filterValues.{{ $columnKey }}"
-            />
-        @endif
+        <input
+            id="{{ $fid }}"
+            type="search"
+            autocomplete="off"
+            class="table-ui__filter-input"
+            aria-labelledby="{{ $fid }}-label"
+            wire:model.live.debounce.300ms="filterValues.{{ $columnKey }}"
+        />
     @endif
 </div>

@@ -12,7 +12,6 @@ use InEngine\TableUI\ColumnTypes\Primitives\NumberColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\TimestampColumn;
 use InEngine\TableUI\Contracts\BuildsFilterDefinitionForColumn;
 use InEngine\TableUI\Filters;
-use InEngine\TableUI\Livewire\TableView;
 use InEngine\TableUI\Support\RegisteredTableTypes;
 
 /**
@@ -25,7 +24,7 @@ final class FilterDefinition
     /**
      * @param  array<string, string>|null  $enumOptions  Value => label for {@see FilterType::Enum}.
      * @param  int|null  $moneyDivisor  Stored minor-units divisor for {@see FilterType::Money} (defaults from config when null).
-     * @param  bool  $allowMultiple  When true and type is {@see FilterType::Enum}, filter state is a list of selected values (OR match).
+     * @param  bool  $allowMultiple  When true with {@see FilterType::Enum}, or text-like types from {@see forColumn()}, filter state is a list of selected values (OR match).
      */
     public function __construct(
         public readonly string $columnKey,
@@ -52,12 +51,14 @@ final class FilterDefinition
             return new self($key, $label, FilterType::Boolean);
         }
 
+        $textLikeAllowMultiple = (bool) config('tableui.filters.text_like_allow_multiple', true);
+
         if ($column instanceof PhoneColumn) {
-            return new self($key, $label, FilterType::Phone);
+            return new self($key, $label, FilterType::Phone, allowMultiple: $textLikeAllowMultiple);
         }
 
         if ($column instanceof EmailColumn) {
-            return new self($key, $label, FilterType::Email);
+            return new self($key, $label, FilterType::Email, allowMultiple: $textLikeAllowMultiple);
         }
 
         if ($column instanceof MoneyColumn) {
@@ -98,7 +99,7 @@ final class FilterDefinition
                 );
             }
 
-            return new self($key, $label, FilterType::Text);
+            return new self($key, $label, FilterType::Text, allowMultiple: $textLikeAllowMultiple);
         }
 
         foreach (RegisteredTableTypes::mergedFilterDefinitionClasses() as $definitionClass) {
@@ -113,6 +114,6 @@ final class FilterDefinition
             }
         }
 
-        return new self($key, $label, FilterType::Text);
+        return new self($key, $label, FilterType::Text, allowMultiple: $textLikeAllowMultiple);
     }
 }

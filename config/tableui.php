@@ -40,6 +40,14 @@ return [
         'enum_allow_multiple' => true,
 
         /*
+        | When true, {@see \InEngine\TableUI\FilterTypes\FilterDefinition::forColumn()} uses multiselect
+        | controls for text, phone, and email column filters (distinct values from the current row payload,
+        | OR semantics). When false, those filters use the single combobox or plain input. Override per
+        | filter with {@see \InEngine\TableUI\FilterTypes\FilterDefinition::$allowMultiple}.
+        */
+        'text_like_allow_multiple' => true,
+
+        /*
         | Extra registrar / ccTLD / gTLD labels merged into the built-in list used when an email filter
         | value is a single DNS label (no "@", no ".") — matching is against the host's last label only.
         */

@@ -13,6 +13,50 @@ it('matches text by substring', function (): void {
         ->and(TableUiFilterMatcher::matches(['name' => 'Ada'], $def, ''))->toBeTrue();
 });
 
+it('matches text with multiple needles using OR semantics when allowMultiple is true', function (): void {
+    $def = [
+        'columnKey' => 'name',
+        'label' => 'Name',
+        'type' => FilterType::Text->value,
+        'enumOptions' => null,
+        'moneyDivisor' => null,
+        'allowMultiple' => true,
+    ];
+
+    expect(TableUiFilterMatcher::matches(['name' => 'Zara'], $def, ['ada', 'bob']))->toBeFalse()
+        ->and(TableUiFilterMatcher::matches(['name' => 'Ada Lovelace'], $def, ['ada', 'bob']))->toBeTrue()
+        ->and(TableUiFilterMatcher::matches(['name' => 'Bob'], $def, ['ada', 'bob']))->toBeTrue()
+        ->and(TableUiFilterMatcher::matches(['name' => 'Ada'], $def, []))->toBeTrue();
+});
+
+it('matches phone with multiple needles using OR semantics when allowMultiple is true', function (): void {
+    $def = [
+        'columnKey' => 'phone',
+        'label' => 'Phone',
+        'type' => FilterType::Phone->value,
+        'enumOptions' => null,
+        'moneyDivisor' => null,
+        'allowMultiple' => true,
+    ];
+
+    expect(TableUiFilterMatcher::matches(['phone' => '13078779505'], $def, ['555', '877']))->toBeTrue()
+        ->and(TableUiFilterMatcher::matches(['phone' => '555'], $def, ['307']))->toBeFalse();
+});
+
+it('matches email with multiple needles using OR semantics when allowMultiple is true', function (): void {
+    $def = [
+        'columnKey' => 'email',
+        'label' => 'Email',
+        'type' => FilterType::Email->value,
+        'enumOptions' => null,
+        'moneyDivisor' => null,
+        'allowMultiple' => true,
+    ];
+
+    expect(TableUiFilterMatcher::matches(['email' => 'a@test.org'], $def, ['@gmail.com', '@test.org']))->toBeTrue()
+        ->and(TableUiFilterMatcher::matches(['email' => 'a@test.org'], $def, ['@gmail.com']))->toBeFalse();
+});
+
 it('matches text by case-insensitive exact value when textMatch is exact', function (): void {
     $def = [
         'columnKey' => 'hid',
@@ -145,7 +189,11 @@ it('detects active filter state for toolbar counts', function (): void {
 
     $enum = ['columnKey' => 's', 'label' => 'S', 'type' => FilterType::Enum->value, 'enumOptions' => ['a' => 'A'], 'moneyDivisor' => null];
 
+    $textMulti = [...$text, 'allowMultiple' => true];
+
     expect(TableUiFilterMatcher::isFilterActive($text, ''))->toBeFalse()
+        ->and(TableUiFilterMatcher::isFilterActive($textMulti, []))->toBeFalse()
+        ->and(TableUiFilterMatcher::isFilterActive($textMulti, ['x']))->toBeTrue()
         ->and(TableUiFilterMatcher::isFilterActive($text, '  x  '))->toBeTrue()
         ->and(TableUiFilterMatcher::isFilterActive($phone, ''))->toBeFalse()
         ->and(TableUiFilterMatcher::isFilterActive($phone, '(307)'))->toBeTrue()
