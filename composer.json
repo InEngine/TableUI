@@ -6,6 +6,7 @@
         "laravel",
         "tableui"
     ],
+    "version": "1.0.0",
     "homepage": "https://github.com/inengine/tableui",
     "license": "MIT",
     "authors": [
@@ -37,8 +38,7 @@
     },
     "autoload": {
         "psr-4": {
-            "InEngine\\TableUI\\": "src/",
-            "InEngine\\TableUI\\Database\\Factories\\": "database/factories/"
+            "InEngine\\TableUI\\": "src/"
         }
     },
     "autoload-dev": {
