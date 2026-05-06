@@ -32,6 +32,13 @@ return [
         'autocomplete_max_per_column' => 100,
 
         /*
+        | When true, {@see \InEngine\TableUI\FilterTypes\FilterDefinition::forColumn()} builds enum column
+        | filters as multiselect checkboxes (OR semantics: rows match any selected value). When false, enum
+        | filters use a single {@code <select>}. Override per filter with {@see \InEngine\TableUI\FilterTypes\FilterDefinition::$allowMultiple}.
+        */
+        'enum_allow_multiple' => true,
+
+        /*
         | Extra registrar / ccTLD / gTLD labels merged into the built-in list used when an email filter
         | value is a single DNS label (no "@", no ".") — matching is against the host's last label only.
         */

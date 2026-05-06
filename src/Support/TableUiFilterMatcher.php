@@ -42,7 +42,8 @@ final class TableUiFilterMatcher
         $type = FilterType::tryFrom($definition['type'] ?? '') ?? FilterType::Text;
 
         return match ($type) {
-            FilterType::Text, FilterType::Enum, FilterType::Phone, FilterType::Email => self::coerceTextLikeFilterNeedle($state) !== '',
+            FilterType::Text, FilterType::Phone, FilterType::Email => self::coerceTextLikeFilterNeedle($state) !== '',
+            FilterType::Enum => self::isEnumFilterActive($state),
             FilterType::Boolean => is_string($state) && $state !== '',
             FilterType::Number, FilterType::Money => self::rangeHasBounds(self::coerceRangeState($state)),
             FilterType::Date, FilterType::Datetime => self::fromToTemporalFilterActive($definition, self::coerceFromToState($state)),
@@ -90,7 +91,7 @@ final class TableUiFilterMatcher
     /**
      * @param  array<array-key, mixed>  $row
      * @param  array{columnKey: string, label: string, type: string, enumOptions?: array<string, string>|null, moneyDivisor?: int|null, temporalBounds?: array{min: string, max: string}|null, textMatch?: 'substring'|'exact'}  $definition  Snapshot from {@see TableView::$filterDefinitions}.
-     * @param  mixed  $state  Scalar string for text/boolean/enum; {@code ['min','max']} or {@code ['from','to']} for range types.
+     * @param  mixed  $state  Scalar for text/boolean; list<string> for multiselect enum; {@code ['min','max']} or {@code ['from','to']} for range types.
      */
     public static function matches(array $row, array $definition, mixed $state): bool
     {
@@ -101,7 +102,8 @@ final class TableUiFilterMatcher
         $textMatch = ($definition['textMatch'] ?? 'substring') === 'exact' ? 'exact' : 'substring';
 
         return match ($type) {
-            FilterType::Text, FilterType::Enum => self::matchesTextOrEnum($raw, $state, $type, $textMatch),
+            FilterType::Text => self::matchesText($raw, $state, $textMatch),
+            FilterType::Enum => self::matchesEnum($raw, $state),
             FilterType::Phone => self::matchesPhone($raw, self::coerceTextLikeFilterNeedle($state)),
             FilterType::Email => self::matchesEmail($raw, self::coerceTextLikeFilterNeedle($state)),
             FilterType::Boolean => self::matchesBoolean($raw, is_string($state) ? $state : ''),
@@ -141,15 +143,47 @@ final class TableUiFilterMatcher
         return trim((string) $state);
     }
 
-    private static function matchesTextOrEnum(mixed $raw, mixed $state, FilterType $type, string $textMatch = 'substring'): bool
+    private static function isEnumFilterActive(mixed $state): bool
     {
+        if (is_array($state)) {
+            return $state !== [];
+        }
+
+        return self::coerceTextLikeFilterNeedle($state) !== '';
+    }
+
+    private static function matchesEnum(mixed $raw, mixed $state): bool
+    {
+        if (is_array($state)) {
+            if ($state === []) {
+                return true;
+            }
+
+            $value = (string) $raw;
+
+            foreach ($state as $selected) {
+                if ((string) $selected === $value) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         $needle = self::coerceTextLikeFilterNeedle($state);
+
         if ($needle === '') {
             return true;
         }
 
-        if ($type === FilterType::Enum) {
-            return (string) $raw === $needle;
+        return (string) $raw === $needle;
+    }
+
+    private static function matchesText(mixed $raw, mixed $state, string $textMatch): bool
+    {
+        $needle = self::coerceTextLikeFilterNeedle($state);
+        if ($needle === '') {
+            return true;
         }
 
         if ($textMatch === 'exact') {

@@ -40,6 +40,8 @@
 @source inline("table-ui__filter-autocomplete");
 @source inline("table-ui__filter-autocomplete-panel");
 @source inline("table-ui__filter-select");
+@source inline("table-ui__filter-multiselect");
+@source inline("table-ui__filter-checkbox");
 @source inline("table-ui__filter-trigger");
 @source inline("table-ui__filter-count-badge");
 @source inline("table-ui__filter-clear");
@@ -259,6 +261,14 @@
         @apply w-full min-w-[10rem] rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-sm text-gray-900 shadow-sm focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-gray-500/40;
     }
 
+    .table-ui__filter-multiselect {
+        @apply w-full min-w-0 max-h-40 overflow-y-auto rounded-md border border-gray-200 bg-white/80 px-2 py-1.5 dark:border-gray-600 dark:bg-gray-900/60;
+    }
+
+    .table-ui__filter-checkbox {
+        @apply size-4 rounded border-gray-300 text-gray-700 focus:ring-gray-400/40 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200;
+    }
+
     /*
      * Inline filter strip: one tbody directly under the header, cells align with data columns.
      */
@@ -298,6 +308,10 @@
 
     .table-ui__td--filter .table-ui__filter-select {
         @apply min-w-0;
+    }
+
+    .table-ui__td--filter .table-ui__filter-multiselect {
+        @apply min-w-0 max-w-full;
     }
 
     .table-ui__bulk-actions {

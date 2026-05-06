@@ -31,8 +31,19 @@ it('maps column classes to filter types', function (): void {
 
     expect(FilterDefinition::forColumn(new EnumColumn('status'))->type)->toBe(FilterType::Text->value);
 
-    expect(FilterDefinition::forColumn(new EnumColumn('status'), ['draft' => 'Draft'])->type)->toBe(FilterType::Enum->value)
-        ->and(FilterDefinition::forColumn(new EnumColumn('status'), ['draft' => 'Draft'])->enumOptions)->toBe(['draft' => 'Draft']);
+    config()->set('tableui.filters.enum_allow_multiple', true);
+
+    $enumFilter = FilterDefinition::forColumn(new EnumColumn('status'), ['draft' => 'Draft']);
+
+    expect($enumFilter->type)->toBe(FilterType::Enum->value)
+        ->and($enumFilter->enumOptions)->toBe(['draft' => 'Draft'])
+        ->and($enumFilter->allowMultiple)->toBeTrue();
+
+    config()->set('tableui.filters.enum_allow_multiple', false);
+
+    expect(FilterDefinition::forColumn(new EnumColumn('status'), ['x' => 'X'])->allowMultiple)->toBeFalse();
+
+    config()->set('tableui.filters.enum_allow_multiple', true);
 
     expect(FilterDefinition::forColumn(new PhoneColumn('phone'))->type)->toBe(FilterType::Phone->value)
         ->and(FilterDefinition::forColumn(new EmailColumn('email'))->type)->toBe(FilterType::Email->value);

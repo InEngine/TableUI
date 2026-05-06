@@ -188,6 +188,10 @@ final class ArchiveActionProvider implements BuildsDefaultTableAction
 ],
 ```
 
+### Enum filters (multiselect)
+
+When `tableui.filters.enum_allow_multiple` is `true` (the package default), enum column filters render as **checkboxes**; the row matches if its value is **any** of the selected options (OR). Set to `false` for a classic single `<select>`. You can also set `allowMultiple` on a specific `FilterDefinition` when building filters manually.
+
 ### Custom filter definitions
 
 Add custom filter mapping for your custom columns by implementing `InEngine\TableUI\Contracts\BuildsFilterDefinitionForColumn` and registering in `tableui.filter_definitions`.

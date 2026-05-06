@@ -355,6 +355,10 @@ final class TableUiConfigValidator
             }
         }
 
+        if (array_key_exists('enum_allow_multiple', $filters) && ! is_bool($filters['enum_allow_multiple'])) {
+            throw new InvalidArgumentException('tableui.filters.enum_allow_multiple must be a boolean when present.');
+        }
+
         if (array_key_exists('email_extra_tld_labels', $filters) && ! is_array($filters['email_extra_tld_labels'])) {
             throw new InvalidArgumentException('tableui.filters.email_extra_tld_labels must be an array when present.');
         }

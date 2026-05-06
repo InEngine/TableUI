@@ -66,6 +66,28 @@ it('matches enum exactly', function (): void {
         ->and(TableUiFilterMatcher::matches(['status' => 'b'], $def, 'a'))->toBeFalse();
 });
 
+it('matches enum multiselect when the row value is among selected options', function (): void {
+    $def = [
+        'columnKey' => 'status',
+        'label' => 'Status',
+        'type' => FilterType::Enum->value,
+        'enumOptions' => ['a' => 'A', 'b' => 'B'],
+        'moneyDivisor' => null,
+        'allowMultiple' => true,
+    ];
+
+    expect(TableUiFilterMatcher::matches(['status' => 'a'], $def, ['a', 'b']))->toBeTrue()
+        ->and(TableUiFilterMatcher::matches(['status' => 'b'], $def, ['a']))->toBeFalse()
+        ->and(TableUiFilterMatcher::matches(['status' => 'b'], $def, ['a', 'b']))->toBeTrue()
+        ->and(TableUiFilterMatcher::matches(['status' => 'c'], $def, ['a']))->toBeFalse();
+});
+
+it('treats empty enum multiselect selection as neutral', function (): void {
+    $def = ['columnKey' => 'status', 'label' => 'Status', 'type' => FilterType::Enum->value, 'enumOptions' => ['a' => 'A'], 'moneyDivisor' => null];
+
+    expect(TableUiFilterMatcher::matches(['status' => 'surprise'], $def, []))->toBeTrue();
+});
+
 it('matches phone by digits substring', function (): void {
     $def = ['columnKey' => 'phone', 'label' => 'Phone', 'type' => FilterType::Phone->value, 'enumOptions' => null, 'moneyDivisor' => null];
 
@@ -121,12 +143,16 @@ it('detects active filter state for toolbar counts', function (): void {
     $number = ['columnKey' => 'num', 'label' => 'Num', 'type' => FilterType::Number->value, 'enumOptions' => null, 'moneyDivisor' => null];
     $date = ['columnKey' => 'd', 'label' => 'D', 'type' => FilterType::Date->value, 'enumOptions' => null, 'moneyDivisor' => null];
 
+    $enum = ['columnKey' => 's', 'label' => 'S', 'type' => FilterType::Enum->value, 'enumOptions' => ['a' => 'A'], 'moneyDivisor' => null];
+
     expect(TableUiFilterMatcher::isFilterActive($text, ''))->toBeFalse()
         ->and(TableUiFilterMatcher::isFilterActive($text, '  x  '))->toBeTrue()
         ->and(TableUiFilterMatcher::isFilterActive($phone, ''))->toBeFalse()
         ->and(TableUiFilterMatcher::isFilterActive($phone, '(307)'))->toBeTrue()
         ->and(TableUiFilterMatcher::isFilterActive($boolean, ''))->toBeFalse()
         ->and(TableUiFilterMatcher::isFilterActive($boolean, '0'))->toBeTrue()
+        ->and(TableUiFilterMatcher::isFilterActive($enum, []))->toBeFalse()
+        ->and(TableUiFilterMatcher::isFilterActive($enum, ['draft']))->toBeTrue()
         ->and(TableUiFilterMatcher::isFilterActive($number, ['min' => '', 'max' => '']))->toBeFalse()
         ->and(TableUiFilterMatcher::isFilterActive($number, ['min' => '1', 'max' => '']))->toBeTrue()
         ->and(TableUiFilterMatcher::isFilterActive($date, ['from' => '', 'to' => '']))->toBeFalse()

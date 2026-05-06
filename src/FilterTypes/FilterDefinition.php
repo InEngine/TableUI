@@ -25,6 +25,7 @@ final class FilterDefinition
     /**
      * @param  array<string, string>|null  $enumOptions  Value => label for {@see FilterType::Enum}.
      * @param  int|null  $moneyDivisor  Stored minor-units divisor for {@see FilterType::Money} (defaults from config when null).
+     * @param  bool  $allowMultiple  When true and type is {@see FilterType::Enum}, filter state is a list of selected values (OR match).
      */
     public function __construct(
         public readonly string $columnKey,
@@ -32,6 +33,7 @@ final class FilterDefinition
         string|FilterType $type = FilterType::Text,
         public readonly ?array $enumOptions = null,
         public readonly ?int $moneyDivisor = null,
+        public readonly bool $allowMultiple = false,
     ) {
         $this->type = $type instanceof FilterType ? $type->value : $type;
     }
@@ -85,7 +87,15 @@ final class FilterDefinition
 
         if ($column instanceof EnumColumn) {
             if ($enumOptions !== null && $enumOptions !== []) {
-                return new self($key, $label, FilterType::Enum, enumOptions: $enumOptions);
+                $allowMultiple = (bool) config('tableui.filters.enum_allow_multiple', true);
+
+                return new self(
+                    $key,
+                    $label,
+                    FilterType::Enum,
+                    enumOptions: $enumOptions,
+                    allowMultiple: $allowMultiple,
+                );
             }
 
             return new self($key, $label, FilterType::Text);

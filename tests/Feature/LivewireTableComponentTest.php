@@ -10,6 +10,7 @@ use InEngine\TableUI\Columns;
 use InEngine\TableUI\ColumnTypes\Column;
 use InEngine\TableUI\ColumnTypes\Complex\DualColumn;
 use InEngine\TableUI\ColumnTypes\Complex\MoneyColumn;
+use InEngine\TableUI\ColumnTypes\Primitives\EnumColumn;
 use InEngine\TableUI\Filters;
 use InEngine\TableUI\FilterTypes\FilterDefinition;
 use InEngine\TableUI\FilterTypes\FilterType;
@@ -164,6 +165,34 @@ it('filters DualColumn rows by display key using exact match semantics', functio
         ->set('filterValues.hid', 100)
         ->assertSee('beta')
         ->assertDontSee('alpha');
+});
+
+it('renders multiselect checkboxes for enum filters when enum_allow_multiple is true', function (): void {
+    config()->set('tableui.filters.enum_allow_multiple', true);
+
+    $draft = new LivewireTableComponentTestModel;
+    $draft->forceFill(['id' => 1, 'status' => 'draft', 'slug' => 'row-draft']);
+
+    $published = new LivewireTableComponentTestModel;
+    $published->forceFill(['id' => 2, 'status' => 'published', 'slug' => 'row-pub']);
+
+    $table = new Table([$draft, $published], new Columns([
+        new EnumColumn('status'),
+        new Column('slug'),
+    ]));
+    $table->setFilters(Filters::inferFromTable($table));
+
+    $component = Livewire::test(TableView::class, [
+        'table' => $table,
+    ])
+        ->call('toggleFiltersPanel')
+        ->assertSeeHtml('table-ui__filter-multiselect')
+        ->assertSee('row-draft')
+        ->assertSee('row-pub')
+        ->set('filterValues.status', ['draft']);
+
+    expect(count($component->instance()->displayRows))->toBe(1)
+        ->and($component->instance()->displayRows[0]['slug'])->toBe('row-draft');
 });
 
 it('does not apply inferred default sort when enableDefaultSort is false', function (): void {

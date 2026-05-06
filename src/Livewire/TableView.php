@@ -143,7 +143,7 @@ class TableView extends Component
     /**
      * Filter controls derived from {@see Table::filters()} in {@see mount()}.
      *
-     * @var list<array{columnKey: string, label: string, type: string, enumOptions: ?array<string, string>, moneyDivisor: ?int, textMatch?: 'substring'|'exact'}>
+     * @var list<array{columnKey: string, label: string, type: string, enumOptions: ?array<string, string>, moneyDivisor: ?int, textMatch?: 'substring'|'exact', allowMultiple?: bool}>
      */
     public array $filterDefinitions = [];
 
@@ -342,6 +342,7 @@ class TableView extends Component
                 'enumOptions' => $definition->enumOptions,
                 'moneyDivisor' => $definition->moneyDivisor,
                 'textMatch' => $textMatch,
+                'allowMultiple' => $definition->allowMultiple,
             ];
 
             if (! array_key_exists($definition->columnKey, $this->filterValues)) {
@@ -352,6 +353,8 @@ class TableView extends Component
                         'columnKey' => $definition->columnKey,
                         'type' => $definition->type,
                     ]);
+                } elseif ($ftype === FilterType::Enum && $definition->allowMultiple) {
+                    $this->filterValues[$definition->columnKey] = [];
                 } else {
                     $this->filterValues[$definition->columnKey] = $this->initialFilterStateForType($definition->type);
                 }
@@ -371,6 +374,8 @@ class TableView extends Component
 
             if ($ftype === FilterType::Date || $ftype === FilterType::Datetime) {
                 $next[$definition['columnKey']] = $this->defaultTemporalFilterStateForDefinition($definition);
+            } elseif ($ftype === FilterType::Enum && ($definition['allowMultiple'] ?? false)) {
+                $next[$definition['columnKey']] = [];
             } else {
                 $next[$definition['columnKey']] = $this->initialFilterStateForType($definition['type']);
             }

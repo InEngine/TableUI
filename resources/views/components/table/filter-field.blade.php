@@ -201,17 +201,38 @@
             @endif
         </div>
     @elseif ($type === 'enum')
-        <select
-            id="{{ $fid }}"
-            class="table-ui__filter-select"
-            aria-labelledby="{{ $fid }}-label"
-            wire:model.live="filterValues.{{ $columnKey }}"
-        >
-            <option value="">{{ __('All') }}</option>
-            @foreach ($def['enumOptions'] ?? [] as $value => $optionLabel)
-                <option value="{{ $value }}">{{ $optionLabel }}</option>
-            @endforeach
-        </select>
+        @if ($def['allowMultiple'] ?? false)
+            <fieldset
+                class="table-ui__filter-multiselect min-w-0 space-y-1"
+                role="group"
+                aria-labelledby="{{ $fid }}-label"
+            >
+                @foreach ($def['enumOptions'] ?? [] as $value => $optionLabel)
+                    <label class="flex cursor-pointer items-center gap-2 text-sm min-w-0">
+                        <input
+                            type="checkbox"
+                            value="{{ $value }}"
+                            wire:model.live="filterValues.{{ $columnKey }}"
+                            wire:key="{{ $fid }}-opt-{{ $value }}"
+                            class="table-ui__filter-checkbox shrink-0"
+                        />
+                        <span class="min-w-0 truncate">{{ $optionLabel }}</span>
+                    </label>
+                @endforeach
+            </fieldset>
+        @else
+            <select
+                id="{{ $fid }}"
+                class="table-ui__filter-select"
+                aria-labelledby="{{ $fid }}-label"
+                wire:model.live="filterValues.{{ $columnKey }}"
+            >
+                <option value="">{{ __('All') }}</option>
+                @foreach ($def['enumOptions'] ?? [] as $value => $optionLabel)
+                    <option value="{{ $value }}">{{ $optionLabel }}</option>
+                @endforeach
+            </select>
+        @endif
     @elseif ($type === 'phone')
         @if ($hasAc)
             @include('tableui::components.table.filter-autocomplete-combobox', [
