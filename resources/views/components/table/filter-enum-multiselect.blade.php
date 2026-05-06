@@ -1,5 +1,5 @@
 {{--
-    Enum filter with multiselect: dropdown list, clear (×), selected options use table primary + white text.
+    Enum filter with multiselect: dropdown list; selected labels wrap inside the trigger (no horizontal scrollbar).
 
     @var string $wireModelPath  e.g. filterValues.status
     @var string $fieldId
@@ -75,20 +75,18 @@
             }
             return this.selected.some((x) => String(x) === v);
         },
+        labelFor(value) {
+            const v = String(value);
+            return this.labels[value] ?? this.labels[v] ?? v;
+        },
         get summary() {
             if (!Array.isArray(this.selected) || this.selected.length === 0) {
                 return '';
             }
-            return this.selected
-                .map((v) => this.labels[v] ?? this.labels[String(v)] ?? String(v))
-                .join(', ');
+            return this.selected.map((x) => this.labelFor(x)).join(', ');
         },
         get hasSelection() {
             return Array.isArray(this.selected) && this.selected.length > 0;
-        },
-        clear() {
-            this.selected = [];
-            this.open = false;
         },
         init() {
             this.$watch('open', (isOpen) => {
@@ -101,11 +99,11 @@
     }"
     @click.outside="open = false"
 >
-    <div class="table-ui__filter-enum-multi-control flex min-w-0 max-w-full items-stretch gap-0.5 overflow-hidden" x-ref="anchor">
+    <div class="table-ui__filter-enum-multi-control w-full min-w-0 max-w-full overflow-hidden" x-ref="anchor">
         <button
             type="button"
             id="{{ $fieldId }}"
-            class="table-ui__filter-enum-multi-trigger flex min-w-0 max-w-full flex-1 items-center justify-between gap-1 overflow-hidden rounded-md border border-gray-300 bg-white px-2 py-1.5 text-left text-sm text-gray-900 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400/35 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800/80 dark:focus:ring-gray-500/40"
+            class="table-ui__filter-enum-multi-trigger box-border min-h-[2.25rem] w-full min-w-0 max-w-full items-start gap-1 overflow-hidden rounded-md border border-gray-300 bg-white px-2 py-1.5 text-left text-sm text-gray-900 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400/35 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800/80 dark:focus:ring-gray-500/40"
             @click="open = !open"
             @if ($ariaLabelledby !== null) aria-labelledby="{{ $ariaLabelledby }}" @endif
             aria-haspopup="listbox"
@@ -113,18 +111,12 @@
             aria-controls="{{ $listboxId }}"
             :title="hasSelection ? summary : ''"
         >
-            <span class="min-w-0 flex-1 truncate text-left" x-text="hasSelection ? summary : allLabel"></span>
-            {!! \InEngine\TableUI\Support\HeroiconOutlineSvg::inlineSvg('chevron-down', 'shrink-0 text-gray-500 dark:text-gray-400') !!}
-        </button>
-        <button
-            type="button"
-            class="table-ui__filter-enum-multi-clear inline-flex shrink-0 items-center justify-center rounded-md border border-gray-300 bg-white px-2 py-1.5 text-gray-500 shadow-sm transition-colors hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400/35 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
-            x-show="hasSelection"
-            x-cloak
-            @click.stop="clear()"
-            aria-label="{{ __('Clear filter') }}"
-        >
-            {!! \InEngine\TableUI\Support\HeroiconOutlineSvg::inlineSvg('x-mark', 'h-4 w-4') !!}
+            <span class="table-ui__filter-enum-multi-summary-scroll min-w-0 overflow-hidden">
+                <span class="block min-w-0 break-words text-left leading-snug" x-text="hasSelection ? summary : allLabel"></span>
+            </span>
+            <span class="shrink-0 pt-0.5 text-gray-500 dark:text-gray-400" aria-hidden="true">
+                {!! \InEngine\TableUI\Support\HeroiconOutlineSvg::inlineSvg('chevron-down', 'shrink-0') !!}
+            </span>
         </button>
     </div>
     <ul

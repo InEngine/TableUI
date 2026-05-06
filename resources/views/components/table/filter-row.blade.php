@@ -13,10 +13,15 @@
         @endif
         @foreach ($columnKeys as $cellIndex => $columnKey)
             <td
-                class="table-ui__td table-ui__td--filter"
+                @class([
+                    'table-ui__td table-ui__td--filter',
+                    'table-ui__td--filter-has-control' => $filtersByColumnKey->has($columnKey),
+                ])
                 wire:key="table-ui-filter-col-{{ $columnKey }}"
             >
                 @if ($filtersByColumnKey->has($columnKey))
+                    {{-- In-flow spacer: absolutely positioned filter controls do not expand row height; this reserves vertical space for the full control. --}}
+                    <div class="table-ui__filter-cell-height-spacer" aria-hidden="true"></div>
                     @include('tableui::components.table.filter-field', [
                         'def' => $filtersByColumnKey->get($columnKey),
                         'filterIndex' => $cellIndex,

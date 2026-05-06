@@ -44,7 +44,7 @@
 @source inline("table-ui__filter-enum-multi");
 @source inline("table-ui__filter-enum-multi-control");
 @source inline("table-ui__filter-enum-multi-trigger");
-@source inline("table-ui__filter-enum-multi-clear");
+@source inline("table-ui__filter-enum-multi-summary-scroll");
 @source inline("table-ui__filter-enum-multi-panel");
 @source inline("table-ui__filter-enum-multi-option");
 @source inline("table-ui__filter-enum-multi-option--selected");
@@ -58,6 +58,8 @@
 @source inline("table-ui__filter-row-tbody");
 @source inline("table-ui__filter-row");
 @source inline("table-ui__td--filter");
+@source inline("table-ui__td--filter-has-control");
+@source inline("table-ui__filter-cell-height-spacer");
 @source inline("table-ui__td--filter-spacer");
 @source inline("table-ui__bulk-actions");
 @source inline("table-ui__bulk-selection-count");
@@ -228,7 +230,8 @@
     }
 
     .table-ui__filter-clear-actions {
-        @apply align-top py-2;
+        /* padding from .table-ui__filter-row > td */
+        @apply align-top;
     }
 
     .table-ui__filter-clear-actions-inner {
@@ -263,8 +266,9 @@
         @apply flex w-full min-w-[10rem] max-w-md flex-wrap items-center gap-2;
     }
 
+    /* py-2 matches `.table-ui__td` vertical padding on body rows (same rhythm as data cells). */
     .table-ui__filter-select {
-        @apply w-full min-w-[10rem] rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-sm text-gray-900 shadow-sm focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-gray-500/40;
+        @apply w-full min-w-[10rem] rounded-md border border-gray-300 bg-white px-2.5 py-2 text-sm text-gray-900 shadow-sm focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-gray-500/40;
     }
 
     .table-ui__filter-enum-multi-option {
@@ -296,17 +300,63 @@
         @apply align-top;
     }
 
-    .table-ui__td--filter {
-        /* Override .table-ui__td whitespace-nowrap so long filter summaries do not widen columns. */
-        @apply min-w-0 align-top whitespace-normal py-2;
+    /*
+     * Single vertical rhythm for the filter row: equal padding top and bottom on every cell.
+     * Checkbox column matches body `.table-ui__td--select` (align-middle + px-2), not align-top.
+     */
+    .table-ui__filter-row > td {
+        @apply py-2 align-top;
     }
 
-    .table-ui__td--filter-spacer {
-        @apply py-2;
+    .table-ui__filter-row > td.table-ui__td--select {
+        @apply px-2 align-middle;
+    }
+
+    .table-ui__td--filter {
+        /*
+         * w-0 + min-w-0: shrink contribution when paired with absolute filter controls (below).
+         */
+        @apply w-0 min-w-0 whitespace-normal;
+    }
+
+    /*
+     * Absolutely position the filter field so long multiselect text / flex min-width:auto chains do not
+     * participate in table column intrinsic sizing — column width stays driven by thead + tbody cells.
+     */
+    /*
+     * In-flow spacer inside the td (see filter-row.blade.php): table rows ignore height from absolutely
+     * positioned-only content — without this, the filter row collapses and clips the controls.
+     */
+    /*
+     * Row height must exceed the tallest filter control (multiselect trigger; wrapped summaries may use extra lines).
+     * Keep this modest so simple select filters match body-row density.
+     */
+    .table-ui__filter-cell-height-spacer {
+        @apply pointer-events-none min-h-[5.5rem] w-full shrink-0 select-none;
+    }
+
+    .table-ui__td--filter.table-ui__td--filter-has-control {
+        /*
+         * Do not use overflow-hidden here: it clips borders/shadows on filter controls. Width comes from
+         * left+right on .table-ui__filter-field (not width:100% + inset-x, which shifts content and clips).
+         */
+        @apply relative;
+    }
+
+    .table-ui__td--filter.table-ui__td--filter-has-control .table-ui__filter-field {
+        /*
+         * left-3 + right-3 defines width (avoid w-full with inset-x — 100% width + offset clips the right edge).
+         * Top inset matches py-2; max-h keeps stacked filters scrollable.
+         */
+        @apply absolute left-3 right-3 top-2 z-[5] flex h-max max-h-[calc(100%-1rem)] min-h-0 w-auto max-w-none min-w-0 flex-col gap-1 overflow-x-hidden overflow-y-auto;
+    }
+
+    .table-ui__td--filter:not(.table-ui__td--filter-has-control) {
+        @apply overflow-hidden;
     }
 
     .table-ui__td--filter .table-ui__filter-field {
-        @apply min-w-0 max-w-full;
+        @apply min-w-0;
     }
 
     .table-ui__td--filter .table-ui__filter-range {
@@ -317,9 +367,13 @@
         @apply min-w-0;
     }
 
+    .table-ui__td--filter .table-ui__filter-autocomplete {
+        @apply min-w-0 max-w-full;
+    }
+
     .table-ui__td--filter .table-ui__filter-input--narrow,
     .table-ui__td--filter .table-ui__filter-input--datetime {
-        @apply min-w-0 w-full flex-none;
+        @apply min-w-0 w-full max-w-full flex-none box-border;
     }
 
     .table-ui__td--filter .table-ui__filter-select {
@@ -327,15 +381,23 @@
     }
 
     .table-ui__td--filter .table-ui__filter-enum-multi {
-        @apply min-w-0 max-w-full overflow-hidden;
+        @apply box-border min-h-0 w-full min-w-0 max-w-full;
     }
 
     .table-ui__td--filter .table-ui__filter-enum-multi-control {
-        @apply max-w-full overflow-hidden;
+        @apply w-full max-w-full min-w-0;
     }
 
     .table-ui__td--filter .table-ui__filter-enum-multi-trigger {
-        @apply max-w-full min-w-0 overflow-hidden;
+        @apply box-border grid w-full max-w-full min-w-0 items-start gap-1;
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    /*
+     * Summary text wraps within the column; no horizontal scrollbar (avoids widening / noisy UI).
+     */
+    .table-ui__td--filter .table-ui__filter-enum-multi-summary-scroll {
+        @apply min-h-5 min-w-0 overflow-hidden;
     }
 
     .table-ui__bulk-actions {
@@ -424,6 +486,13 @@
         @apply w-0 min-w-0 px-2 py-2 text-right align-middle;
     }
 
+    /*
+     * Extra gap between consecutive action columns (~0.625em); width from button (w-0 / min-w-0).
+     */
+    .table-ui__th--action + .table-ui__th--action {
+        padding-left: calc(0.5rem + 0.625em);
+    }
+
     .table-ui__sort-button {
         @apply inline-flex w-full items-center gap-1 rounded px-1 py-0.5 text-left font-semibold hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400 dark:text-gray-100 dark:hover:bg-gray-800 dark:focus-visible:outline-gray-500;
         color: var(--table-ui-primary, theme(colors.gray.800));
@@ -459,6 +528,10 @@
 
     .table-ui__td--action {
         @apply w-0 min-w-0 whitespace-nowrap px-2 py-2 align-middle text-right text-xs;
+    }
+
+    .table-ui__td--action + .table-ui__td--action {
+        padding-left: calc(0.5rem + 0.625em);
     }
 
     .table-ui__row-action-link {

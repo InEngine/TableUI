@@ -196,6 +196,30 @@ it('renders multiselect checkboxes for enum filters when enum_allow_multiple is 
         ->and($component->instance()->displayRows[0]['slug'])->toBe('row-draft');
 });
 
+it('renders enum multiselect summary container so labels wrap without widening table markup', function (): void {
+    config()->set('tableui.filters.enum_allow_multiple', true);
+
+    $draft = new LivewireTableComponentTestModel;
+    $draft->forceFill(['id' => 1, 'status' => 'draft', 'slug' => 'row-draft']);
+
+    $published = new LivewireTableComponentTestModel;
+    $published->forceFill(['id' => 2, 'status' => 'published', 'slug' => 'row-pub']);
+
+    $table = new Table([$draft, $published], new Columns([
+        new EnumColumn('status'),
+        new Column('slug'),
+    ]));
+    $table->setFilters(Filters::inferFromTable($table));
+
+    Livewire::test(TableView::class, [
+        'table' => $table,
+    ])
+        ->call('toggleFiltersPanel')
+        ->assertSeeHtml('table-ui__filter-enum-multi-summary-scroll')
+        ->assertSeeHtml('table-ui__td--filter-has-control')
+        ->assertSeeHtml('table-ui__filter-cell-height-spacer');
+});
+
 it('filters string columns with OR semantics when text-like multiselect is enabled', function (): void {
     config()->set('tableui.filters.text_like_allow_multiple', true);
 
