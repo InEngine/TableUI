@@ -8,6 +8,7 @@ use Illuminate\Support\Collection;
 use InEngine\TableUI\ActionTypes\Action;
 use InEngine\TableUI\ColumnTypes\Column;
 use InEngine\TableUI\ColumnTypes\ColumnFactory;
+use InEngine\TableUI\ColumnTypes\Complex\DualColumn;
 use InEngine\TableUI\FilterTypes\FilterDefinition;
 use InEngine\TableUI\FilterTypes\FilterType;
 use InEngine\TableUI\Livewire\Concerns\ManagesBulkSelection;
@@ -987,6 +988,12 @@ class TableView extends Component
             return 'id:'.(string) $row['id'];
         }
 
+        foreach ($this->referenceRowKeys() as $referenceKey) {
+            if (array_key_exists($referenceKey, $row) && $row[$referenceKey] !== null && (string) $row[$referenceKey] !== '') {
+                return 'id:'.(string) $row[$referenceKey];
+            }
+        }
+
         $sorted = $row;
         ksort($sorted);
 
@@ -1003,6 +1010,7 @@ class TableView extends Component
     private function hydrateFromDomainTable(Table $table): void
     {
         $columns = $table->columns();
+        $requiredRowKeys = $this->requiredRowKeysForColumns($columns->items());
 
         $this->columnKeys = $columns->all();
         $this->headers = $columns->toLabels();
@@ -1011,9 +1019,54 @@ class TableView extends Component
             $columns->items()
         );
         $this->rows = $table
-            ->map(fn (Model $model): array => $model->only($this->columnKeys))
+            ->map(fn (Model $model): array => $model->only($requiredRowKeys))
             ->values()
             ->all();
+    }
+
+    /**
+     * @param  list<Column>  $columns
+     * @return list<string>
+     */
+    private function requiredRowKeysForColumns(array $columns): array
+    {
+        $keys = [];
+
+        foreach ($columns as $column) {
+            $keys = array_merge($keys, $column->requiredRowKeys());
+        }
+
+        return array_values(array_unique($keys));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function referenceRowKeys(): array
+    {
+        $keys = [];
+
+        foreach ($this->columnKeys as $index => $key) {
+            $className = $this->columnTypeClasses[$index] ?? Column::class;
+
+            if ($className !== DualColumn::class) {
+                continue;
+            }
+
+            $column = ColumnFactory::make($key, $className);
+
+            if (! $column instanceof DualColumn) {
+                continue;
+            }
+
+            $dataKey = $column->dataKey();
+
+            if ($dataKey !== '' && $dataKey !== 'id') {
+                $keys[] = $dataKey;
+            }
+        }
+
+        return array_values(array_unique($keys));
     }
 
     /**

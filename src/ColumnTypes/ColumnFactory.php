@@ -2,6 +2,7 @@
 
 namespace InEngine\TableUI\ColumnTypes;
 
+use InEngine\TableUI\ColumnTypes\Complex\DualColumn;
 use InEngine\TableUI\ColumnTypes\Complex\EmailColumn;
 use InEngine\TableUI\ColumnTypes\Complex\MoneyColumn;
 use InEngine\TableUI\ColumnTypes\Complex\PhoneColumn;
@@ -41,6 +42,7 @@ final class ColumnFactory
             NumberColumn::class => new NumberColumn($attributeKey),
             IdColumn::class => new IdColumn($attributeKey),
             EmailColumn::class => new EmailColumn($attributeKey),
+            DualColumn::class => new DualColumn($attributeKey),
             MoneyColumn::class => new MoneyColumn($attributeKey),
             PhoneColumn::class => new PhoneColumn($attributeKey),
             default => self::makeCustomColumn($attributeKey, $columnClass),

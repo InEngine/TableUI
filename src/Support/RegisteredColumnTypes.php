@@ -3,6 +3,7 @@
 namespace InEngine\TableUI\Support;
 
 use InEngine\TableUI\ColumnTypes\Column;
+use InEngine\TableUI\ColumnTypes\Complex\DualColumn;
 use InEngine\TableUI\ColumnTypes\Complex\EmailColumn;
 use InEngine\TableUI\ColumnTypes\Complex\MoneyColumn;
 use InEngine\TableUI\ColumnTypes\Complex\PhoneColumn;
@@ -47,6 +48,7 @@ final class RegisteredColumnTypes
             NumberColumn::class,
             IdColumn::class,
             EmailColumn::class,
+            DualColumn::class,
             MoneyColumn::class,
             PhoneColumn::class,
         ];

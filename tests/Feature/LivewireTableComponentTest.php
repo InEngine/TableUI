@@ -7,6 +7,7 @@ use InEngine\TableUI\Actions;
 use InEngine\TableUI\ActionTypes\DeleteAction;
 use InEngine\TableUI\ActionTypes\ViewAction;
 use InEngine\TableUI\Columns;
+use InEngine\TableUI\ColumnTypes\Complex\DualColumn;
 use InEngine\TableUI\ColumnTypes\Complex\MoneyColumn;
 use InEngine\TableUI\Filters;
 use InEngine\TableUI\FilterTypes\FilterDefinition;
@@ -113,6 +114,27 @@ it('redirects via row_link when navigateRowLink is called for a default model ta
     Livewire::test(TableView::class, [
         'table' => new Table([$ada]),
     ])
+        ->call('navigateRowLink', 'id:10')
+        ->assertRedirect('/LivewireTableComponentTestModel/10/view');
+});
+
+it('uses dual display keys for sorting while preserving canonical keys for row actions', function (): void {
+    $first = new LivewireTableComponentTestModel;
+    $first->forceFill(['id' => 10, 'hid' => 200]);
+
+    $second = new LivewireTableComponentTestModel;
+    $second->forceFill(['id' => 20, 'hid' => 100]);
+
+    $table = new Table([$first, $second], new Columns([
+        new DualColumn('hid', 'id'),
+    ]));
+
+    Livewire::test(TableView::class, [
+        'table' => $table,
+    ])
+        ->assertSet('columnKeys', ['hid'])
+        ->assertSet('sortBy', 'hid')
+        ->assertSeeInOrder(['100', '200'])
         ->call('navigateRowLink', 'id:10')
         ->assertRedirect('/LivewireTableComponentTestModel/10/view');
 });

@@ -5,6 +5,7 @@ namespace InEngine\TableUI\ColumnTypes;
 use Illuminate\Support\Str;
 use InEngine\TableUI\Contracts\BuildsColumnFromAttributeKey;
 use InEngine\TableUI\Contracts\DefinesColumnRenderers;
+use InEngine\TableUI\Contracts\ProvidesRequiredRowKeys;
 use InEngine\TableUI\Rendering\ColumnRendererInterface;
 use InEngine\TableUI\Rendering\GenericColumnRenderer;
 
@@ -13,7 +14,7 @@ use InEngine\TableUI\Rendering\GenericColumnRenderer;
  *
  * Subclass to customize {@see toLabel()} or future metadata (visibility, sort rules, etc.).
  */
-class Column implements BuildsColumnFromAttributeKey, DefinesColumnRenderers
+class Column implements BuildsColumnFromAttributeKey, DefinesColumnRenderers, ProvidesRequiredRowKeys
 {
     public function __construct(
         private readonly string $attributeKey,
@@ -30,6 +31,14 @@ class Column implements BuildsColumnFromAttributeKey, DefinesColumnRenderers
     public static function fromAttributeKey(string $attributeKey): Column
     {
         return new static($attributeKey);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function requiredRowKeys(): array
+    {
+        return [$this->key()];
     }
 
     /**
