@@ -15,7 +15,7 @@
 @php($listboxId = $fieldId.'-listbox')
 @php($allLabel = __('All'))
 <div
-    class="table-ui__filter-enum-multi relative min-w-0 w-full max-w-full"
+    class="table-ui__filter-enum-multi relative min-w-0 w-full max-w-full overflow-hidden"
     x-data="{
         open: false,
         panelStyle: {},
@@ -101,18 +101,19 @@
     }"
     @click.outside="open = false"
 >
-    <div class="table-ui__filter-enum-multi-control flex min-w-0 items-stretch gap-0.5" x-ref="anchor">
+    <div class="table-ui__filter-enum-multi-control flex min-w-0 max-w-full items-stretch gap-0.5 overflow-hidden" x-ref="anchor">
         <button
             type="button"
             id="{{ $fieldId }}"
-            class="table-ui__filter-enum-multi-trigger flex min-w-0 flex-1 items-center justify-between gap-1 rounded-md border border-gray-300 bg-white px-2 py-1.5 text-left text-sm text-gray-900 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400/35 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800/80 dark:focus:ring-gray-500/40"
+            class="table-ui__filter-enum-multi-trigger flex min-w-0 max-w-full flex-1 items-center justify-between gap-1 overflow-hidden rounded-md border border-gray-300 bg-white px-2 py-1.5 text-left text-sm text-gray-900 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400/35 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800/80 dark:focus:ring-gray-500/40"
             @click="open = !open"
             @if ($ariaLabelledby !== null) aria-labelledby="{{ $ariaLabelledby }}" @endif
             aria-haspopup="listbox"
             :aria-expanded="open"
             aria-controls="{{ $listboxId }}"
+            :title="hasSelection ? summary : ''"
         >
-            <span class="min-w-0 flex-1 truncate" x-text="hasSelection ? summary : allLabel"></span>
+            <span class="min-w-0 flex-1 truncate text-left" x-text="hasSelection ? summary : allLabel"></span>
             {!! \InEngine\TableUI\Support\HeroiconOutlineSvg::inlineSvg('chevron-down', 'shrink-0 text-gray-500 dark:text-gray-400') !!}
         </button>
         <button

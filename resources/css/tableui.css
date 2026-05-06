@@ -297,7 +297,8 @@
     }
 
     .table-ui__td--filter {
-        @apply min-w-0 align-top py-2;
+        /* Override .table-ui__td whitespace-nowrap so long filter summaries do not widen columns. */
+        @apply min-w-0 align-top whitespace-normal py-2;
     }
 
     .table-ui__td--filter-spacer {
@@ -326,7 +327,15 @@
     }
 
     .table-ui__td--filter .table-ui__filter-enum-multi {
-        @apply min-w-0 max-w-full;
+        @apply min-w-0 max-w-full overflow-hidden;
+    }
+
+    .table-ui__td--filter .table-ui__filter-enum-multi-control {
+        @apply max-w-full overflow-hidden;
+    }
+
+    .table-ui__td--filter .table-ui__filter-enum-multi-trigger {
+        @apply max-w-full min-w-0 overflow-hidden;
     }
 
     .table-ui__bulk-actions {
