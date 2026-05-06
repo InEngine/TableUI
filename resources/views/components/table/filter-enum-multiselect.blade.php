@@ -18,9 +18,45 @@
     class="table-ui__filter-enum-multi relative min-w-0 w-full max-w-full"
     x-data="{
         open: false,
+        panelStyle: {},
         labels: @js($enumOptions),
         allLabel: @js($allLabel),
         selected: $wire.entangle(@js($wireModelPath)).live,
+        positionPanel() {
+            const el = this.$refs.anchor;
+            if (!el || typeof el.getBoundingClientRect !== 'function') {
+                return;
+            }
+            const r = el.getBoundingClientRect();
+            const gap = 4;
+            const spaceBelow = window.innerHeight - r.bottom - gap - 8;
+            const maxH = Math.min(208, Math.max(96, spaceBelow));
+            this.panelStyle = {
+                position: 'fixed',
+                left: Math.min(Math.max(8, r.left), window.innerWidth - r.width - 8) + 'px',
+                top: r.bottom + gap + 'px',
+                width: r.width + 'px',
+                maxHeight: maxH + 'px',
+                zIndex: 500,
+            };
+        },
+        bindScrollReposition() {
+            if (this._scrollBound) {
+                return;
+            }
+            this._onScrollReposition = () => {
+                if (this.open) {
+                    this.positionPanel();
+                }
+            };
+            const scrollEl = this.$refs.anchor?.closest('.table-ui__scroll');
+            if (scrollEl) {
+                scrollEl.addEventListener('scroll', this._onScrollReposition, { passive: true });
+            }
+            window.addEventListener('resize', this._onScrollReposition);
+            document.addEventListener('scroll', this._onScrollReposition, true);
+            this._scrollBound = true;
+        },
         toggle(rawVal) {
             const val = String(rawVal);
             let s = Array.isArray(this.selected) ? [...this.selected] : [];
@@ -54,10 +90,18 @@
             this.selected = [];
             this.open = false;
         },
+        init() {
+            this.$watch('open', (isOpen) => {
+                if (isOpen) {
+                    this.bindScrollReposition();
+                    this.$nextTick(() => this.positionPanel());
+                }
+            });
+        },
     }"
     @click.outside="open = false"
 >
-    <div class="table-ui__filter-enum-multi-control flex min-w-0 items-stretch gap-0.5">
+    <div class="table-ui__filter-enum-multi-control flex min-w-0 items-stretch gap-0.5" x-ref="anchor">
         <button
             type="button"
             id="{{ $fieldId }}"
@@ -87,7 +131,8 @@
         x-show="open"
         x-transition.opacity.duration.150ms
         id="{{ $listboxId }}"
-        class="table-ui__filter-enum-multi-panel absolute left-0 right-0 z-[200] mt-0.5 max-h-52 overflow-y-auto rounded-md border border-gray-200 bg-white py-1 text-left text-sm shadow-lg ring-1 ring-black/5 dark:border-gray-600 dark:bg-gray-900 dark:ring-white/10"
+        class="table-ui__filter-enum-multi-panel table-ui__filter-dropdown-panel fixed overflow-y-auto rounded-md border border-gray-200 bg-white py-1 text-left text-sm shadow-lg ring-1 ring-black/5 dark:border-gray-600 dark:bg-gray-900 dark:ring-white/10"
+        :style="panelStyle"
         role="listbox"
         aria-multiselectable="true"
         aria-label="{{ __('Options') }}"
