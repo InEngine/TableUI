@@ -56,13 +56,7 @@ final class TableUiConfigValidator
 
         if (! is_subclass_of($fqcn, AbstractColumnRenderer::class)) {
             throw new InvalidArgumentException(
-                'tableui.renderers entry must extend '.AbstractColumnRenderer::class.": {$fqcn}"
-            );
-        }
-
-        if (! is_subclass_of($fqcn, ColumnRendererInterface::class)) {
-            throw new InvalidArgumentException(
-                'tableui.renderers entry must implement '.ColumnRendererInterface::class.": {$fqcn}"
+                'tableui.renderers entry must extend '.AbstractColumnRenderer::class.' and implement '.ColumnRendererInterface::class.": {$fqcn}"
             );
         }
     }

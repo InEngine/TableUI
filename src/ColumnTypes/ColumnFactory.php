@@ -15,6 +15,7 @@ use InEngine\TableUI\ColumnTypes\Primitives\TextColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\TimestampColumn;
 use InEngine\TableUI\Contracts\BuildsColumnFromAttributeKey;
 use InEngine\TableUI\Support\RegisteredColumnTypes;
+use ReflectionClass;
 
 /**
  * Builds concrete {@see Column} instances from an attribute key and column class name.
@@ -64,7 +65,10 @@ final class ColumnFactory
      */
     private static function makeCustomColumn(string $attributeKey, string $columnClass): Column
     {
-        if (is_subclass_of($columnClass, BuildsColumnFromAttributeKey::class)) {
+        $reflection = new ReflectionClass($columnClass);
+
+        if ($reflection->implementsInterface(BuildsColumnFromAttributeKey::class)) {
+            /** @var class-string<Column&BuildsColumnFromAttributeKey> $columnClass */
             return $columnClass::fromAttributeKey($attributeKey);
         }
 

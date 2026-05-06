@@ -35,6 +35,9 @@ class Column extends Component
 
     public function render(): View
     {
-        return view('tableui::livewire.column');
+        /** @var view-string $view */
+        $view = 'tableui::livewire.column';
+
+        return view($view);
     }
 }

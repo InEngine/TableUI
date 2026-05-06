@@ -28,15 +28,15 @@ final class LaravelColumnSchema
      */
     public static function abstractTypeToken(array $column): ?string
     {
-        $full = (string) ($column['type'] ?? '');
+        $full = (string) $column['type'];
 
         if ($full !== '' && self::isMysqlTinyintOneBoolean($full)) {
             return 'boolean';
         }
 
-        $typeName = $column['type_name'] ?? null;
+        $typeName = $column['type_name'];
 
-        if (! is_string($typeName) || $typeName === '') {
+        if ($typeName === '') {
             return null;
         }
 

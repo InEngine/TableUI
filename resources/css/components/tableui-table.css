@@ -1,0 +1,200 @@
+/* Data table, header, body rows, sort controls, action buttons, links. */
+
+@layer components {
+    .table-ui__empty {
+        @apply rounded-md border border-dashed px-4 py-8 text-center text-sm;
+        border-color: color-mix(in oklab, var(--table-ui-primary, theme(colors.gray.400)) 35%, transparent);
+        @apply bg-gray-50 text-gray-500 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-400;
+    }
+
+    /*
+     * w-max: intrinsic width from columns so wide tables overflow the scroll wrapper (horizontal scroll).
+     * min-w-full: when the viewport is wider than content, still span the scroll area.
+     * Do not use width:100% alone on the table — it prevents horizontal overflow in narrow containers.
+     */
+    .table-ui__table {
+        @apply w-max min-w-full border-collapse text-left text-sm;
+    }
+
+    .table-ui__thead {
+        border-bottom-color: color-mix(in oklab, var(--table-ui-primary, theme(colors.gray.300)) 55%, transparent);
+        @apply border-b bg-gray-50 dark:border-gray-700 dark:bg-gray-900/50;
+    }
+
+    .table-ui__th {
+        @apply px-3 py-2 font-semibold dark:text-gray-200;
+        color: var(--table-ui-primary, theme(colors.gray.700));
+    }
+
+    .table-ui__th--select {
+        @apply w-10 px-2 text-center align-middle;
+    }
+
+    .table-ui__th--action {
+        @apply w-0 min-w-0 px-2 py-2 text-right align-middle;
+    }
+
+    /*
+     * Extra gap between consecutive action columns (~0.625em); width from button (w-0 / min-w-0).
+     */
+    .table-ui__th--action + .table-ui__th--action {
+        padding-left: calc(0.5rem + 0.625em);
+    }
+
+    .table-ui__sort-button {
+        @apply inline-flex w-full items-center gap-1 rounded px-1 py-0.5 text-left font-semibold hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400 dark:text-gray-100 dark:hover:bg-gray-800 dark:focus-visible:outline-gray-500;
+        color: var(--table-ui-primary, theme(colors.gray.800));
+    }
+
+    .table-ui__sort-button:hover {
+        color: var(--table-ui-secondary, theme(colors.gray.900));
+    }
+
+    .dark .table-ui__sort-button:hover {
+        color: var(--table-ui-secondary, theme(colors.white));
+    }
+
+    .table-ui__tbody {
+        @apply bg-white dark:bg-gray-950;
+    }
+
+    .table-ui__tbody .table-ui__tr {
+        @apply border-b border-gray-200 last:border-b-0 dark:border-gray-700;
+    }
+
+    .table-ui__tr {
+        @apply transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/60;
+    }
+
+    .table-ui__td {
+        @apply whitespace-nowrap px-3 py-2 align-middle text-gray-800 dark:text-gray-200;
+    }
+
+    .table-ui__td--select {
+        @apply w-10 px-2 text-center align-middle;
+    }
+
+    .table-ui__td--action {
+        @apply w-0 min-w-0 whitespace-nowrap px-2 py-2 align-middle text-right text-xs;
+    }
+
+    .table-ui__td--action + .table-ui__td--action {
+        padding-left: calc(0.5rem + 0.625em);
+    }
+
+    .table-ui__row-action-link {
+        color: var(--table-ui-secondary, theme(colors.blue.600));
+        @apply font-medium underline-offset-2 hover:underline;
+    }
+
+    /*
+     * Action buttons (row cells + bulk execute): compose .btn with a variant. Publish this file to customize.
+     */
+    .table-ui .btn {
+        @apply inline-flex cursor-pointer items-center justify-center rounded-md border-2 px-3 py-1.5 text-sm font-medium transition-colors;
+        @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400 dark:focus-visible:outline-gray-500;
+    }
+
+    .table-ui .btn:disabled,
+    .table-ui .btn[disabled] {
+        @apply cursor-not-allowed opacity-70;
+        background-color: theme(colors.gray.400) !important;
+        color: theme(colors.gray.200) !important;
+        border-color: theme(colors.gray.500) !important;
+    }
+
+    .table-ui .btn:disabled:hover,
+    .table-ui .btn[disabled]:hover {
+        background-color: theme(colors.gray.400) !important;
+        color: theme(colors.gray.200) !important;
+        border-color: theme(colors.gray.500) !important;
+    }
+
+    .dark .table-ui .btn:disabled,
+    .dark .table-ui .btn[disabled] {
+        background-color: theme(colors.gray.600) !important;
+        color: theme(colors.gray.400) !important;
+        border-color: theme(colors.gray.600) !important;
+    }
+
+    .dark .table-ui .btn:disabled:hover,
+    .dark .table-ui .btn[disabled]:hover {
+        background-color: theme(colors.gray.600) !important;
+        color: theme(colors.gray.400) !important;
+        border-color: theme(colors.gray.600) !important;
+    }
+
+    .table-ui .btn.btn-delete {
+        @apply bg-white text-red-600;
+        border-color: theme(colors.red.600);
+    }
+
+    .table-ui .btn.btn-delete:hover:not(:disabled):not([disabled]) {
+        @apply bg-red-600 text-white;
+        border-color: theme(colors.red.600);
+    }
+
+    .dark .table-ui .btn.btn-delete {
+        @apply bg-gray-950 text-red-400;
+        border-color: theme(colors.red.500);
+    }
+
+    .dark .table-ui .btn.btn-delete:hover:not(:disabled):not([disabled]) {
+        @apply bg-red-600 text-white;
+        border-color: theme(colors.red.600);
+    }
+
+    .table-ui .btn.btn-view {
+        @apply bg-white;
+        color: var(--table-ui-primary, theme(colors.gray.700));
+        border-color: var(--table-ui-primary, theme(colors.gray.700));
+    }
+
+    .table-ui .btn.btn-view:hover:not(:disabled):not([disabled]) {
+        background-color: var(--table-ui-primary, theme(colors.gray.700));
+        color: #fff;
+        border-color: var(--table-ui-primary, theme(colors.gray.700));
+    }
+
+    .table-ui .btn.btn-edit {
+        background-color: var(--table-ui-primary, theme(colors.gray.600));
+        color: #fff;
+        border-color: #fff;
+    }
+
+    .table-ui .btn.btn-edit:hover:not(:disabled):not([disabled]) {
+        @apply bg-white;
+        color: var(--table-ui-primary, theme(colors.gray.600));
+        border-color: var(--table-ui-primary, theme(colors.gray.600));
+    }
+
+    .table-ui .btn.btn-neutral {
+        @apply border-gray-300 bg-white text-gray-800 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-100;
+    }
+
+    .table-ui .btn.btn-neutral:hover:not(:disabled):not([disabled]) {
+        @apply bg-gray-100 dark:bg-gray-900;
+    }
+
+    .table-ui__checkbox {
+        @apply h-4 w-4 cursor-pointer rounded border-gray-300 outline-none focus:outline-none dark:border-gray-600 dark:bg-gray-900;
+        @apply focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-gray-400 dark:focus-visible:ring-gray-500;
+        accent-color: var(--table-ui-primary, theme(colors.gray.600));
+    }
+
+    .table-ui__boolean {
+        @apply inline-flex items-center justify-center;
+    }
+
+    /*
+     * Email and phone cells render <a class="table-ui__link …">. The table root adds exactly one of:
+     * .underlined (config tableui.underline_links true) or .no-underlined (false, default).
+     */
+    .table-ui.no-underlined .table-ui__link {
+        @apply no-underline;
+    }
+
+    .table-ui.underlined .table-ui__link {
+        @apply underline underline-offset-2;
+    }
+}

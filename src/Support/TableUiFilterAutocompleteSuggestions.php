@@ -21,7 +21,7 @@ final class TableUiFilterAutocompleteSuggestions
      */
     public static function distinctForColumn(string $columnKey, array $def, array $rows, int $max): array
     {
-        $type = FilterType::tryFrom($def['type'] ?? '') ?? FilterType::Text;
+        $type = FilterType::tryFrom($def['type']) ?? FilterType::Text;
 
         if ($type === FilterType::Boolean || $type === FilterType::Enum) {
             return [];

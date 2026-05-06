@@ -15,7 +15,7 @@ trait ManagesBulkSelection
     public function getHasBulkActionOptionsProperty(): bool
     {
         foreach ($this->actionSnapshots as $snapshot) {
-            if (($snapshot['bulk'] ?? false) === true) {
+            if ($snapshot['bulk'] === true) {
                 return true;
             }
         }
@@ -74,7 +74,7 @@ trait ManagesBulkSelection
     protected function bulkActionSelectionIsAllowed(): bool
     {
         foreach ($this->actionSnapshots as $snapshot) {
-            if (($snapshot['bulk'] ?? false) === true && ($snapshot['name'] ?? '') === $this->bulkActionSelection) {
+            if ($snapshot['bulk'] === true && $snapshot['name'] === $this->bulkActionSelection) {
                 return true;
             }
         }

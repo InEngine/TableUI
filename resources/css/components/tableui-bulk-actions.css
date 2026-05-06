@@ -1,0 +1,56 @@
+/* Bulk actions bar, selection controls, actions dropdown. */
+
+@layer components {
+    .table-ui__bulk-actions {
+        @apply flex items-center gap-2;
+    }
+
+    .table-ui__bulk-selection-count {
+        @apply shrink-0 whitespace-nowrap text-sm tabular-nums;
+    }
+
+    .table-ui__bulk-selection-count-number {
+        font-weight: 600;
+        color: var(--table-ui-primary, theme(colors.gray.600));
+    }
+
+    .table-ui__bulk-selection-count-suffix {
+        @apply font-medium text-gray-600 dark:text-gray-400;
+    }
+
+    .table-ui__actions-select {
+        @apply min-w-[10rem] rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 shadow-sm focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-gray-500/40;
+    }
+
+    .table-ui__select-all {
+        @apply inline-flex cursor-pointer rounded-md px-3 py-1.5 text-sm font-medium transition-colors;
+        background-color: var(--table-ui-primary, theme(colors.gray.600));
+        color: #fff;
+    }
+
+    .table-ui__select-all:hover {
+        background-color: var(--table-ui-secondary, theme(colors.blue.600));
+        color: #fff;
+    }
+
+    .table-ui__select-all:disabled {
+        @apply cursor-not-allowed opacity-70;
+        background-color: theme(colors.gray.400);
+        color: theme(colors.gray.200);
+    }
+
+    .table-ui__select-all:disabled:hover {
+        background-color: theme(colors.gray.400);
+        color: theme(colors.gray.200);
+    }
+
+    .dark .table-ui__select-all:disabled {
+        background-color: theme(colors.gray.600);
+        color: theme(colors.gray.400);
+    }
+
+    .dark .table-ui__select-all:disabled:hover {
+        background-color: theme(colors.gray.600);
+        color: theme(colors.gray.400);
+    }
+}

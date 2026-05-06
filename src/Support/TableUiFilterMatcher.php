@@ -34,12 +34,12 @@ final class TableUiFilterMatcher
     /**
      * Whether the user has set a narrowing value for this filter (non-empty text; boolean/enum not "all"; any bound on ranges).
      *
-     * @param  array{columnKey: string, label: string, type: string, enumOptions?: array<string, string>|null, moneyDivisor?: int|null, temporalBounds?: array{min: string, max: string}|null, textMatch?: 'substring'|'exact'}  $definition  Snapshot from {@see TableView::$filterDefinitions}.
+     * @param  array{columnKey: string, label: string, type: string, enumOptions?: array<string, string>|null, moneyDivisor?: int|null, temporalBounds?: array{min: string, max: string}|null, textMatch?: 'substring'|'exact', allowMultiple?: bool}  $definition  Snapshot from {@see TableView::$filterDefinitions}.
      * @param  mixed  $state  Same shape as {@see matches()}.
      */
     public static function isFilterActive(array $definition, mixed $state): bool
     {
-        $type = FilterType::tryFrom($definition['type'] ?? '') ?? FilterType::Text;
+        $type = FilterType::tryFrom($definition['type']) ?? FilterType::Text;
 
         return match ($type) {
             FilterType::Text, FilterType::Phone, FilterType::Email => ($definition['allowMultiple'] ?? false)
@@ -83,7 +83,7 @@ final class TableUiFilterMatcher
 
         $bounds = $definition['temporalBounds'] ?? null;
 
-        if (is_array($bounds) && ($bounds['min'] ?? '') !== '' && ($bounds['max'] ?? '') !== '') {
+        if (is_array($bounds) && $bounds['min'] !== '' && $bounds['max'] !== '') {
             return $range['from'] !== $bounds['min'] || $range['to'] !== $bounds['max'];
         }
 
@@ -92,13 +92,13 @@ final class TableUiFilterMatcher
 
     /**
      * @param  array<array-key, mixed>  $row
-     * @param  array{columnKey: string, label: string, type: string, enumOptions?: array<string, string>|null, moneyDivisor?: int|null, temporalBounds?: array{min: string, max: string}|null, textMatch?: 'substring'|'exact'}  $definition  Snapshot from {@see TableView::$filterDefinitions}.
+     * @param  array{columnKey: string, label: string, type: string, enumOptions?: array<string, string>|null, moneyDivisor?: int|null, temporalBounds?: array{min: string, max: string}|null, textMatch?: 'substring'|'exact', allowMultiple?: bool}  $definition  Snapshot from {@see TableView::$filterDefinitions}.
      * @param  mixed  $state  Scalar for text/boolean; list<string> for multiselect enum; {@code ['min','max']} or {@code ['from','to']} for range types.
      */
     public static function matches(array $row, array $definition, mixed $state): bool
     {
         $key = $definition['columnKey'];
-        $type = FilterType::tryFrom($definition['type'] ?? '') ?? FilterType::Text;
+        $type = FilterType::tryFrom($definition['type']) ?? FilterType::Text;
 
         $raw = data_get($row, $key);
         $textMatch = ($definition['textMatch'] ?? 'substring') === 'exact' ? 'exact' : 'substring';

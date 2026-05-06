@@ -7,3 +7,15 @@ parameters:
         - src
         - config
     tmpDir: build/phpstan
+    treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+        # Laravel Collection `new static()` in Table::fromCollection(); subclasses return concrete collection type.
+        -
+            message: '#Unsafe usage of new static#'
+            paths:
+                - src/Table.php
+        # Column::fromAttributeKey() must instantiate the concrete column class (BooleanColumn, etc.).
+        -
+            message: '#Unsafe usage of new static#'
+            paths:
+                - src/ColumnTypes/Column.php

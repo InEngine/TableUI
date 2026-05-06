@@ -29,9 +29,7 @@ php artisan vendor:publish --tag="tableui-config"
 
 ### Tailwind CSS (v4)
 
-**Recommended (host app already uses `@tailwindcss/vite`):** import **`resources/css/tableui.css` only** — it contains *
-*`@source`** for this package’s Blade views and **`@layer components`** styles, and **does not** `@import "tailwindcss"`
-again, so Tailwind is loaded a single time from your app entry (e.g. `base.css`).
+**Recommended (host app already uses `@tailwindcss/vite`):** import **`resources/css/tableui.css` only** — it pulls in **`partials/tableui-sources.css`** (`@source` scanning for this package’s Blade views and inline literals), shared base **`[x-cloak]`**, filter-panel **view transitions**, and **`components/tableui-*.css`** (`@layer components` chunks). It **does not** `@import "tailwindcss"` again, so Tailwind is loaded a single time from your app entry (e.g. `base.css`).
 
 ```css
 @import "tailwindcss";
@@ -248,6 +246,45 @@ final class SkuFilterDefinitionProvider implements BuildsFilterDefinitionForColu
     App\TableUI\Filters\SkuFilterDefinitionProvider::class,
 ],
 ```
+
+Pick a **`FilterType`** case that matches how **`TableUiFilterMatcher`** should interpret stored filter values (`Text`,
+`Email`, `Phone`, `Boolean`, `Enum`, `Number`, `Money`, `Date`, `Datetime`, `Time`). Use **`allowMultiple`** on the
+definition when you need OR-style enum/text matching beyond the global **`tableui.filters.enum_allow_multiple`** flag.
+
+### Custom Blade views and CSS (UI)
+
+Use this path when you need different markup, layout hooks, or styling — without forking the package.
+
+**Publish views** (copies into `resources/views/vendor/tableui/`; Laravel resolves these **before** the package copies):
+
+```bash
+php artisan vendor:publish --tag="tableui-views"
+```
+
+Typical overrides:
+
+- **`livewire/table.blade.php`** — outer shell, toolbar includes, scroll wrapper.
+- **`components/table/*.blade.php`** — thead, body row, toolbar, bulk toolbar, pagination.
+- **`components/table/filters/*.blade.php`** — each filter control (text, enum multiselect, range, etc.).
+
+Keep the same Livewire state (`$filterDefinitions`, `$filterValues`, `wire:model` bindings) when you change layout so the
+PHP side of TableUI continues to hydrate correctly.
+
+**Cell rendering vs Blade:** body cells go through **`<livewire:tableui.column>`**, which delegates to your registered **`ColumnRendererInterface`** classes from **`tableui.renderers`**. Override appearance for a column *type* there; use Blade overrides when you need structural changes around the table (toolbar, filter row, wrappers).
+
+**Publish the CSS entry** (optional — snapshot into your repo if you do not want to reference `vendor/`):
+
+```bash
+php artisan vendor:publish --tag="tableui-css"
+```
+
+You still normally **`@import`** the single published **`resources/css/vendor/tableui.css`** after Tailwind in your Vite
+entry. That file remains the supported contract; internally it **`@import`s** `partials/` and **`components/`** so you can
+vendor only what you touch (for example copy **`components/tableui-table.css`** into your app and layer overrides after
+the package import).
+
+**Standalone / CDN stylesheet:** maintainers run **`npm run build`** in this package so **`public/css/tableui.css`** stays
+in sync for consumers who link the precompiled bundle instead of merging into a Tailwind app pipeline.
 
 ## Testing
 

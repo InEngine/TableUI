@@ -36,7 +36,7 @@ final class TableUiPhoneFilterInputFormatter
             return '+1 '.self::parenNational($national);
         }
 
-        if (str_starts_with($digits, '1') && strlen($digits) >= 1) {
+        if (strlen($digits) < 11 && str_starts_with($digits, '1')) {
             $national = substr($digits, 1, 10);
 
             return '+1 '.self::parenNational($national);

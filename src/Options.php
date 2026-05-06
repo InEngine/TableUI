@@ -241,9 +241,6 @@ final class Options
         return $this->defaultSortColumn;
     }
 
-    /**
-     * @throws InvalidArgumentException
-     */
     public function setDefaultSortColumn(?string $defaultSortColumn): void
     {
         $this->defaultSortColumn = $defaultSortColumn;

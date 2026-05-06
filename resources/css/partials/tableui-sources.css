@@ -1,0 +1,92 @@
+/*
+|--------------------------------------------------------------------------
+| Tailwind @source — scanned classes from Blade + inline literals (do not remove).
+|--------------------------------------------------------------------------
+*/
+
+@source "../views/**/*.blade.php";
+
+/* Boolean renderer wrapper (output from PHP, not always visible as literals in Blade). */
+@source inline("table-ui__boolean");
+
+/* Link columns (email, phone): .table-ui gets underlined | no-underlined from Livewire (config tableui.underline_links). */
+@source inline("table-ui__link");
+@source inline("underlined");
+@source inline("no-underlined");
+
+/* Row striping utilities applied via Blade @class(...) when stripping is enabled. */
+@source inline("odd:bg-gray-50/90 dark:odd:bg-gray-900/45 odd:hover:bg-gray-100 dark:odd:hover:bg-gray-800/70");
+
+/* Toolbar: bulk (left) + filters (right); bulk controls + primary / secondary theme button */
+@source inline("table-ui__sheet");
+@source inline("table-ui__toolbar");
+@source inline("table-ui__toolbar--filters-only");
+@source inline("table-ui__toolbar--bulk-only");
+@source inline("table-ui__toolbar--split");
+@source inline("table-ui__toolbar-bulk");
+@source inline("table-ui__toolbar-filters");
+@source inline("table-ui__bulk-controls");
+@source inline("table-ui__filter-field");
+@source inline("table-ui__filter-label");
+@source inline("table-ui__filter-input");
+@source inline("table-ui__filter-input--narrow");
+@source inline("table-ui__filter-input--datetime");
+@source inline("table-ui__filter-range");
+@source inline("table-ui__filter-autocomplete");
+@source inline("table-ui__filter-autocomplete-panel");
+@source inline("table-ui__filter-dropdown-panel");
+@source inline("table-ui__filter-select");
+@source inline("table-ui__filter-enum-multi");
+@source inline("table-ui__filter-enum-multi-control");
+@source inline("table-ui__filter-enum-multi-trigger");
+@source inline("table-ui__filter-enum-multi-summary-scroll");
+@source inline("table-ui__filter-enum-multi-panel");
+@source inline("table-ui__filter-enum-multi-option");
+@source inline("table-ui__filter-enum-multi-option--selected");
+@source inline("table-ui__filter-trigger");
+@source inline("table-ui__filter-count-badge");
+@source inline("table-ui__filter-clear");
+@source inline("table-ui__filter-clear-actions");
+@source inline("table-ui__filter-clear-actions-inner");
+@source inline("table-ui__filter-clear-span");
+@source inline("table-ui__filter-row--clear-only");
+@source inline("table-ui__filter-row-tbody");
+@source inline("table-ui__filter-row");
+@source inline("table-ui__td--filter");
+@source inline("table-ui__td--filter-has-control");
+@source inline("table-ui__filter-cell-height-spacer");
+@source inline("table-ui__td--filter-spacer");
+@source inline("table-ui__bulk-actions");
+@source inline("table-ui__bulk-selection-count");
+@source inline("table-ui__bulk-selection-count-number");
+@source inline("table-ui__bulk-selection-count-suffix");
+@source inline("table-ui__actions-select");
+@source inline("table-ui__select-all");
+@source inline("table-ui__checkbox");
+@source inline("table-ui__th--action");
+@source inline("table-ui__td--action");
+@source inline("table-ui__row-action-link");
+/* Row + bulk action buttons: compose .btn with .btn-delete | .btn-view | .btn-edit | .btn-neutral */
+@source inline("btn");
+@source inline("btn-delete");
+@source inline("btn-view");
+@source inline("btn-edit");
+@source inline("btn-neutral");
+
+/* Scroll wrapper: overflow utilities chosen in livewire/table.blade.php from Options / config */
+@source inline("table-ui__scroll");
+@source inline("overflow-x-auto");
+@source inline("overflow-x-scroll");
+@source inline("overflow-x-hidden");
+@source inline("overflow-y-auto");
+@source inline("overflow-y-scroll");
+@source inline("overflow-y-hidden");
+
+/* Pagination below the table (Blade partial + Livewire actions). */
+@source inline("table-ui__pagination");
+@source inline("table-ui__pagination-inner");
+@source inline("table-ui__pagination-nav");
+@source inline("table-ui__pagination-nav--prev");
+@source inline("table-ui__pagination-nav--next");
+@source inline("table-ui__pagination-page");
+@source inline("table-ui__pagination-page--current");

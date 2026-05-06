@@ -30,6 +30,23 @@ use Livewire\Component;
  *
  * Registered as the Livewire tag `tableui.table` (blade: `livewire:tableui.table`) when Livewire is installed.
  *
+ * Livewire computed properties (access as {@code $this->displayRows}, etc.):
+ *
+ * @property-read list<array<array-key, mixed>> $displayRows
+ * @property-read array<string, array{min: string, max: string}> $filterTemporalBounds
+ * @property-read int $activeFilterCount
+ * @property-read array<string, list<string>> $filterAutocompleteOptions
+ * @property-read list<array{name: string, label: string, bulk: bool, target: ?string, serializedClosure: string, isButton: bool, showInRowColumn: bool}> $bulkActionSnapshots
+ * @property-read bool $hasBulkActionOptions
+ * @property-read bool $showRowSelection
+ * @property-read list<array{name: string, label: string, bulk: bool, target: ?string, serializedClosure: string, isButton: bool, showInRowColumn: bool}> $visibleRowActionSnapshots
+ * @property-read bool $hasRowLinkAction
+ * @property-read bool $paginationShouldShow
+ * @property-read int $paginationTotalPages
+ * @property-read list<int|string> $paginationVisiblePages
+ * @property-read bool $paginationHasPrevious
+ * @property-read bool $paginationHasNext
+ *
  * @see TableServiceProvider::packageBooted()
  */
 class TableView extends Component
@@ -143,7 +160,7 @@ class TableView extends Component
     /**
      * Filter controls derived from {@see Table::filters()} in {@see mount()}.
      *
-     * @var list<array{columnKey: string, label: string, type: string, enumOptions: ?array<string, string>, moneyDivisor: ?int, textMatch?: 'substring'|'exact', allowMultiple?: bool}>
+     * @var list<array{columnKey: string, label: string, type: string, enumOptions: ?array<string, string>, moneyDivisor: ?int, textMatch?: 'substring'|'exact', allowMultiple?: bool, temporalBounds?: array{min: string, max: string}|null}>
      */
     public array $filterDefinitions = [];
 
@@ -267,7 +284,7 @@ class TableView extends Component
     {
         $this->normalizeHydratedPaginationPerPage();
 
-        $this->paginationPage = max(1, (int) ($this->paginationPage ?? 1));
+        $this->paginationPage = max(1, (int) $this->paginationPage);
     }
 
     /**
@@ -372,7 +389,7 @@ class TableView extends Component
         $next = $this->filterValues;
 
         foreach ($this->filterDefinitions as $definition) {
-            $ftype = FilterType::tryFrom($definition['type'] ?? '') ?? FilterType::Text;
+            $ftype = FilterType::tryFrom($definition['type']) ?? FilterType::Text;
 
             if ($ftype === FilterType::Date || $ftype === FilterType::Datetime) {
                 $next[$definition['columnKey']] = $this->defaultTemporalFilterStateForDefinition($definition);
@@ -412,7 +429,7 @@ class TableView extends Component
 
         foreach ($this->filterDefinitions as $definition) {
             $key = $definition['columnKey'];
-            $type = FilterType::tryFrom($definition['type'] ?? '') ?? FilterType::Text;
+            $type = FilterType::tryFrom($definition['type']) ?? FilterType::Text;
 
             if (($definition['allowMultiple'] ?? false) && in_array($type, [FilterType::Text, FilterType::Phone, FilterType::Email], true)) {
                 $current = $next[$key] ?? [];
@@ -473,7 +490,7 @@ class TableView extends Component
         $changed = false;
 
         foreach ($this->filterDefinitions as $definition) {
-            $type = FilterType::tryFrom($definition['type'] ?? '') ?? FilterType::Text;
+            $type = FilterType::tryFrom($definition['type']) ?? FilterType::Text;
 
             if (! self::filterUsesTextLikeMulti($type, $definition)) {
                 continue;
@@ -561,7 +578,7 @@ class TableView extends Component
         $out = [];
 
         foreach ($this->filterDefinitions as $definition) {
-            $type = FilterType::tryFrom($definition['type'] ?? '') ?? FilterType::Text;
+            $type = FilterType::tryFrom($definition['type']) ?? FilterType::Text;
 
             if ($type !== FilterType::Date && $type !== FilterType::Datetime) {
                 continue;
@@ -611,7 +628,7 @@ class TableView extends Component
         $out = [];
 
         foreach ($this->filterDefinitions as $definition) {
-            $type = FilterType::tryFrom($definition['type'] ?? '') ?? FilterType::Text;
+            $type = FilterType::tryFrom($definition['type']) ?? FilterType::Text;
 
             if ($type === FilterType::Boolean || $type === FilterType::Enum) {
                 $out[$definition['columnKey']] = [];
@@ -661,8 +678,16 @@ class TableView extends Component
     {
         return array_values(array_filter(
             $this->actionSnapshots,
-            static fn (array $snapshot): bool => ($snapshot['bulk'] ?? false) === true
+            static fn (array $snapshot): bool => $snapshot['bulk'] === true
         ));
+    }
+
+    /**
+     * True when {@see Table::actions()} includes at least one bulk {@see Action} (toolbar + row checkboxes).
+     */
+    public function getHasBulkActionOptionsProperty(): bool
+    {
+        return $this->bulkActionSnapshots !== [];
     }
 
     /**
@@ -682,7 +707,7 @@ class TableView extends Component
     {
         return array_values(array_filter(
             $this->actionSnapshots,
-            static fn (array $snapshot): bool => ($snapshot['showInRowColumn'] ?? true) === true
+            static fn (array $snapshot): bool => $snapshot['showInRowColumn'] === true
         ));
     }
 
@@ -1133,7 +1158,10 @@ class TableView extends Component
 
     public function render(): View
     {
-        return view('tableui::livewire.table');
+        /** @var view-string $view */
+        $view = 'tableui::livewire.table';
+
+        return view($view);
     }
 
     private function hydrateFromDomainTable(Table $table): void

@@ -470,6 +470,8 @@ it('renders bulk toolbar and row checkboxes when at least one action is bulk', f
     Livewire::test(TableView::class, [
         'table' => livewireTableWithBulkDelete([$ada]),
     ])
+        ->assertSet('hasBulkActionOptions', true)
+        ->assertSet('showRowSelection', true)
         ->assertSee(__('Select all'))
         ->assertSeeHtml('type="checkbox"');
 });
@@ -481,9 +483,15 @@ it('hides row selection and bulk UI when actions are empty', function (): void {
     $table = new Table([$ada]);
     $table->setActions(Actions::empty());
 
-    $html = Livewire::test(TableView::class, [
+    $component = Livewire::test(TableView::class, [
         'table' => $table,
-    ])->html();
+    ]);
+
+    $component
+        ->assertSet('hasBulkActionOptions', false)
+        ->assertSet('showRowSelection', false);
+
+    $html = $component->html();
 
     expect($html)->not->toContain('type="checkbox"')
         ->and($html)->not->toContain('table-ui__bulk-controls')
@@ -499,9 +507,15 @@ it('omits bulk controls and bulk actions select when no actions are bulk-capable
         new ViewAction(target: '/items'),
     ]));
 
-    $html = Livewire::test(TableView::class, [
+    $component = Livewire::test(TableView::class, [
         'table' => $table,
-    ])->html();
+    ]);
+
+    $component
+        ->assertSet('hasBulkActionOptions', false)
+        ->assertSet('showRowSelection', false);
+
+    $html = $component->html();
 
     expect($html)->not->toContain('table-ui__actions-select')
         ->and($html)->not->toContain('table-ui__bulk-controls');

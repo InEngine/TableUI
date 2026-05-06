@@ -1,0 +1,98 @@
+/* Shell, sheet, toolbar regions, pagination block. */
+
+@layer components {
+    /*
+     * Theme: config tableui.theme.primary / secondary set --table-ui-* on .table-ui via Blade (Tailwind --color-* palette).
+     *
+     * Fills the host vertically when the parent establishes height (e.g. flex column + flex-1 / min-h-0, or h-full chain).
+     * flex-1 applies when .table-ui is a flex item; h-full when the parent has a definite height.
+     */
+    .table-ui {
+        @apply flex h-full min-h-0 w-full min-w-0 flex-1 flex-col text-gray-900 dark:text-gray-100;
+    }
+
+    /*
+     * Scroll container around <table> only (toolbar stays visible). Overflow classes come from Blade.
+     * flex-1 + min-h-0 lets this region absorb remaining height below the toolbar so rows scroll inside the shell.
+     */
+    .table-ui__scroll {
+        @apply min-h-0 min-w-0 w-full max-w-full flex-1;
+    }
+
+    /*
+     * Vertical stack: bulk toolbar region, then gap, then scroll region + table.
+     */
+    .table-ui__sheet {
+        @apply flex min-h-0 flex-1 flex-col gap-4;
+    }
+
+    .table-ui__toolbar {
+        @apply flex w-full shrink-0 flex-wrap items-end gap-x-4 gap-y-3;
+    }
+
+    .table-ui__toolbar--split {
+        @apply justify-between;
+    }
+
+    .table-ui__toolbar--bulk-only {
+        @apply justify-start;
+    }
+
+    .table-ui__toolbar--filters-only {
+        @apply justify-end;
+    }
+
+    .table-ui__toolbar-bulk {
+        @apply flex min-w-0 flex-shrink-0 flex-wrap items-center gap-3;
+    }
+
+    .table-ui__toolbar-filters {
+        @apply flex min-w-0 flex-shrink flex-wrap items-end justify-end gap-4;
+    }
+
+    /*
+     * Pagination: sits below the scroll wrapper, aligned bottom-right (same sheet column as toolbar/table).
+     */
+    .table-ui__pagination {
+        @apply flex w-full shrink-0 justify-end;
+    }
+
+    .table-ui__pagination-inner {
+        @apply inline-flex items-center gap-1;
+    }
+
+    .table-ui__pagination-nav {
+        @apply inline-flex min-h-9 min-w-9 cursor-pointer items-center justify-center rounded-md border border-gray-300 bg-white px-2 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-200 dark:hover:bg-gray-900;
+    }
+
+    .table-ui__pagination-page {
+        @apply inline-flex min-h-9 min-w-9 cursor-pointer items-center justify-center rounded-md border border-gray-300 bg-white px-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-200 dark:hover:bg-gray-900;
+    }
+
+    .table-ui__pagination-page--current {
+        @apply bg-gray-50 dark:bg-gray-900;
+        border-color: var(--table-ui-primary, theme(colors.gray.600));
+        color: var(--table-ui-primary, theme(colors.gray.600));
+    }
+
+    /*
+     * Active filter count on the Filters button: filled circle using theme primary (see {@see TableUiTheme}).
+     */
+    .table-ui__filter-count-badge {
+        @apply inline-flex min-h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-xs font-semibold tabular-nums leading-none text-white;
+        background-color: var(--table-ui-primary, theme(colors.gray.600));
+    }
+
+    .table-ui__filter-clear-actions {
+        /* padding from .table-ui__filter-row > td */
+        @apply align-top;
+    }
+
+    .table-ui__filter-clear-actions-inner {
+        @apply flex justify-end;
+    }
+
+    .table-ui__bulk-controls {
+        @apply flex flex-wrap items-center gap-3;
+    }
+}
