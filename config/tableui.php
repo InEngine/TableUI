@@ -33,8 +33,9 @@ return [
 
         /*
         | When true, {@see \InEngine\TableUI\FilterTypes\FilterDefinition::forColumn()} builds enum column
-        | filters as multiselect checkboxes (OR semantics: rows match any selected value). When false, enum
-        | filters use a single {@code <select>}. Override per filter with {@see \InEngine\TableUI\FilterTypes\FilterDefinition::$allowMultiple}.
+        | filters as a multiselect dropdown (OR semantics: rows match any selected value; clear with ×).
+        | When false, enum filters use a single {@code <select>}. Override per filter with
+        | {@see \InEngine\TableUI\FilterTypes\FilterDefinition::$allowMultiple}.
         */
         'enum_allow_multiple' => true,
 
@@ -135,7 +136,7 @@ return [
     |
     | - `true` / `false`: each branch may define:
     |   - `icon` (string): Heroicons v2 **outline** icon slug (kebab-case), e.g. `check`, `x-mark`.
-    |     Only built-in slugs ship in the package (`check`, `x-mark`, `question-mark-circle` as fallback);
+    |     Only built-in slugs ship in the package (`check`, `x-mark`, `chevron-down`, `funnel`, `question-mark-circle` as fallback);
     |     unknown slugs render the fallback icon until you extend {@see \InEngine\TableUI\Support\HeroiconOutlineSvg}.
     |   - `color` (string): Tailwind text colour applied to the SVG via `stroke="currentColor"`.
     |     You may pass:

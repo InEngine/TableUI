@@ -202,24 +202,12 @@
         </div>
     @elseif ($type === 'enum')
         @if ($def['allowMultiple'] ?? false)
-            <fieldset
-                class="table-ui__filter-multiselect min-w-0 space-y-1"
-                role="group"
-                aria-labelledby="{{ $fid }}-label"
-            >
-                @foreach ($def['enumOptions'] ?? [] as $value => $optionLabel)
-                    <label class="flex cursor-pointer items-center gap-2 text-sm min-w-0">
-                        <input
-                            type="checkbox"
-                            value="{{ $value }}"
-                            wire:model.live="filterValues.{{ $columnKey }}"
-                            wire:key="{{ $fid }}-opt-{{ $value }}"
-                            class="table-ui__filter-checkbox shrink-0"
-                        />
-                        <span class="min-w-0 truncate">{{ $optionLabel }}</span>
-                    </label>
-                @endforeach
-            </fieldset>
+            @include('tableui::components.table.filter-enum-multiselect', [
+                'wireModelPath' => 'filterValues.'.$columnKey,
+                'fieldId' => $fid,
+                'enumOptions' => $def['enumOptions'] ?? [],
+                'ariaLabelledby' => $fid.'-label',
+            ])
         @else
             <select
                 id="{{ $fid }}"

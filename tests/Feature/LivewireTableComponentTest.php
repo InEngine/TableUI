@@ -186,7 +186,7 @@ it('renders multiselect checkboxes for enum filters when enum_allow_multiple is 
         'table' => $table,
     ])
         ->call('toggleFiltersPanel')
-        ->assertSeeHtml('table-ui__filter-multiselect')
+        ->assertSeeHtml('table-ui__filter-enum-multi')
         ->assertSee('row-draft')
         ->assertSee('row-pub')
         ->set('filterValues.status', ['draft']);
