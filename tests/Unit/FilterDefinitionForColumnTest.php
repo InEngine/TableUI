@@ -13,6 +13,8 @@ use InEngine\TableUI\ColumnTypes\Primitives\StringColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\TimestampColumn;
 use InEngine\TableUI\FilterTypes\FilterDefinition;
 use InEngine\TableUI\FilterTypes\FilterType;
+use InEngine\TableUI\Tests\Fixtures\SkuColumn;
+use InEngine\TableUI\Tests\Fixtures\SkuFilterDefinitionProvider;
 
 it('maps column classes to filter types', function (): void {
     expect(FilterDefinition::forColumn(new StringColumn('title'))->type)->toBe(FilterType::Text->value)
@@ -33,4 +35,14 @@ it('maps column classes to filter types', function (): void {
 
     expect(FilterDefinition::forColumn(new PhoneColumn('phone'))->type)->toBe(FilterType::Phone->value)
         ->and(FilterDefinition::forColumn(new EmailColumn('email'))->type)->toBe(FilterType::Email->value);
+});
+
+it('uses config-registered filter definition providers for custom columns', function (): void {
+    config()->set('tableui.filter_definitions', [SkuFilterDefinitionProvider::class]);
+
+    $definition = FilterDefinition::forColumn(new SkuColumn('internal_sku'));
+
+    expect($definition->type)->toBe(FilterType::Text->value)
+        ->and($definition->label)->toBe('SKU Code')
+        ->and($definition->columnKey)->toBe('internal_sku');
 });

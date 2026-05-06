@@ -20,6 +20,8 @@ class TestCase extends Orchestra
 
         config()->set('tableui.columns', []);
         config()->set('tableui.renderers', []);
+        config()->set('tableui.actions', []);
+        config()->set('tableui.filter_definitions', []);
 
         $tableuiDefaults = require dirname(__DIR__).'/config/tableui.php';
         config()->set('tableui.theme', $tableuiDefaults['theme'] ?? []);

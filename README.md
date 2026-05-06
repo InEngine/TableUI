@@ -86,9 +86,143 @@ php artisan vendor:publish --tag="tableui-views"
 
 ## Usage
 
+Create a table from an Eloquent collection and render it with the Livewire component:
+
 ```php
-$table = new InEngine\Table();
-echo $table->echoPhrase('Hello, InEngine!');
+use App\Models\User;
+use InEngine\TableUI\Table;
+
+$table = Table::fromCollection(User::query()->latest()->limit(50)->get());
+```
+
+```blade
+<livewire:tableui.table-view :table="$table" />
+```
+
+## Extending TableUI
+
+TableUI supports app-level extension points through `config/tableui.php`.
+
+### Custom column types
+
+1. Create a column class that extends `InEngine\TableUI\ColumnTypes\Column`.
+2. Implement:
+   - `InEngine\TableUI\Contracts\BuildsColumnFromAttributeKey`
+   - `InEngine\TableUI\Contracts\DefinesColumnRenderers`
+3. Register your column and renderer classes in `tableui.columns` and `tableui.renderers`.
+
+```php
+namespace App\TableUI\Columns;
+
+use InEngine\TableUI\ColumnTypes\Column;
+use InEngine\TableUI\Contracts\BuildsColumnFromAttributeKey;
+use InEngine\TableUI\Contracts\DefinesColumnRenderers;
+use InEngine\TableUI\Contracts\ParticipatesInColumnInference;
+use InEngine\TableUI\Rendering\ColumnRendererInterface;
+
+final class SkuColumn extends Column implements BuildsColumnFromAttributeKey, DefinesColumnRenderers, ParticipatesInColumnInference
+{
+    public static function fromAttributeKey(string $attributeKey): Column
+    {
+        return new self($attributeKey);
+    }
+
+    public static function matchesSample(string $attributeKey, mixed $sample): bool
+    {
+        return str_contains(strtolower($attributeKey), 'sku');
+    }
+
+    /**
+     * @return list<class-string<ColumnRendererInterface>>
+     */
+    public static function rendererClassNames(): array
+    {
+        return [SkuColumnRenderer::class];
+    }
+
+    /**
+     * @return class-string<ColumnRendererInterface>
+     */
+    public static function defaultRendererClassName(): string
+    {
+        return SkuColumnRenderer::class;
+    }
+}
+```
+
+```php
+// config/tableui.php
+'columns' => [
+    App\TableUI\Columns\SkuColumn::class,
+],
+'renderers' => [
+    App\TableUI\Renderers\SkuColumnRenderer::class,
+],
+```
+
+### Custom default actions
+
+Add extra default actions for model-backed tables by implementing `InEngine\TableUI\Contracts\BuildsDefaultTableAction` and registering the class in `tableui.actions`.
+
+```php
+namespace App\TableUI\Actions;
+
+use InEngine\TableUI\ActionTypes\Action;
+use InEngine\TableUI\ActionTypes\UpdateAction;
+use InEngine\TableUI\Contracts\BuildsDefaultTableAction;
+use InEngine\TableUI\Table;
+
+final class ArchiveActionProvider implements BuildsDefaultTableAction
+{
+    public static function forTable(Table $table): ?Action
+    {
+        return new UpdateAction(label: 'Archive', target: '/users/{id}/archive');
+    }
+}
+```
+
+```php
+// config/tableui.php
+'actions' => [
+    App\TableUI\Actions\ArchiveActionProvider::class,
+],
+```
+
+### Custom filter definitions
+
+Add custom filter mapping for your custom columns by implementing `InEngine\TableUI\Contracts\BuildsFilterDefinitionForColumn` and registering in `tableui.filter_definitions`.
+
+```php
+namespace App\TableUI\Filters;
+
+use App\TableUI\Columns\SkuColumn;
+use InEngine\TableUI\ColumnTypes\Column;
+use InEngine\TableUI\Contracts\BuildsFilterDefinitionForColumn;
+use InEngine\TableUI\FilterTypes\FilterDefinition;
+use InEngine\TableUI\FilterTypes\FilterType;
+
+final class SkuFilterDefinitionProvider implements BuildsFilterDefinitionForColumn
+{
+    public static function forColumn(Column $column, ?array $enumOptions = null): ?FilterDefinition
+    {
+        if (! $column instanceof SkuColumn) {
+            return null;
+        }
+
+        return new FilterDefinition(
+            columnKey: $column->key(),
+            label: 'SKU',
+            type: FilterType::Text,
+        );
+    }
+}
+```
+
+```php
+// config/tableui.php
+'filter_definitions' => [
+    App\TableUI\Filters\SkuFilterDefinitionProvider::class,
+],
 ```
 
 ## Testing

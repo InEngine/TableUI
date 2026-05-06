@@ -78,3 +78,15 @@ it('rejects non-boolean column_types.boolean.show_false', function (): void {
 
     expect(fn () => new ColumnRendererRegistry)->toThrow(InvalidArgumentException::class, 'show_false');
 });
+
+it('rejects action providers that do not implement the default action contract', function (): void {
+    config()->set('tableui.actions', [stdClass::class]);
+
+    expect(fn () => new ColumnRendererRegistry)->toThrow(InvalidArgumentException::class, 'tableui.actions');
+});
+
+it('rejects filter definition providers that do not implement the filter definition contract', function (): void {
+    config()->set('tableui.filter_definitions', [stdClass::class]);
+
+    expect(fn () => new ColumnRendererRegistry)->toThrow(InvalidArgumentException::class, 'tableui.filter_definitions');
+});

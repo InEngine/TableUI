@@ -7,6 +7,8 @@ use InEngine\TableUI\ActionTypes\DeleteAction;
 use InEngine\TableUI\ActionTypes\EditAction;
 use InEngine\TableUI\ActionTypes\RowLinkAction;
 use InEngine\TableUI\ActionTypes\ViewAction;
+use InEngine\TableUI\Contracts\BuildsDefaultTableAction;
+use InEngine\TableUI\Support\RegisteredTableTypes;
 
 /**
  * Builds the package default row/bulk actions for domain tables backed by Eloquent models.
@@ -29,12 +31,26 @@ final class DefaultTableActions
 
         $segment = class_basename($first);
 
-        return new Actions([
+        $actions = [
             new RowLinkAction(target: self::path($segment, 'view')),
             new ViewAction(target: self::path($segment, 'view')),
             new EditAction(target: self::path($segment, 'edit')),
             new DeleteAction(target: self::path($segment, 'delete')),
-        ]);
+        ];
+
+        foreach (RegisteredTableTypes::mergedDefaultActionClasses() as $actionClass) {
+            if (! is_subclass_of($actionClass, BuildsDefaultTableAction::class)) {
+                continue;
+            }
+
+            $action = $actionClass::forTable($table);
+
+            if ($action !== null) {
+                $actions[] = $action;
+            }
+        }
+
+        return new Actions($actions);
     }
 
     private static function path(string $resourceSegment, string $actionName): string

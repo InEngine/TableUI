@@ -3,6 +3,9 @@
 namespace InEngine\TableUI\Support;
 
 use InEngine\TableUI\ColumnTypes\Column;
+use InEngine\TableUI\Contracts\BuildsColumnFromAttributeKey;
+use InEngine\TableUI\Contracts\BuildsDefaultTableAction;
+use InEngine\TableUI\Contracts\BuildsFilterDefinitionForColumn;
 use InEngine\TableUI\Contracts\DefinesColumnRenderers;
 use InEngine\TableUI\Rendering\AbstractColumnRenderer;
 use InEngine\TableUI\Rendering\ColumnRendererInterface;
@@ -30,6 +33,14 @@ final class TableUiConfigValidator
 
         foreach (config('tableui.columns', []) as $fqcn) {
             self::assertExtraColumnFqcn((string) $fqcn, $mergedRenderers);
+        }
+
+        foreach (RegisteredTableTypes::mergedDefaultActionClasses() as $fqcn) {
+            self::assertDefaultActionFqcn((string) $fqcn);
+        }
+
+        foreach (RegisteredTableTypes::mergedFilterDefinitionClasses() as $fqcn) {
+            self::assertFilterDefinitionFqcn((string) $fqcn);
         }
     }
 
@@ -87,6 +98,12 @@ final class TableUiConfigValidator
             );
         }
 
+        if (! $reflection->implementsInterface(BuildsColumnFromAttributeKey::class)) {
+            throw new InvalidArgumentException(
+                'tableui.columns entry must implement '.BuildsColumnFromAttributeKey::class.": {$fqcn}"
+            );
+        }
+
         /** @var class-string<Column> $fqcn */
         $rendererNames = $fqcn::rendererClassNames();
         $defaultName = $fqcn::defaultRendererClassName();
@@ -109,6 +126,52 @@ final class TableUiConfigValidator
                     "Renderer {$rendererFqcn} used by column {$fqcn} must be registered under tableui.renderers (or be a package built-in renderer)."
                 );
             }
+        }
+    }
+
+    private static function assertDefaultActionFqcn(string $fqcn): void
+    {
+        if ($fqcn === '') {
+            throw new InvalidArgumentException('tableui.actions contains an empty class name.');
+        }
+
+        if (! class_exists($fqcn)) {
+            throw new InvalidArgumentException("tableui.actions class does not exist: {$fqcn}");
+        }
+
+        $reflection = new ReflectionClass($fqcn);
+
+        if ($reflection->isAbstract()) {
+            throw new InvalidArgumentException("tableui.actions entry must not be abstract: {$fqcn}");
+        }
+
+        if (! $reflection->implementsInterface(BuildsDefaultTableAction::class)) {
+            throw new InvalidArgumentException(
+                'tableui.actions entry must implement '.BuildsDefaultTableAction::class.": {$fqcn}"
+            );
+        }
+    }
+
+    private static function assertFilterDefinitionFqcn(string $fqcn): void
+    {
+        if ($fqcn === '') {
+            throw new InvalidArgumentException('tableui.filter_definitions contains an empty class name.');
+        }
+
+        if (! class_exists($fqcn)) {
+            throw new InvalidArgumentException("tableui.filter_definitions class does not exist: {$fqcn}");
+        }
+
+        $reflection = new ReflectionClass($fqcn);
+
+        if ($reflection->isAbstract()) {
+            throw new InvalidArgumentException("tableui.filter_definitions entry must not be abstract: {$fqcn}");
+        }
+
+        if (! $reflection->implementsInterface(BuildsFilterDefinitionForColumn::class)) {
+            throw new InvalidArgumentException(
+                'tableui.filter_definitions entry must implement '.BuildsFilterDefinitionForColumn::class.": {$fqcn}"
+            );
         }
     }
 

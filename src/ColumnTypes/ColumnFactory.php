@@ -12,6 +12,7 @@ use InEngine\TableUI\ColumnTypes\Primitives\NumberColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\StringColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\TextColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\TimestampColumn;
+use InEngine\TableUI\Contracts\BuildsColumnFromAttributeKey;
 use InEngine\TableUI\Support\RegisteredColumnTypes;
 
 /**
@@ -42,7 +43,19 @@ final class ColumnFactory
             EmailColumn::class => new EmailColumn($attributeKey),
             MoneyColumn::class => new MoneyColumn($attributeKey),
             PhoneColumn::class => new PhoneColumn($attributeKey),
-            default => new $columnClass($attributeKey),
+            default => self::makeCustomColumn($attributeKey, $columnClass),
         };
+    }
+
+    /**
+     * @param  class-string<Column>  $columnClass
+     */
+    private static function makeCustomColumn(string $attributeKey, string $columnClass): Column
+    {
+        if (is_subclass_of($columnClass, BuildsColumnFromAttributeKey::class)) {
+            return $columnClass::fromAttributeKey($attributeKey);
+        }
+
+        return new $columnClass($attributeKey);
     }
 }

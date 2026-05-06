@@ -10,9 +10,13 @@ use InEngine\TableUI\ColumnTypes\Primitives\BooleanColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\EnumColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\NumberColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\TimestampColumn;
+use InEngine\TableUI\Contracts\BuildsFilterDefinitionForColumn;
+use InEngine\TableUI\Filters;
+use InEngine\TableUI\Livewire\TableView;
+use InEngine\TableUI\Support\RegisteredTableTypes;
 
 /**
- * Declares one filter control for {@see \InEngine\TableUI\Livewire\TableView} (applied client-side to sorted rows).
+ * Declares one filter control for {@see TableView} (applied client-side to sorted rows).
  */
 final class FilterDefinition
 {
@@ -33,7 +37,7 @@ final class FilterDefinition
     }
 
     /**
-     * Map a column definition to the closest filter type (see {@see \InEngine\TableUI\Filters::forColumns()}).
+     * Map a column definition to the closest filter type (see {@see Filters::forColumns()}).
      *
      * @param  array<string, string>|null  $enumOptions  When provided for {@see EnumColumn}, builds a select; otherwise enum columns fall back to {@see FilterType::Text}.
      */
@@ -85,6 +89,18 @@ final class FilterDefinition
             }
 
             return new self($key, $label, FilterType::Text);
+        }
+
+        foreach (RegisteredTableTypes::mergedFilterDefinitionClasses() as $definitionClass) {
+            if (! is_subclass_of($definitionClass, BuildsFilterDefinitionForColumn::class)) {
+                continue;
+            }
+
+            $custom = $definitionClass::forColumn($column, $enumOptions);
+
+            if ($custom !== null) {
+                return $custom;
+            }
         }
 
         return new self($key, $label, FilterType::Text);

@@ -600,7 +600,8 @@ it('shows selected row count to the right of bulk actions when more than one row
         ->assertDontSeeHtml('table-ui__bulk-selection-count')
         ->set('selectedRowKeys', ['id:1', 'id:2'])
         ->assertSeeHtml('table-ui__bulk-selection-count')
-        ->assertSee(__(':count selected', ['count' => 2]));
+        ->assertSeeHtml('table-ui__bulk-selection-count-number">2</span>')
+        ->assertSeeHtml('table-ui__bulk-selection-count-suffix"> selected</span>');
 });
 
 it('hides pagination when filters reduce the row count to within per page', function (): void {

@@ -223,6 +223,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | Each class must extend {@see \InEngine\TableUI\ColumnTypes\Column}, implement
+    | {@see \InEngine\TableUI\Contracts\BuildsColumnFromAttributeKey} and
     | {@see \InEngine\TableUI\Contracts\DefinesColumnRenderers}, and declare at least one renderer
     | plus a default via {@see DefinesColumnRenderers::rendererClassNames()} and
     | {@see DefinesColumnRenderers::defaultRendererClassName()}. Every renderer FQCN listed there must
@@ -230,7 +231,8 @@ return [
     |
     | Registered types participate in {@see \InEngine\TableUI\Columns::fromAttributeKeys()} inference (with a
     | {@see \Illuminate\Support\Facades\Schema::getColumnType()} map from {@see \InEngine\TableUI\Table::columns()})
-    | when applicable and in {@see \InEngine\TableUI\ColumnTypes\ColumnFactory::make()}.
+    | when applicable and in {@see \InEngine\TableUI\ColumnTypes\ColumnFactory::make()} via
+    | {@see \InEngine\TableUI\Contracts\BuildsColumnFromAttributeKey::fromAttributeKey()}.
     |
     | @var list<class-string<\InEngine\TableUI\ColumnTypes\Column>>
     */
@@ -249,6 +251,36 @@ return [
     | @var list<class-string<\InEngine\TableUI\Rendering\AbstractColumnRenderer>>
     */
     'renderers' => [
+        //
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Additional default action providers (FQCN)
+    |--------------------------------------------------------------------------
+    |
+    | Each class must implement {@see \InEngine\TableUI\Contracts\BuildsDefaultTableAction}.
+    | Providers are called by {@see \InEngine\TableUI\DefaultTableActions::forTable()} and may
+    | return one extra {@see \InEngine\TableUI\ActionTypes\Action} (or null to skip).
+    |
+    | @var list<class-string<\InEngine\TableUI\Contracts\BuildsDefaultTableAction>>
+    */
+    'actions' => [
+        //
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Additional filter definition providers (FQCN)
+    |--------------------------------------------------------------------------
+    |
+    | Each class must implement {@see \InEngine\TableUI\Contracts\BuildsFilterDefinitionForColumn}.
+    | Providers are consulted by {@see \InEngine\TableUI\FilterTypes\FilterDefinition::forColumn()}
+    | after built-in column mappings. Return null when a provider does not apply.
+    |
+    | @var list<class-string<\InEngine\TableUI\Contracts\BuildsFilterDefinitionForColumn>>
+    */
+    'filter_definitions' => [
         //
     ],
 

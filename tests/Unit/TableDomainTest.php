@@ -10,6 +10,7 @@ use InEngine\TableUI\ColumnTypes\Complex\EmailColumn;
 use InEngine\TableUI\Filters;
 use InEngine\TableUI\Options;
 use InEngine\TableUI\Table;
+use InEngine\TableUI\Tests\Fixtures\ArchiveActionProvider;
 
 final class TableDomainTestModel extends Model
 {
@@ -91,6 +92,20 @@ it('defaults actions to view edit delete row_link with delete bulk-only when mod
         ->and($actions->find('view')->urlForRow(['id' => 42]))->toBe('/TableDomainTestModel/42/view')
         ->and($actions->find('edit')->urlForRow(['id' => 42]))->toBe('/TableDomainTestModel/42/edit')
         ->and($actions->find('delete')->urlForRow(['id' => 42]))->toBe('/TableDomainTestModel/42/delete');
+});
+
+it('appends config-registered default actions for model tables', function (): void {
+    config()->set('tableui.actions', [ArchiveActionProvider::class]);
+
+    $model = new TableDomainTestModel;
+    $model->forceFill(['id' => 42]);
+
+    $table = new Table([$model]);
+    $actions = $table->actions();
+
+    expect($actions->names())->toBe(['row_link', 'view', 'edit', 'delete', 'archive'])
+        ->and($actions->find('archive'))->not->toBeNull()
+        ->and($actions->find('archive')->urlForRow(['id' => 42]))->toBe('/archive/42');
 });
 
 it('uses empty actions by default when the collection has no models', function (): void {
