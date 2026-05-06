@@ -2,8 +2,10 @@
 
 namespace InEngine\TableUI\FilterTypes;
 
+use InEngine\TableUI\ColumnTypes\Column;
+
 /**
- * Filter widget + matching semantics for {@see FilterDefinition} (aligned with {@see \InEngine\TableUI\ColumnTypes\Column} families).
+ * Filter widget + matching semantics for {@see FilterDefinition} (aligned with {@see Column} families).
  */
 enum FilterType: string
 {
