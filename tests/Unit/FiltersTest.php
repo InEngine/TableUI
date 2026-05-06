@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use InEngine\TableUI\FilterTypes\FilterDefinition;
 use InEngine\TableUI\Filters;
+use InEngine\TableUI\FilterTypes\FilterDefinition;
 
 it('supports empty filters', function (): void {
     expect(Filters::empty()->isEmpty())->toBeTrue()

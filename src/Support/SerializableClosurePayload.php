@@ -3,11 +3,12 @@
 namespace InEngine\TableUI\Support;
 
 use Closure;
+use InEngine\TableUI\Livewire\TableView;
 use InvalidArgumentException;
 use Laravel\SerializableClosure\SerializableClosure;
 
 /**
- * Encodes {@see Closure} targets into Livewire-safe strings for {@see \InEngine\TableUI\Livewire\TableView::$actionSnapshots}.
+ * Encodes {@see Closure} targets into Livewire-safe strings for {@see TableView::$actionSnapshots}.
  */
 final class SerializableClosurePayload
 {
