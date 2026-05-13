@@ -18,9 +18,10 @@ return [
     | Filters (combobox autocomplete)
     |--------------------------------------------------------------------------
     |
-    | Typeable filter inputs use an Alpine combobox with suggestions built from distinct values in the current
-    | {@see \InEngine\TableUI\Livewire\TableView::$rows} payload. When you add server-side pagination,
-    | refresh {@code rows} (or replace the suggestion builder) so options stay aligned with loaded data.
+    | Typeable text-like filters (text, id-as-text, phone, email) use a combobox: type to narrow distinct
+    | values, press Enter to add a substring needle, and toggle rows in the list (OR semantics). Enum
+    | multiselect panels include a search field to narrow options. Date, datetime, time, number, and money
+    | filters keep range or numeric controls.
     |
     | Email filters treat "@domain.tld", ".tld", "domain.tld", and bare common TLD tokens (see package defaults)
     | specially so values like "com" match the domain suffix only (not substrings inside the local part).

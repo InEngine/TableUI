@@ -238,6 +238,7 @@ it('filters string columns with OR semantics when text-like multiselect is enabl
         'table' => $table,
     ])
         ->call('toggleFiltersPanel')
+        ->assertSeeHtml('table-ui__filter-typeahead-multi')
         ->assertSeeHtml('table-ui__filter-enum-multi')
         ->set('filterValues.user_name', ['Ada', 'Bob']);
 

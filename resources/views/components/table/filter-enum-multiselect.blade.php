@@ -19,9 +19,25 @@
     x-data="{
         open: false,
         panelStyle: {},
+        optionQuery: '',
         labels: @js($enumOptions),
         allLabel: @js($allLabel),
         selected: $wire.entangle(@js($wireModelPath)).live,
+        get filteredEnumEntries() {
+            const q = (this.optionQuery ?? '').toString().toLowerCase().trim();
+            const out = [];
+            for (const [value, label] of Object.entries(this.labels ?? {})) {
+                if (!q) {
+                    out.push([value, label]);
+                    continue;
+                }
+                const hay = (String(label) + ' ' + String(value)).toLowerCase();
+                if (hay.includes(q)) {
+                    out.push([value, label]);
+                }
+            }
+            return out;
+        },
         positionPanel() {
             const el = this.$refs.anchor;
             if (!el || typeof el.getBoundingClientRect !== 'function') {
@@ -104,7 +120,7 @@
             type="button"
             id="{{ $fieldId }}"
             class="table-ui__filter-enum-multi-trigger box-border min-h-[2.25rem] w-full min-w-0 max-w-full items-start gap-1 overflow-hidden rounded-md border border-gray-300 bg-white px-2 py-1.5 text-left text-sm text-gray-900 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400/35 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800/80 dark:focus:ring-gray-500/40"
-            @click="open = !open"
+            @click="open = !open; if (open) { optionQuery = ''; }"
             @if ($ariaLabelledby !== null) aria-labelledby="{{ $ariaLabelledby }}" @endif
             aria-haspopup="listbox"
             :aria-expanded="open"
@@ -130,19 +146,30 @@
         aria-multiselectable="true"
         aria-label="{{ __('Options') }}"
     >
-        @foreach ($enumOptions as $value => $optionLabel)
+        <li class="sticky top-0 z-10 border-b border-gray-100 bg-white px-2 py-1.5 dark:border-gray-700 dark:bg-gray-900" role="presentation">
+            <input
+                type="search"
+                class="table-ui__filter-input w-full text-xs"
+                x-model="optionQuery"
+                placeholder="{{ __('Filter options…') }}"
+                autocomplete="off"
+                @click.stop
+                @mousedown.stop
+            />
+        </li>
+        <template x-for="entry in filteredEnumEntries" :key="String(entry[0])">
             <li role="presentation">
                 <button
                     type="button"
                     class="table-ui__filter-enum-multi-option w-full px-3 py-2 text-left text-sm transition-colors"
                     role="option"
-                    :class="{ 'table-ui__filter-enum-multi-option--selected': isOn({{ json_encode((string) $value) }}) }"
-                    :aria-selected="isOn({{ json_encode((string) $value) }})"
-                    @click.stop="toggle({{ json_encode((string) $value) }})"
+                    :class="{ 'table-ui__filter-enum-multi-option--selected': isOn(entry[0]) }"
+                    :aria-selected="isOn(entry[0])"
+                    @mousedown.prevent.stop="toggle(entry[0])"
                 >
-                    <span class="block truncate">{{ $optionLabel }}</span>
+                    <span class="block truncate" x-text="entry[1]"></span>
                 </button>
             </li>
-        @endforeach
+        </template>
     </ul>
 </div>

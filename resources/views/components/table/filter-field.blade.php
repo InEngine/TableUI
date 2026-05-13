@@ -228,6 +228,8 @@
             'fieldId' => $fid,
             'ariaLabelledby' => $fid.'-label',
             'acOpts' => $acOpts,
+            'inputType' => 'tel',
+            'inputmode' => 'tel',
         ])
     @elseif ($type === 'phone' && $hasAc)
         @include('tableui::components.table.filter-autocomplete-combobox', [
@@ -255,6 +257,8 @@
             'fieldId' => $fid,
             'ariaLabelledby' => $fid.'-label',
             'acOpts' => $acOpts,
+            'inputType' => 'email',
+            'inputmode' => 'email',
         ])
     @elseif ($type === 'email' && $hasAc)
         @include('tableui::components.table.filter-autocomplete-combobox', [
