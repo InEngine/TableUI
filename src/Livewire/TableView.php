@@ -992,16 +992,16 @@ class TableView extends Component
      */
     public function getDisplayRowsProperty(): array
     {
-        $filtered = $this->applyFiltersToRows($this->sortedRows());
+        $prepared = $this->filteredThenSortedRows();
 
-        if ($this->paginationPerPage <= 0 || count($filtered) <= $this->paginationPerPage) {
-            return $filtered;
+        if ($this->paginationPerPage <= 0 || count($prepared) <= $this->paginationPerPage) {
+            return $prepared;
         }
 
-        $totalPages = max(1, (int) ceil(count($filtered) / $this->paginationPerPage));
+        $totalPages = max(1, (int) ceil(count($prepared) / $this->paginationPerPage));
         $page = max(1, min($this->paginationPage, $totalPages));
 
-        return array_slice($filtered, ($page - 1) * $this->paginationPerPage, $this->paginationPerPage);
+        return array_slice($prepared, ($page - 1) * $this->paginationPerPage, $this->paginationPerPage);
     }
 
     /**
@@ -1013,7 +1013,7 @@ class TableView extends Component
             return false;
         }
 
-        $filteredCount = count($this->applyFiltersToRows($this->sortedRows()));
+        $filteredCount = count($this->filteredThenSortedRows());
 
         return $filteredCount > $this->paginationPerPage;
     }
@@ -1024,7 +1024,7 @@ class TableView extends Component
             return 1;
         }
 
-        $filteredCount = count($this->applyFiltersToRows($this->sortedRows()));
+        $filteredCount = count($this->filteredThenSortedRows());
 
         return max(1, (int) ceil($filteredCount / $this->paginationPerPage));
     }
@@ -1066,7 +1066,7 @@ class TableView extends Component
             return;
         }
 
-        $filteredCount = count($this->applyFiltersToRows($this->sortedRows()));
+        $filteredCount = count($this->filteredThenSortedRows());
 
         if ($filteredCount <= $this->paginationPerPage) {
             $this->paginationPage = 1;
@@ -1079,19 +1079,32 @@ class TableView extends Component
     }
 
     /**
+     * Active filters narrow the in-memory dataset; sorting applies to that full filtered set before pagination slices.
+     *
      * @return list<array<array-key, mixed>>
      */
-    private function sortedRows(): array
+    private function filteredThenSortedRows(): array
+    {
+        $filtered = $this->applyFiltersToRows($this->rows);
+
+        return $this->sortRows($filtered);
+    }
+
+    /**
+     * @param  list<array<array-key, mixed>>  $rows
+     * @return list<array<array-key, mixed>>
+     */
+    private function sortRows(array $rows): array
     {
         if ($this->sortBy === null) {
-            return $this->rows;
+            return $rows;
         }
 
         $sortBy = $this->sortBy;
         $descending = $this->sortDirection === 'desc';
 
         $indexed = [];
-        foreach ($this->rows as $index => $row) {
+        foreach ($rows as $index => $row) {
             $indexed[] = ['i' => $index, 'r' => $row];
         }
 
