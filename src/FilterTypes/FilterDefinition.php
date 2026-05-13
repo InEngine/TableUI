@@ -15,7 +15,7 @@ use InEngine\TableUI\Filters;
 use InEngine\TableUI\Support\RegisteredTableTypes;
 
 /**
- * Declares one filter control for {@see TableView} (applied client-side to sorted rows).
+ * Declares one filter control for {@see TableView} (applied client-side before sorting and pagination).
  */
 final class FilterDefinition
 {
