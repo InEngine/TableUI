@@ -1,4 +1,8 @@
 @if (count($headers) > 0)
+    @php
+        $sortAscGlyph = $this->flipSortIndicatorGlyphs ? '↓' : '↑';
+        $sortDescGlyph = $this->flipSortIndicatorGlyphs ? '↑' : '↓';
+    @endphp
     <thead class="table-ui__thead">
         <tr>
             @if ($this->showRowSelection)
@@ -12,7 +16,7 @@
                     <button type="button" wire:click="sort('{{ $columnKey }}')" class="table-ui__sort-button">
                         {{ $header }}
                         @if ($sortBy === $columnKey)
-                            <span aria-hidden="true">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                            <span aria-hidden="true">{{ $sortDirection === 'asc' ? $sortAscGlyph : $sortDescGlyph }}</span>
                         @endif
                     </button>
                 </th>

@@ -89,11 +89,16 @@ class TableView extends Component
     public string $sortDirection = 'asc';
 
     /**
-     * When the user sorts by a column other than the active one, this matches {@see Options::getDefaultSortDirection()} from mount (typically {@code desc} for newest-first on {@code id}).
+     * When the user sorts by a column other than the active one, this matches {@see Options::getDefaultSortDirection()} from mount (package default {@code asc}; use {@code desc} in {@see Options} for newest-first).
      *
      * @var 'asc'|'desc'
      */
-    public string $defaultSortDirectionForNewColumn = 'desc';
+    public string $defaultSortDirectionForNewColumn = 'asc';
+
+    /**
+     * When true (default), ascending shows ↓ and descending shows ↑ in the sort header ({@see Options::getFlipSortIndicatorGlyphs()}).
+     */
+    public bool $flipSortIndicatorGlyphs = true;
 
     public string $emptyMessage = 'No rows to display.';
 
@@ -245,6 +250,8 @@ class TableView extends Component
         $this->sortDirection = strtolower($sortDirection) === 'desc' ? 'desc' : 'asc';
 
         $this->defaultSortDirectionForNewColumn = $table->options()->getDefaultSortDirection();
+
+        $this->flipSortIndicatorGlyphs = $table->options()->getFlipSortIndicatorGlyphs();
 
         $hydratedFromDomainTable = false;
 

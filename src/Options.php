@@ -39,14 +39,20 @@ final class Options
     private string $defaultSortDirection;
 
     /**
+     * When true (default), ascending sort shows ↓ and descending shows ↑ in the header so the caret matches values changing as you read down the table. Set false for the classic ↑/↓ mapping.
+     */
+    private bool $flipSortIndicatorGlyphs = true;
+
+    /**
      * @param  bool  $stripping  Default: true
      * @param  ?string  $defaultSortColumn  When non-null and present on the table, used as initial sort column (also works for legacy headers/rows). When null, {@see TableView} infers {@code id} or the first column only for non-empty domain {@see Table} payloads.
-     * @param  ?string  $defaultSortDirection  {@code null} uses {@code config('tableui.default_sort_direction', 'desc')}. Otherwise {@code asc} or {@code desc}.
+     * @param  ?string  $defaultSortDirection  {@code null} uses {@code config('tableui.default_sort_direction', 'asc')}. Otherwise {@code asc} or {@code desc}.
      * @param  bool  $enableDefaultSort  When false, no initial sort is applied unless the host passes {@code sortBy} into {@see TableView::mount()}.
      * @param  string|bool|null  $scrollbarHorizontal  {@code null} uses {@code config('tableui.scrollbars.horizontal')}. Accepts {@code auto}, bool, or {@code "true"}/{@code "false"} strings.
      * @param  string|bool|null  $scrollbarVertical  {@code null} uses {@code config('tableui.scrollbars.vertical')}.
      * @param  string|null  $verticalMaxHeight  {@code null} uses {@code config('tableui.scrollbars.vertical_max_height')}; empty string treated as uncapped.
      * @param  mixed  $perPage  {@code null} uses {@code config('tableui.pagination')} (package/app default). Any non-negative integer overrides (numeric strings coerced).
+     * @param  bool  $flipSortIndicatorGlyphs  When true (default), swap ↑/↓ in the sort button (ascending → ↓, descending → ↑). Pass false for classic arrows.
      *
      * @throws InvalidArgumentException When {@see defaultSortDirection} is not asc/desc, or scrollbar modes are invalid.
      */
@@ -59,8 +65,9 @@ final class Options
         string|bool|null $scrollbarVertical = null,
         ?string $verticalMaxHeight = null,
         mixed $perPage = null,
+        bool $flipSortIndicatorGlyphs = true,
     ) {
-        $resolvedSortDirection = $defaultSortDirection ?? (string) config('tableui.default_sort_direction', 'desc');
+        $resolvedSortDirection = $defaultSortDirection ?? (string) config('tableui.default_sort_direction', 'asc');
         $this->assertDefaultSortDirection($resolvedSortDirection);
         $this->defaultSortDirection = strtolower($resolvedSortDirection) === 'desc' ? 'desc' : 'asc';
 
@@ -71,6 +78,7 @@ final class Options
             $verticalMaxHeight ?? ($scrollConfig['vertical_max_height'] ?? null)
         );
         $this->perPage = self::resolvePerPage($perPage);
+        $this->flipSortIndicatorGlyphs = $flipSortIndicatorGlyphs;
     }
 
     /**
@@ -276,5 +284,15 @@ final class Options
     public function setEnableDefaultSort(bool $enableDefaultSort): void
     {
         $this->enableDefaultSort = $enableDefaultSort;
+    }
+
+    public function getFlipSortIndicatorGlyphs(): bool
+    {
+        return $this->flipSortIndicatorGlyphs;
+    }
+
+    public function setFlipSortIndicatorGlyphs(bool $flipSortIndicatorGlyphs): void
+    {
+        $this->flipSortIndicatorGlyphs = $flipSortIndicatorGlyphs;
     }
 }

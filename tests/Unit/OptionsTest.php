@@ -9,12 +9,17 @@ it('applies constructor defaults', function (): void {
 
     expect($options->getStripping())->toBeTrue()
         ->and($options->getDefaultSortColumn())->toBeNull()
-        ->and($options->getDefaultSortDirection())->toBe('desc')
+        ->and($options->getDefaultSortDirection())->toBe('asc')
         ->and($options->getEnableDefaultSort())->toBeTrue()
+        ->and($options->getFlipSortIndicatorGlyphs())->toBeTrue()
         ->and($options->getScrollbarHorizontal())->toBe('auto')
         ->and($options->getScrollbarVertical())->toBe('auto')
         ->and($options->getVerticalMaxHeight())->toBeNull()
         ->and($options->getPerPage())->toBe((int) config('tableui.pagination', 25));
+});
+
+it('allows disabling flipSortIndicatorGlyphs via named constructor argument', function (): void {
+    expect((new Options(flipSortIndicatorGlyphs: false))->getFlipSortIndicatorGlyphs())->toBeFalse();
 });
 
 it('loads default_sort_direction from config when constructor omits the argument', function (): void {
