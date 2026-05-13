@@ -9,6 +9,7 @@ use InEngine\TableUI\ActionTypes\Action;
 use InEngine\TableUI\ColumnTypes\Column;
 use InEngine\TableUI\ColumnTypes\ColumnFactory;
 use InEngine\TableUI\ColumnTypes\Complex\DualColumn;
+use InEngine\TableUI\Concerns\ToTable;
 use InEngine\TableUI\FilterTypes\FilterDefinition;
 use InEngine\TableUI\FilterTypes\FilterType;
 use InEngine\TableUI\Livewire\Concerns\ManagesBulkSelection;
@@ -52,6 +53,7 @@ use Livewire\Component;
 class TableView extends Component
 {
     use ManagesBulkSelection;
+    use ToTable;
 
     /**
      * @var list<string>
