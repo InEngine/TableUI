@@ -140,9 +140,9 @@
     }"
     @click.outside="open = false"
 >
-    <div class="table-ui__filter-typeahead-multi__stack w-full min-w-0 max-w-full space-y-1.5">
+    <div class="table-ui__filter-typeahead-multi__stack w-full min-w-0 max-w-full space-y-1">
         <div
-            class="table-ui__filter-typeahead-multi-chips flex max-h-28 min-h-0 flex-wrap gap-1 overflow-y-auto"
+            class="table-ui__filter-typeahead-multi-chips flex max-h-[5.25rem] min-h-0 flex-wrap gap-1 overflow-y-auto"
             x-show="hasSelection"
             x-cloak
         >

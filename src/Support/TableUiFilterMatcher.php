@@ -145,6 +145,21 @@ final class TableUiFilterMatcher
         return trim((string) $state);
     }
 
+    /**
+     * Default substring text mode: case-insensitive when the value contains the needle (UTF-8 safe; includes a leading prefix / begins-with).
+     */
+    private static function matchesCaseFoldingPrefixOrSubstring(string $raw, string $needle): bool
+    {
+        if ($needle === '') {
+            return true;
+        }
+
+        $hay = mb_strtolower((string) $raw);
+        $n = mb_strtolower($needle);
+
+        return mb_strpos($hay, $n, 0) !== false;
+    }
+
     private static function isTextLikeMultiNeedleActive(mixed $state): bool
     {
         if (! is_array($state)) {
@@ -218,7 +233,7 @@ final class TableUiFilterMatcher
                     if (mb_strtolower((string) $raw) === mb_strtolower($needle)) {
                         return true;
                     }
-                } elseif (str_contains(mb_strtolower((string) $raw), mb_strtolower($needle))) {
+                } elseif (self::matchesCaseFoldingPrefixOrSubstring((string) $raw, $needle)) {
                     return true;
                 }
             }
@@ -236,9 +251,7 @@ final class TableUiFilterMatcher
             return mb_strtolower((string) $raw) === mb_strtolower($needle);
         }
 
-        $haystack = mb_strtolower((string) $raw);
-
-        return str_contains($haystack, mb_strtolower($needle));
+        return self::matchesCaseFoldingPrefixOrSubstring((string) $raw, $needle);
     }
 
     private static function matchesPhone(mixed $raw, mixed $state, bool $allowMultiple): bool
@@ -271,7 +284,7 @@ final class TableUiFilterMatcher
     }
 
     /**
-     * Single needle: substring match on normalized digit strings.
+     * Single needle: substring match on normalized digit strings (includes a leading digit prefix).
      */
     private static function matchesPhoneScalar(mixed $raw, string $needle): bool
     {

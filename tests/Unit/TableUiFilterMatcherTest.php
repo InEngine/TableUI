@@ -13,6 +13,14 @@ it('matches text by substring', function (): void {
         ->and(TableUiFilterMatcher::matches(['name' => 'Ada'], $def, ''))->toBeTrue();
 });
 
+it('matches text substring mode for prefix, infix, and multibyte needles', function (): void {
+    $def = ['columnKey' => 'name', 'label' => 'Name', 'type' => FilterType::Text->value, 'enumOptions' => null, 'moneyDivisor' => null];
+
+    expect(TableUiFilterMatcher::matches(['name' => 'Foobar'], $def, 'foo'))->toBeTrue()
+        ->and(TableUiFilterMatcher::matches(['name' => 'Foobar'], $def, 'oba'))->toBeTrue()
+        ->and(TableUiFilterMatcher::matches(['name' => 'José'], $def, 'sé'))->toBeTrue();
+});
+
 it('matches text with multiple needles using OR semantics when allowMultiple is true', function (): void {
     $def = [
         'columnKey' => 'name',
