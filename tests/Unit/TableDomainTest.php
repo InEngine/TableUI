@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 use InEngine\TableUI\Columns;
 use InEngine\TableUI\ColumnTypes\Column;
 use InEngine\TableUI\ColumnTypes\Complex\EmailColumn;
+use InEngine\TableUI\Concerns\ToTable;
 use InEngine\TableUI\Filters;
+use InEngine\TableUI\Livewire\TableView;
 use InEngine\TableUI\Options;
 use InEngine\TableUI\Table;
 use InEngine\TableUI\Tests\Fixtures\ArchiveActionProvider;
@@ -110,6 +112,12 @@ it('appends config-registered default actions for model tables', function (): vo
 
 it('uses empty actions by default when the collection has no models', function (): void {
     expect((new Table([]))->actions()->isEmpty())->toBeTrue();
+});
+
+it('composes the ToTable marker trait on TableView for static analysis parity', function (): void {
+    $traits = (new ReflectionClass(TableView::class))->getTraitNames();
+
+    expect($traits)->toContain(ToTable::class);
 });
 
 it('defaults filters from inferFromTable with one definition per column when filters are not set', function (): void {

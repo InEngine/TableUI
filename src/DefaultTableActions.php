@@ -2,7 +2,6 @@
 
 namespace InEngine\TableUI;
 
-use Illuminate\Database\Eloquent\Model;
 use InEngine\TableUI\ActionTypes\DeleteAction;
 use InEngine\TableUI\ActionTypes\EditAction;
 use InEngine\TableUI\ActionTypes\RowLinkAction;
@@ -25,7 +24,7 @@ final class DefaultTableActions
     {
         $first = $table->first();
 
-        if (! $first instanceof Model) {
+        if ($first === null) {
             return Actions::empty();
         }
 
