@@ -8,7 +8,13 @@
     ])
     wire:key="table-ui-r-{{ $rowKey }}"
     @if ($this->hasRowLinkAction)
-        wire:click="navigateRowLink({{ json_encode($rowKey) }})"
+        x-on:click="
+            const interactiveTarget = $event.target.closest('a.table-ui__link, a.table-ui__row-action-link, button, input, select, textarea, [data-tableui-stop-row-link]');
+            if (interactiveTarget) {
+                return;
+            }
+            $wire.navigateRowLink({{ json_encode($rowKey) }});
+        "
     @endif
 >
     @if ($this->showRowSelection)
