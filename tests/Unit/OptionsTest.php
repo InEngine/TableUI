@@ -9,12 +9,22 @@ it('applies constructor defaults', function (): void {
 
     expect($options->getStripping())->toBeTrue()
         ->and($options->getDefaultSortColumn())->toBeNull()
-        ->and($options->getDefaultSortDirection())->toBe('asc')
+        ->and($options->getDefaultSortDirection())->toBe('desc')
         ->and($options->getEnableDefaultSort())->toBeTrue()
         ->and($options->getScrollbarHorizontal())->toBe('auto')
         ->and($options->getScrollbarVertical())->toBe('auto')
         ->and($options->getVerticalMaxHeight())->toBeNull()
         ->and($options->getPerPage())->toBe((int) config('tableui.pagination', 25));
+});
+
+it('loads default_sort_direction from config when constructor omits the argument', function (): void {
+    config()->set('tableui.default_sort_direction', 'asc');
+
+    expect((new Options)->getDefaultSortDirection())->toBe('asc');
+
+    config()->set('tableui.default_sort_direction', 'DESC');
+
+    expect((new Options)->getDefaultSortDirection())->toBe('desc');
 });
 
 it('allows partial overrides via named constructor arguments', function (): void {

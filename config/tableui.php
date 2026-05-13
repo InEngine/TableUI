@@ -122,6 +122,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Default client-side sort direction
+    |--------------------------------------------------------------------------
+    |
+    | When {@see \InEngine\TableUI\Livewire\TableView} applies an initial sort (see {@see \InEngine\TableUI\Options::getEnableDefaultSort()}),
+    | this value is used unless the host passes an explicit {@code defaultSortDirection} into {@see \InEngine\TableUI\Options}.
+    |
+    | • {@code desc} — typical for newest-first when the default column is a monotonic integer {@code id} or {@code hid}.
+    | • {@code asc} — restore the previous package default behaviour.
+    |
+    | UUID {@code id} columns are not chronological in either direction; prefer {@see \InEngine\TableUI\Options::setEnableDefaultSort(false)}
+    | or an explicit {@code defaultSortColumn} such as {@code created_at} when the row payload includes one.
+    |
+    */
+    'default_sort_direction' => 'desc',
+
+    /*
+    |--------------------------------------------------------------------------
     | Link underline (email & phone columns)
     |--------------------------------------------------------------------------
     |

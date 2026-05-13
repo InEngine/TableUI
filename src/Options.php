@@ -32,9 +32,16 @@ final class Options
     private int $perPage;
 
     /**
+     * Initial client-side sort direction when {@see TableView} applies a default column (inferred {@code id} / first column, or {@see Options::getDefaultSortColumn()} when set).
+     *
+     * @var 'asc'|'desc'
+     */
+    private string $defaultSortDirection;
+
+    /**
      * @param  bool  $stripping  Default: true
      * @param  ?string  $defaultSortColumn  When non-null and present on the table, used as initial sort column (also works for legacy headers/rows). When null, {@see TableView} infers {@code id} or the first column only for non-empty domain {@see Table} payloads.
-     * @param  string  $defaultSortDirection  Initial sort direction when a default column applies: {@code asc} or {@code desc}.
+     * @param  ?string  $defaultSortDirection  {@code null} uses {@code config('tableui.default_sort_direction', 'desc')}. Otherwise {@code asc} or {@code desc}.
      * @param  bool  $enableDefaultSort  When false, no initial sort is applied unless the host passes {@code sortBy} into {@see TableView::mount()}.
      * @param  string|bool|null  $scrollbarHorizontal  {@code null} uses {@code config('tableui.scrollbars.horizontal')}. Accepts {@code auto}, bool, or {@code "true"}/{@code "false"} strings.
      * @param  string|bool|null  $scrollbarVertical  {@code null} uses {@code config('tableui.scrollbars.vertical')}.
@@ -46,15 +53,16 @@ final class Options
     public function __construct(
         private bool $stripping = true,
         private ?string $defaultSortColumn = null,
-        private string $defaultSortDirection = 'asc',
+        ?string $defaultSortDirection = null,
         private bool $enableDefaultSort = true,
         string|bool|null $scrollbarHorizontal = null,
         string|bool|null $scrollbarVertical = null,
         ?string $verticalMaxHeight = null,
         mixed $perPage = null,
     ) {
-        $this->assertDefaultSortDirection($defaultSortDirection);
-        $this->defaultSortDirection = strtolower($defaultSortDirection) === 'desc' ? 'desc' : 'asc';
+        $resolvedSortDirection = $defaultSortDirection ?? (string) config('tableui.default_sort_direction', 'desc');
+        $this->assertDefaultSortDirection($resolvedSortDirection);
+        $this->defaultSortDirection = strtolower($resolvedSortDirection) === 'desc' ? 'desc' : 'asc';
 
         $scrollConfig = config('tableui.scrollbars', []);
         $this->scrollbarHorizontal = self::normalizeScrollbarMode($scrollbarHorizontal ?? ($scrollConfig['horizontal'] ?? 'auto'));

@@ -104,10 +104,10 @@ it('hydrates headers and rows from a Table domain object', function (): void {
         ->assertSet('headers', ['ID', 'User Name'])
         ->assertSet('columnKeys', ['id', 'user_name'])
         ->assertSet('sortBy', 'id')
-        ->assertSet('sortDirection', 'asc')
+        ->assertSet('sortDirection', 'desc')
         ->assertCount('visibleRowActionSnapshots', 3)
         ->assertSet('hasRowLinkAction', true)
-        ->assertSeeInOrder(['1', 'Bob', '2', 'Ada']);
+        ->assertSeeInOrder(['2', 'Ada', '1', 'Bob']);
 });
 
 it('redirects via row_link when navigateRowLink is called for a default model table', function (): void {
@@ -137,7 +137,7 @@ it('uses dual display keys for sorting while preserving canonical keys for row a
     ])
         ->assertSet('columnKeys', ['hid'])
         ->assertSet('sortBy', 'hid')
-        ->assertSeeInOrder(['100', '200'])
+        ->assertSeeInOrder(['200', '100'])
         ->call('navigateRowLink', 'id:10')
         ->assertRedirect('/LivewireTableComponentTestModel/10/view');
 });
@@ -277,7 +277,8 @@ it('defaults sort to the first column when the domain table has no id key', func
         'table' => new Table([$ada, $bob]),
     ])
         ->assertSet('sortBy', 'user_name')
-        ->assertSeeInOrder(['Ada', 'Bob']);
+        ->assertSet('sortDirection', 'desc')
+        ->assertSeeInOrder(['Bob', 'Ada']);
 });
 
 it('uses explicit defaultSortColumn for legacy headers and rows', function (): void {
@@ -290,8 +291,8 @@ it('uses explicit defaultSortColumn for legacy headers and rows', function (): v
         ],
     ])
         ->assertSet('sortBy', '1')
-        ->assertSet('sortDirection', 'asc')
-        ->assertSeeInOrder(['Ada', 'Developer', 'Bob', 'Operator']);
+        ->assertSet('sortDirection', 'desc')
+        ->assertSeeInOrder(['Bob', 'Operator', 'Ada', 'Developer']);
 });
 
 it('renders money column cells with minor-unit divisor', function (): void {
@@ -639,7 +640,7 @@ it('toggleSelectAll selects and clears all displayed row keys', function (): voi
         'table' => livewireTableWithBulkDelete([$ada, $bob]),
     ])
         ->call('toggleSelectAll')
-        ->assertSet('selectedRowKeys', ['id:1', 'id:2'])
+        ->assertSet('selectedRowKeys', ['id:2', 'id:1'])
         ->call('toggleSelectAll')
         ->assertSet('selectedRowKeys', []);
 });

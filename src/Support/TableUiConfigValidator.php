@@ -22,6 +22,7 @@ final class TableUiConfigValidator
         self::assertThemeShape();
         self::assertScrollbarsShape();
         self::assertPaginationShape();
+        self::assertDefaultSortDirectionConfig();
         self::assertColumnTypesShape();
         self::assertFiltersShape();
 
@@ -323,6 +324,25 @@ final class TableUiConfigValidator
 
         if (! is_numeric($pagination) || (int) $pagination < 0) {
             throw new InvalidArgumentException('tableui.pagination must be a non-negative integer.');
+        }
+    }
+
+    private static function assertDefaultSortDirectionConfig(): void
+    {
+        if (! config()->has('tableui.default_sort_direction')) {
+            return;
+        }
+
+        $direction = config('tableui.default_sort_direction');
+
+        if (! is_string($direction)) {
+            throw new InvalidArgumentException('tableui.default_sort_direction must be a string ("asc" or "desc").');
+        }
+
+        $normalized = strtolower(trim($direction));
+
+        if (! in_array($normalized, ['asc', 'desc'], true)) {
+            throw new InvalidArgumentException('tableui.default_sort_direction must be "asc" or "desc".');
         }
     }
 
