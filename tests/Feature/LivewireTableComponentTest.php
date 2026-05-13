@@ -451,17 +451,46 @@ it('sorts rows by selected column and toggles direction', function (): void {
         'table' => new Table([]),
         'headers' => ['Name', 'Role'],
         'rows' => [
-            ['Bob', 'Operator'],
-            ['Ada', 'Developer'],
+            ['Ada', 'Operator'],
+            ['Bob', 'Developer'],
         ],
     ])
         ->call('sort', '0')
         ->assertSet('sortBy', '0')
-        ->assertSet('sortDirection', 'asc')
-        ->assertSeeInOrder(['Ada', 'Developer', 'Bob', 'Operator'])
-        ->call('sort', '0')
         ->assertSet('sortDirection', 'desc')
-        ->assertSeeInOrder(['Bob', 'Operator', 'Ada', 'Developer']);
+        ->assertSeeInOrder(['Bob', 'Developer', 'Ada', 'Operator'])
+        ->call('sort', '0')
+        ->assertSet('sortDirection', 'asc')
+        ->assertSeeInOrder(['Ada', 'Operator', 'Bob', 'Developer']);
+});
+
+it('infers id as the default sort column for legacy rows that include an id key', function (): void {
+    Livewire::test(TableView::class, [
+        'table' => new Table([]),
+        'headers' => ['ID', 'Name'],
+        'rows' => [
+            ['id' => 1, 'name' => 'First'],
+            ['id' => 3, 'name' => 'Third'],
+            ['id' => 2, 'name' => 'Second'],
+        ],
+    ])
+        ->assertSet('sortBy', 'id')
+        ->assertSet('sortDirection', 'desc')
+        ->assertSeeInOrder(['3', 'Third', '2', 'Second', '1', 'First']);
+});
+
+it('preserves collection order when sort keys tie', function (): void {
+    Livewire::test(TableView::class, [
+        'table' => new Table([]),
+        'headers' => ['Label', 'Seq'],
+        'rows' => [
+            ['label' => 'Same', 'seq' => 'B'],
+            ['label' => 'Same', 'seq' => 'A'],
+        ],
+    ])
+        ->set('sortBy', 'label')
+        ->set('sortDirection', 'asc')
+        ->assertSeeInOrder(['Same', 'B', 'Same', 'A']);
 });
 
 it('renders bulk toolbar and row checkboxes when at least one action is bulk', function (): void {
