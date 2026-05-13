@@ -39,7 +39,10 @@
     "autoload": {
         "psr-4": {
             "InEngine\\TableUI\\": "src/"
-        }
+        },
+        "files": [
+            "src/Support/tw_merge.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
