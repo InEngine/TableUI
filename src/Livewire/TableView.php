@@ -4,7 +4,6 @@ namespace InEngine\TableUI\Livewire;
 
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 use InEngine\TableUI\ActionTypes\Action;
 use InEngine\TableUI\ColumnTypes\Column;
 use InEngine\TableUI\ColumnTypes\ColumnFactory;
@@ -88,6 +87,18 @@ class TableView extends Component
     public ?string $sortBy = null;
 
     public string $sortDirection = 'asc';
+
+    /**
+     * When the user sorts by a column other than the active one, this matches {@see Options::getDefaultSortDirection()} from mount (package default {@code asc}; use {@code desc} in {@see Options} for newest-first).
+     *
+     * @var 'asc'|'desc'
+     */
+    public string $defaultSortDirectionForNewColumn = 'asc';
+
+    /**
+     * When true (default), ascending shows ↓ and descending shows ↑ in the sort header ({@see Options::getFlipSortIndicatorGlyphs()}).
+     */
+    public bool $flipSortIndicatorGlyphs = true;
 
     public string $emptyMessage = 'No rows to display.';
 
@@ -237,6 +248,10 @@ class TableView extends Component
         );
 
         $this->sortDirection = strtolower($sortDirection) === 'desc' ? 'desc' : 'asc';
+
+        $this->defaultSortDirectionForNewColumn = $table->options()->getDefaultSortDirection();
+
+        $this->flipSortIndicatorGlyphs = $table->options()->getFlipSortIndicatorGlyphs();
 
         $hydratedFromDomainTable = false;
 
@@ -939,7 +954,7 @@ class TableView extends Component
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
         } else {
             $this->sortBy = $column;
-            $this->sortDirection = 'asc';
+            $this->sortDirection = $this->defaultSortDirectionForNewColumn;
         }
 
         $this->clampPaginationPage();
@@ -1085,14 +1100,30 @@ class TableView extends Component
             return $rows;
         }
 
-        return Collection::make($rows)
-            ->sortBy(
-                fn (array $row): string => mb_strtolower((string) data_get($row, $this->sortBy, '')),
-                SORT_NATURAL,
-                $this->sortDirection === 'desc'
-            )
-            ->values()
-            ->all();
+        $sortBy = $this->sortBy;
+        $descending = $this->sortDirection === 'desc';
+
+        $indexed = [];
+        foreach ($rows as $index => $row) {
+            $indexed[] = ['i' => $index, 'r' => $row];
+        }
+
+        usort($indexed, function (array $a, array $b) use ($sortBy, $descending): int {
+            $va = mb_strtolower((string) data_get($a['r'], $sortBy, ''));
+            $vb = mb_strtolower((string) data_get($b['r'], $sortBy, ''));
+            $cmp = strnatcasecmp($va, $vb);
+
+            if ($cmp !== 0) {
+                return $descending ? -$cmp : $cmp;
+            }
+
+            return $a['i'] <=> $b['i'];
+        });
+
+        return array_map(
+            static fn (array $wrap): array => $wrap['r'],
+            $indexed
+        );
     }
 
     /**
@@ -1257,15 +1288,15 @@ class TableView extends Component
             return $explicit;
         }
 
-        if (! $hydratedFromDomainTable) {
-            return null;
-        }
-
         if (in_array('id', $columnKeys, true)) {
             return 'id';
         }
 
-        return $columnKeys[0] ?? null;
+        if ($hydratedFromDomainTable) {
+            return $columnKeys[0] ?? null;
+        }
+
+        return null;
     }
 
     private function resolveColumnKeys(array $rows, array $headers): array

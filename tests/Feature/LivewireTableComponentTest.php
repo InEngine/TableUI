@@ -104,10 +104,10 @@ it('hydrates headers and rows from a Table domain object', function (): void {
         ->assertSet('headers', ['ID', 'User Name'])
         ->assertSet('columnKeys', ['id', 'user_name'])
         ->assertSet('sortBy', 'id')
-        ->assertSet('sortDirection', 'desc')
+        ->assertSet('sortDirection', 'asc')
         ->assertCount('visibleRowActionSnapshots', 3)
         ->assertSet('hasRowLinkAction', true)
-        ->assertSeeInOrder(['2', 'Ada', '1', 'Bob']);
+        ->assertSeeInOrder(['1', 'Bob', '2', 'Ada']);
 });
 
 it('redirects via row_link when navigateRowLink is called for a default model table', function (): void {
@@ -137,7 +137,7 @@ it('uses dual display keys for sorting while preserving canonical keys for row a
     ])
         ->assertSet('columnKeys', ['hid'])
         ->assertSet('sortBy', 'hid')
-        ->assertSeeInOrder(['200', '100'])
+        ->assertSeeInOrder(['100', '200'])
         ->call('navigateRowLink', 'id:10')
         ->assertRedirect('/LivewireTableComponentTestModel/10/view');
 });
@@ -277,8 +277,8 @@ it('defaults sort to the first column when the domain table has no id key', func
         'table' => new Table([$ada, $bob]),
     ])
         ->assertSet('sortBy', 'user_name')
-        ->assertSet('sortDirection', 'desc')
-        ->assertSeeInOrder(['Bob', 'Ada']);
+        ->assertSet('sortDirection', 'asc')
+        ->assertSeeInOrder(['Ada', 'Bob']);
 });
 
 it('uses explicit defaultSortColumn for legacy headers and rows', function (): void {
@@ -291,8 +291,8 @@ it('uses explicit defaultSortColumn for legacy headers and rows', function (): v
         ],
     ])
         ->assertSet('sortBy', '1')
-        ->assertSet('sortDirection', 'desc')
-        ->assertSeeInOrder(['Bob', 'Operator', 'Ada', 'Developer']);
+        ->assertSet('sortDirection', 'asc')
+        ->assertSeeInOrder(['Ada', 'Developer', 'Bob', 'Operator']);
 });
 
 it('renders money column cells with minor-unit divisor', function (): void {
@@ -451,17 +451,64 @@ it('sorts rows by selected column and toggles direction', function (): void {
         'table' => new Table([]),
         'headers' => ['Name', 'Role'],
         'rows' => [
-            ['Bob', 'Operator'],
-            ['Ada', 'Developer'],
+            ['Ada', 'Operator'],
+            ['Bob', 'Developer'],
         ],
     ])
         ->call('sort', '0')
         ->assertSet('sortBy', '0')
         ->assertSet('sortDirection', 'asc')
-        ->assertSeeInOrder(['Ada', 'Developer', 'Bob', 'Operator'])
+        ->assertSeeInOrder(['Ada', 'Operator', 'Bob', 'Developer'])
         ->call('sort', '0')
         ->assertSet('sortDirection', 'desc')
-        ->assertSeeInOrder(['Bob', 'Operator', 'Ada', 'Developer']);
+        ->assertSeeInOrder(['Bob', 'Developer', 'Ada', 'Operator']);
+});
+
+it('infers id as the default sort column for legacy rows that include an id key', function (): void {
+    Livewire::test(TableView::class, [
+        'table' => new Table([]),
+        'headers' => ['ID', 'Name'],
+        'rows' => [
+            ['id' => 1, 'name' => 'First'],
+            ['id' => 3, 'name' => 'Third'],
+            ['id' => 2, 'name' => 'Second'],
+        ],
+    ])
+        ->assertSet('sortBy', 'id')
+        ->assertSet('sortDirection', 'asc')
+        ->assertSeeInOrder(['1', 'First', '2', 'Second', '3', 'Third']);
+});
+
+it('preserves collection order when sort keys tie', function (): void {
+    Livewire::test(TableView::class, [
+        'table' => new Table([]),
+        'headers' => ['Label', 'Seq'],
+        'rows' => [
+            ['label' => 'Same', 'seq' => 'B'],
+            ['label' => 'Same', 'seq' => 'A'],
+        ],
+    ])
+        ->set('sortBy', 'label')
+        ->set('sortDirection', 'asc')
+        ->assertSeeInOrder(['Same', 'B', 'Same', 'A']);
+});
+
+it('shows flipped sort indicator glyphs by default through Options', function (): void {
+    $a = new LivewireTableComponentTestModel;
+    $a->forceFill(['id' => 1, 'user_name' => 'Zed']);
+
+    $b = new LivewireTableComponentTestModel;
+    $b->forceFill(['id' => 2, 'user_name' => 'Ann']);
+
+    Livewire::test(TableView::class, [
+        'table' => new Table([$a, $b], null, new Options(
+            defaultSortColumn: 'id',
+            defaultSortDirection: 'asc',
+        )),
+    ])
+        ->assertSet('sortDirection', 'asc')
+        ->assertSet('flipSortIndicatorGlyphs', true)
+        ->assertSee('↓');
 });
 
 it('renders bulk toolbar and row checkboxes when at least one action is bulk', function (): void {
@@ -640,7 +687,7 @@ it('toggleSelectAll selects and clears all displayed row keys', function (): voi
         'table' => livewireTableWithBulkDelete([$ada, $bob]),
     ])
         ->call('toggleSelectAll')
-        ->assertSet('selectedRowKeys', ['id:2', 'id:1'])
+        ->assertSet('selectedRowKeys', ['id:1', 'id:2'])
         ->call('toggleSelectAll')
         ->assertSet('selectedRowKeys', []);
 });
