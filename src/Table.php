@@ -35,13 +35,16 @@ class Table extends EloquentCollection
     private Options $options;
 
     /**
-     * @param  EloquentCollection<int, Model>|list<Model>  $items
+     * Accepts an Eloquent collection of a concrete model type or a list of models. Documented as {@see iterable} so
+     * static analysis treats item types covariantly (unlike {@see EloquentCollection}'s invariant template parameter).
+     *
+     * @param  iterable<int, Model>  $items
      * @param  ?Options  $options  When null, {@see Options} is instantiated with default flags and routes.
      * @param  ?Actions  $actions  When null, {@see actions()} uses {@see DefaultTableActions::forTable()} for model-backed tables.
      * @param  ?Filters  $filters  When null, {@see filters()} uses {@see Filters::inferFromTable()}.
      */
     public function __construct(
-        EloquentCollection|array $items = [],
+        iterable $items = [],
         ?Columns $columns = null,
         ?Options $options = null,
         ?Actions $actions = null,
@@ -60,12 +63,13 @@ class Table extends EloquentCollection
     }
 
     /**
-     * @param  EloquentCollection<int, Model>|list<Model>  $items
+     * @param  iterable<int, Model>  $items
      * @param  ?Options  $options  When null, {@see Options} is instantiated with default flags and routes.
      * @param  ?Actions  $actions  When null, {@see actions()} uses {@see DefaultTableActions::forTable()} for model-backed tables.
      * @param  ?Filters  $filters  When null, {@see filters()} uses {@see Filters::inferFromTable()}.
+     * @return static
      */
-    public static function fromCollection(EloquentCollection|array $items, ?Columns $columns = null, ?Options $options = null, ?Actions $actions = null, ?Filters $filters = null): static
+    public static function fromCollection(iterable $items, ?Columns $columns = null, ?Options $options = null, ?Actions $actions = null, ?Filters $filters = null): static
     {
         return new static($items, $columns, $options, $actions, $filters);
     }
