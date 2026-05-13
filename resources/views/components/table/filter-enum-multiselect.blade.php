@@ -22,7 +22,7 @@
         optionQuery: '',
         labels: @js($enumOptions),
         allLabel: @js($allLabel),
-        selected: $wire.entangle(@js($wireModelPath)).live,
+        selected: @entangle($wireModelPath).live,
         get filteredEnumEntries() {
             const q = (this.optionQuery ?? '').toString().toLowerCase().trim();
             const out = [];

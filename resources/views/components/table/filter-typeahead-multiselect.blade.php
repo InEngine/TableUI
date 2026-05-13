@@ -29,7 +29,7 @@
     class="table-ui__filter-typeahead-multi table-ui__filter-enum-multi relative min-w-0 w-full max-w-full overflow-hidden"
     x-data="{
         labels: @js($distinctOpts),
-        selected: $wire.entangle(@js($wireModelPath)).live,
+        selected: @entangle($wireModelPath).live,
         draft: '',
         open: false,
         panelStyle: {},
@@ -142,7 +142,7 @@
 >
     <div class="table-ui__filter-typeahead-multi__stack w-full min-w-0 max-w-full space-y-1.5">
         <div
-            class="table-ui__filter-typeahead-multi-chips flex max-h-20 min-h-0 flex-wrap gap-1 overflow-y-auto"
+            class="table-ui__filter-typeahead-multi-chips flex max-h-28 min-h-0 flex-wrap gap-1 overflow-y-auto"
             x-show="hasSelection"
             x-cloak
         >

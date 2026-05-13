@@ -64,7 +64,7 @@
      * Checkbox column matches body `.table-ui__td--select` (align-middle + px-2), not align-top.
      */
     .table-ui__filter-row > td {
-        @apply py-2 align-top;
+        @apply py-3 align-top;
     }
 
     .table-ui__filter-row > td.table-ui__td--select {
@@ -91,7 +91,8 @@
      * Keep this modest so simple select filters match body-row density.
      */
     .table-ui__filter-cell-height-spacer {
-        @apply pointer-events-none min-h-[5.5rem] w-full shrink-0 select-none;
+        /* Taller strip so typeahead + chips + enum search are not vertically squished (absolute controls sit in the td above this). */
+        @apply pointer-events-none min-h-[12rem] w-full shrink-0 select-none;
     }
 
     .table-ui__td--filter.table-ui__td--filter-has-control {
@@ -107,7 +108,7 @@
          * left-3 + right-3 defines width (avoid w-full with inset-x — 100% width + offset clips the right edge).
          * Top inset matches py-2; max-h keeps stacked filters scrollable.
          */
-        @apply absolute left-3 right-3 top-2 z-[5] flex h-max max-h-[calc(100%-1rem)] min-h-0 w-auto max-w-none min-w-0 flex-col gap-1 overflow-x-hidden overflow-y-auto;
+        @apply absolute left-3 right-3 top-2 z-[5] flex h-max max-h-[min(32rem,calc(100vh-14rem))] min-h-0 w-auto max-w-none min-w-0 flex-col gap-1.5 overflow-x-hidden overflow-y-auto;
     }
 
     .table-ui__td--filter:not(.table-ui__td--filter-has-control) {
