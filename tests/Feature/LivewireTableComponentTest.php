@@ -773,3 +773,39 @@ it('hides pagination when filters reduce the row count to within per page', func
         ->assertDontSeeHtml('table-ui__pagination')
         ->assertSee('User-001');
 });
+
+it('sorts the filtered row set before slicing pages', function (): void {
+    $table = new Table([], null, new Options(perPage: 1, enableDefaultSort: false));
+    $table->setFilters(Filters::make(
+        new FilterDefinition('tier', 'Tier', FilterType::Text),
+    ));
+
+    $rows = [
+        ['id' => 4, 'tier' => 'x'],
+        ['id' => 2, 'tier' => 'match'],
+        ['id' => 3, 'tier' => 'x'],
+        ['id' => 1, 'tier' => 'match'],
+    ];
+
+    Livewire::test(TableView::class, [
+        'table' => $table,
+        'headers' => ['ID', 'Tier'],
+        'rows' => $rows,
+    ])
+        ->set('filterValues', ['tier' => 'match'])
+        ->set('sortBy', 'id')
+        ->set('sortDirection', 'desc')
+        ->tap(function ($component): void {
+            expect(array_map(
+                static fn (array $row): int => (int) $row['id'],
+                $component->instance()->displayRows,
+            ))->toBe([2]);
+        })
+        ->call('gotoPaginationPage', 2)
+        ->tap(function ($component): void {
+            expect(array_map(
+                static fn (array $row): int => (int) $row['id'],
+                $component->instance()->displayRows,
+            ))->toBe([1]);
+        });
+});
