@@ -373,6 +373,17 @@ final class TableUiConfigValidator
             throw new InvalidArgumentException('tableui.filters.enum_allow_multiple must be a boolean when present.');
         }
 
+        if (array_key_exists('enum_single_select_max', $filters)) {
+            $max = $filters['enum_single_select_max'];
+            if (! is_numeric($max) || (int) $max < 1) {
+                throw new InvalidArgumentException('tableui.filters.enum_single_select_max must be a positive integer when present.');
+            }
+        }
+
+        if (array_key_exists('text_like_allow_multiple', $filters) && ! is_bool($filters['text_like_allow_multiple'])) {
+            throw new InvalidArgumentException('tableui.filters.text_like_allow_multiple must be a boolean when present.');
+        }
+
         if (array_key_exists('email_extra_tld_labels', $filters) && ! is_array($filters['email_extra_tld_labels'])) {
             throw new InvalidArgumentException('tableui.filters.email_extra_tld_labels must be an array when present.');
         }

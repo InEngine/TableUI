@@ -9,6 +9,7 @@ use InEngine\TableUI\ActionTypes\ViewAction;
 use InEngine\TableUI\Columns;
 use InEngine\TableUI\ColumnTypes\Column;
 use InEngine\TableUI\ColumnTypes\Complex\DualColumn;
+use InEngine\TableUI\ColumnTypes\Complex\EmailColumn;
 use InEngine\TableUI\ColumnTypes\Complex\MoneyColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\EnumColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\StringColumn;
@@ -142,7 +143,7 @@ it('uses dual display keys for sorting while preserving canonical keys for row a
         ->assertRedirect('/LivewireTableComponentTestModel/10/view');
 });
 
-it('filters DualColumn rows by display key using exact match semantics', function (): void {
+it('filters DualColumn hid display values with a numeric min/max range', function (): void {
     $first = new LivewireTableComponentTestModel;
     $first->forceFill(['id' => 10, 'hid' => 200, 'slug' => 'alpha']);
 
@@ -160,10 +161,10 @@ it('filters DualColumn rows by display key using exact match semantics', functio
     ])
         ->assertSee('alpha')
         ->assertSee('beta')
-        ->set('filterValues', ['hid' => '100'])
-        ->assertSee('beta')
-        ->assertDontSee('alpha')
-        ->set('filterValues.hid', 100)
+        ->set('filterValues', ['hid' => ['min' => '150', 'max' => '']])
+        ->assertSee('alpha')
+        ->assertDontSee('beta')
+        ->set('filterValues.hid', ['min' => '100', 'max' => '100'])
         ->assertSee('beta')
         ->assertDontSee('alpha');
 });
@@ -177,7 +178,10 @@ it('renders multiselect checkboxes for enum filters when enum_allow_multiple is 
     $published = new LivewireTableComponentTestModel;
     $published->forceFill(['id' => 2, 'status' => 'published', 'slug' => 'row-pub']);
 
-    $table = new Table([$draft, $published], new Columns([
+    $archived = new LivewireTableComponentTestModel;
+    $archived->forceFill(['id' => 3, 'status' => 'archived', 'slug' => 'row-archived']);
+
+    $table = new Table([$draft, $published, $archived], new Columns([
         new EnumColumn('status'),
         new Column('slug'),
     ]));
@@ -205,7 +209,10 @@ it('renders enum multiselect summary container so labels wrap without widening t
     $published = new LivewireTableComponentTestModel;
     $published->forceFill(['id' => 2, 'status' => 'published', 'slug' => 'row-pub']);
 
-    $table = new Table([$draft, $published], new Columns([
+    $archived = new LivewireTableComponentTestModel;
+    $archived->forceFill(['id' => 3, 'status' => 'archived', 'slug' => 'row-archived']);
+
+    $table = new Table([$draft, $published, $archived], new Columns([
         new EnumColumn('status'),
         new Column('slug'),
     ]));
@@ -220,6 +227,63 @@ it('renders enum multiselect summary container so labels wrap without widening t
         ->assertSeeHtml('table-ui__filter-cell-height-spacer');
 });
 
+it('renders a single select for low-cardinality columns such as gender', function (): void {
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 1, 'gender' => 'male', 'user_name' => 'Ada']);
+
+    $bob = new LivewireTableComponentTestModel;
+    $bob->forceFill(['id' => 2, 'gender' => 'female', 'user_name' => 'Bob']);
+
+    $table = new Table([$ada, $bob], new Columns([
+        Column::fromAttributeKey('gender'),
+        new StringColumn('user_name'),
+    ]));
+    $table->setFilters(Filters::inferFromTable($table));
+
+    $genderFilter = collect($table->filters()->definitions())->first(
+        fn ($definition): bool => $definition->columnKey === 'gender'
+    );
+
+    expect($genderFilter)->not->toBeNull()
+        ->and($genderFilter->type)->toBe(FilterType::Enum->value)
+        ->and($genderFilter->allowMultiple)->toBeFalse();
+
+    Livewire::test(TableView::class, [
+        'table' => $table,
+    ])
+        ->call('toggleFiltersPanel')
+        ->assertSeeHtml('table-ui__filter-select')
+        ->assertSee('Male')
+        ->assertSee('Female');
+});
+
+it('filters email by live substring while typing in the typeahead input', function (): void {
+    config()->set('tableui.filters.text_like_allow_multiple', true);
+
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 1, 'user_name' => 'Ada', 'email' => 'ada@legacytradecollege.org']);
+
+    $bob = new LivewireTableComponentTestModel;
+    $bob->forceFill(['id' => 2, 'user_name' => 'Bob', 'email' => 'bob@example.com']);
+
+    $table = new Table([$ada, $bob], new Columns([
+        new EmailColumn('email'),
+    ]));
+    $table->setFilters(Filters::inferFromTable($table));
+
+    Livewire::test(TableView::class, [
+        'table' => $table,
+    ])
+        ->call('toggleFiltersPanel')
+        ->set('filterValues.email', 'legacytradecollege.org')
+        ->tap(function ($component): void {
+            $rows = $component->instance()->displayRows;
+
+            expect($rows)->toHaveCount(1)
+                ->and($rows[0]['email'])->toBe('ada@legacytradecollege.org');
+        });
+});
+
 it('filters string columns with OR semantics when text-like multiselect is enabled', function (): void {
     config()->set('tableui.filters.text_like_allow_multiple', true);
 
@@ -229,7 +293,10 @@ it('filters string columns with OR semantics when text-like multiselect is enabl
     $bob = new LivewireTableComponentTestModel;
     $bob->forceFill(['id' => 2, 'user_name' => 'Bob']);
 
-    $table = new Table([$ada, $bob], new Columns([
+    $carol = new LivewireTableComponentTestModel;
+    $carol->forceFill(['id' => 3, 'user_name' => 'Carol']);
+
+    $table = new Table([$ada, $bob, $carol], new Columns([
         new StringColumn('user_name'),
     ]));
     $table->setFilters(Filters::inferFromTable($table));
@@ -240,6 +307,10 @@ it('filters string columns with OR semantics when text-like multiselect is enabl
         ->call('toggleFiltersPanel')
         ->assertSeeHtml('table-ui__filter-typeahead-multi')
         ->assertSeeHtml('table-ui__filter-enum-multi')
+        ->assertSeeInOrder([
+            'table-ui__filter-enum-multi-control',
+            'table-ui__filter-typeahead-multi-chips',
+        ])
         ->set('filterValues.user_name', ['Ada', 'Bob']);
 
     expect($component->instance()->displayRows)->toHaveCount(2);

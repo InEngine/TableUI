@@ -41,6 +41,13 @@ return [
         'enum_allow_multiple' => true,
 
         /*
+        | Enum filters with at most this many distinct options (from inferred table data or host-provided
+        | labels) render as a single {@code <select>} (All + each option), like boolean / is_alumni filters.
+        | Larger sets use {@see enum_allow_multiple} for multiselect vs single select.
+        */
+        'enum_single_select_max' => 2,
+
+        /*
         | When true, {@see \InEngine\TableUI\FilterTypes\FilterDefinition::forColumn()} uses multiselect
         | controls for text, phone, and email column filters (distinct values from the current row payload,
         | OR semantics). When false, those filters use the single combobox or plain input. Override per

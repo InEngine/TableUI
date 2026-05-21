@@ -367,7 +367,7 @@ class TableView extends Component
                 $columnClass = $this->columnTypeClasses[$columnIndex] ?? Column::class;
             }
 
-            $textMatch = $columnClass === DualColumn::class ? 'exact' : 'substring';
+            $textMatch = 'substring';
 
             $this->filterDefinitions[] = [
                 'columnKey' => $definition->columnKey,
@@ -390,7 +390,7 @@ class TableView extends Component
                 } elseif ($ftype === FilterType::Enum && $definition->allowMultiple) {
                     $this->filterValues[$definition->columnKey] = [];
                 } elseif (self::filterDefinitionUsesTextLikeMulti($ftype, $definition)) {
-                    $this->filterValues[$definition->columnKey] = [];
+                    $this->filterValues[$definition->columnKey] = '';
                 } else {
                     $this->filterValues[$definition->columnKey] = $this->initialFilterStateForType($definition->type);
                 }
@@ -413,7 +413,7 @@ class TableView extends Component
             } elseif ($ftype === FilterType::Enum && ($definition['allowMultiple'] ?? false)) {
                 $next[$definition['columnKey']] = [];
             } elseif (self::filterUsesTextLikeMulti($ftype, $definition)) {
-                $next[$definition['columnKey']] = [];
+                $next[$definition['columnKey']] = '';
             } else {
                 $next[$definition['columnKey']] = $this->initialFilterStateForType($definition['type']);
             }
@@ -449,7 +449,26 @@ class TableView extends Component
             $type = FilterType::tryFrom($definition['type']) ?? FilterType::Text;
 
             if (($definition['allowMultiple'] ?? false) && in_array($type, [FilterType::Text, FilterType::Phone, FilterType::Email], true)) {
-                $current = $next[$key] ?? [];
+                $current = $next[$key] ?? '';
+
+                if (is_string($current)) {
+                    if ($current === '') {
+                        continue;
+                    }
+
+                    $formatted = match ($type) {
+                        FilterType::Phone => TableUiPhoneFilterInputFormatter::format($current),
+                        FilterType::Email => TableUiEmailFilterInputFormatter::format($current),
+                        default => null,
+                    };
+
+                    if ($formatted !== null && $formatted !== $current) {
+                        $next[$key] = $formatted;
+                        $changed = true;
+                    }
+
+                    continue;
+                }
 
                 if (! is_array($current)) {
                     continue;
@@ -499,7 +518,7 @@ class TableView extends Component
     }
 
     /**
-     * Coerce legacy scalar filter state to a list when the filter is configured for multiselect text-like inputs.
+     * Text-like multiselect filters accept a live substring string or a list of committed needles (OR semantics).
      */
     private function normalizeTextLikeMultiFilterShapes(): void
     {
@@ -521,16 +540,11 @@ class TableView extends Component
 
             $v = $next[$key];
 
-            if (is_array($v)) {
+            if (is_array($v) || is_string($v)) {
                 continue;
             }
 
-            if ($v === null || $v === '') {
-                $next[$key] = [];
-            } else {
-                $next[$key] = [(string) $v];
-            }
-
+            $next[$key] = $v === null || $v === '' ? '' : trim((string) $v);
             $changed = true;
         }
 

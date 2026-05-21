@@ -162,6 +162,14 @@ it('matches email by domain fragment with @ or dotted host', function (): void {
         ->and(TableUiFilterMatcher::matches(['email' => 'u@other.com'], $def, '@gmail.com'))->toBeFalse();
 });
 
+it('matches email by arbitrary substring such as a domain partial', function (): void {
+    $def = ['columnKey' => 'email', 'label' => 'Email', 'type' => FilterType::Email->value, 'enumOptions' => null, 'moneyDivisor' => null, 'allowMultiple' => true];
+
+    expect(TableUiFilterMatcher::matches(['email' => 'ada@legacytradecollege.org'], $def, 'legacytradecollege.org'))->toBeTrue()
+        ->and(TableUiFilterMatcher::matches(['email' => 'bob@example.com'], $def, 'legacytradecollege.org'))->toBeFalse()
+        ->and(TableUiFilterMatcher::matches(['email' => 'ada@legacytradecollege.org'], $def, 'legacytradecollege'))->toBeTrue();
+});
+
 it('matches email by multi-label TLD suffix when needle starts with a dot', function (): void {
     $def = ['columnKey' => 'email', 'label' => 'Email', 'type' => FilterType::Email->value, 'enumOptions' => null, 'moneyDivisor' => null];
 
