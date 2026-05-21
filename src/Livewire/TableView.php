@@ -544,7 +544,7 @@ class TableView extends Component
                 continue;
             }
 
-            $next[$key] = $v === null || $v === '' ? '' : trim((string) $v);
+            $next[$key] = $v === null ? '' : trim((string) $v);
             $changed = true;
         }
 

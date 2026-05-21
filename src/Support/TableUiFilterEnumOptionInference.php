@@ -5,7 +5,6 @@ namespace InEngine\TableUI\Support;
 use InEngine\TableUI\ColumnTypes\Column;
 use InEngine\TableUI\ColumnTypes\Complex\DualColumn;
 use InEngine\TableUI\ColumnTypes\Complex\EmailColumn;
-use InEngine\TableUI\ColumnTypes\Complex\MoneyColumn;
 use InEngine\TableUI\ColumnTypes\Complex\PhoneColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\BooleanColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\EnumColumn;
@@ -55,7 +54,6 @@ final class TableUiFilterEnumOptionInference
 
         if ($column instanceof BooleanColumn
             || $column instanceof NumberColumn
-            || $column instanceof MoneyColumn
             || $column instanceof TimestampColumn
             || $column instanceof IdColumn
             || $column instanceof DualColumn) {
