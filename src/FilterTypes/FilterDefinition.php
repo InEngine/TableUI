@@ -3,11 +3,13 @@
 namespace InEngine\TableUI\FilterTypes;
 
 use InEngine\TableUI\ColumnTypes\Column;
+use InEngine\TableUI\ColumnTypes\Complex\DualColumn;
 use InEngine\TableUI\ColumnTypes\Complex\EmailColumn;
 use InEngine\TableUI\ColumnTypes\Complex\MoneyColumn;
 use InEngine\TableUI\ColumnTypes\Complex\PhoneColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\BooleanColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\EnumColumn;
+use InEngine\TableUI\ColumnTypes\Primitives\IdColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\NumberColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\TimestampColumn;
 use InEngine\TableUI\Contracts\BuildsFilterDefinitionForColumn;
@@ -15,7 +17,7 @@ use InEngine\TableUI\Filters;
 use InEngine\TableUI\Support\RegisteredTableTypes;
 
 /**
- * Declares one filter control for {@see TableView} (applied client-side to sorted rows).
+ * Declares one filter control for {@see TableView} (applied client-side before sorting and pagination).
  */
 final class FilterDefinition
 {
@@ -49,6 +51,30 @@ final class FilterDefinition
 
         if ($column instanceof BooleanColumn) {
             return new self($key, $label, FilterType::Boolean);
+        }
+
+        if ($enumOptions !== null && $enumOptions !== []) {
+            return new self(
+                $key,
+                $label,
+                FilterType::Enum,
+                enumOptions: $enumOptions,
+                allowMultiple: self::enumFilterAllowsMultiple($enumOptions),
+            );
+        }
+
+        if ($column instanceof DualColumn && self::columnKeyLooksLikeNumericIdentifier($key)) {
+            return new self($key, $label, FilterType::Number);
+        }
+
+        if ($column instanceof IdColumn) {
+            if (self::columnKeyLooksLikeNumericIdentifier($key)) {
+                return new self($key, $label, FilterType::Number);
+            }
+
+            $textLikeAllowMultiple = (bool) config('tableui.filters.text_like_allow_multiple', true);
+
+            return new self($key, $label, FilterType::Text, allowMultiple: $textLikeAllowMultiple);
         }
 
         $textLikeAllowMultiple = (bool) config('tableui.filters.text_like_allow_multiple', true);
@@ -87,18 +113,6 @@ final class FilterDefinition
         }
 
         if ($column instanceof EnumColumn) {
-            if ($enumOptions !== null && $enumOptions !== []) {
-                $allowMultiple = (bool) config('tableui.filters.enum_allow_multiple', true);
-
-                return new self(
-                    $key,
-                    $label,
-                    FilterType::Enum,
-                    enumOptions: $enumOptions,
-                    allowMultiple: $allowMultiple,
-                );
-            }
-
             return new self($key, $label, FilterType::Text, allowMultiple: $textLikeAllowMultiple);
         }
 
@@ -115,5 +129,38 @@ final class FilterDefinition
         }
 
         return new self($key, $label, FilterType::Text, allowMultiple: $textLikeAllowMultiple);
+    }
+
+    /**
+     * @param  array<string, string>  $enumOptions
+     */
+    private static function enumFilterAllowsMultiple(array $enumOptions): bool
+    {
+        $maxSingle = (int) config('tableui.filters.enum_single_select_max', 2);
+
+        if (count($enumOptions) <= $maxSingle) {
+            return false;
+        }
+
+        return (bool) config('tableui.filters.enum_allow_multiple', true);
+    }
+
+    /**
+     * Human-readable numeric identifiers ({@code hid}, {@code id}, {@code *_id}) use min/max range filters.
+     * Keys that name UUID/ULID/GUID columns stay text-like.
+     */
+    public static function columnKeyLooksLikeNumericIdentifier(string $key): bool
+    {
+        $lower = strtolower($key);
+
+        if (in_array($lower, ['hid', 'id'], true)) {
+            return true;
+        }
+
+        if (str_contains($lower, 'uuid') || str_contains($lower, 'ulid') || str_contains($lower, 'guid')) {
+            return false;
+        }
+
+        return str_ends_with($lower, '_id') || str_ends_with($lower, '_hid');
     }
 }

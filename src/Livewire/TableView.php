@@ -4,11 +4,11 @@ namespace InEngine\TableUI\Livewire;
 
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 use InEngine\TableUI\ActionTypes\Action;
 use InEngine\TableUI\ColumnTypes\Column;
 use InEngine\TableUI\ColumnTypes\ColumnFactory;
 use InEngine\TableUI\ColumnTypes\Complex\DualColumn;
+use InEngine\TableUI\Concerns\ToTable;
 use InEngine\TableUI\FilterTypes\FilterDefinition;
 use InEngine\TableUI\FilterTypes\FilterType;
 use InEngine\TableUI\Livewire\Concerns\ManagesBulkSelection;
@@ -52,6 +52,7 @@ use Livewire\Component;
 class TableView extends Component
 {
     use ManagesBulkSelection;
+    use ToTable;
 
     /**
      * @var list<string>
@@ -86,6 +87,18 @@ class TableView extends Component
     public ?string $sortBy = null;
 
     public string $sortDirection = 'asc';
+
+    /**
+     * When the user sorts by a column other than the active one, this matches {@see Options::getDefaultSortDirection()} from mount (package default {@code asc}; use {@code desc} in {@see Options} for newest-first).
+     *
+     * @var 'asc'|'desc'
+     */
+    public string $defaultSortDirectionForNewColumn = 'asc';
+
+    /**
+     * When true (default), ascending shows ↓ and descending shows ↑ in the sort header ({@see Options::getFlipSortIndicatorGlyphs()}).
+     */
+    public bool $flipSortIndicatorGlyphs = true;
 
     public string $emptyMessage = 'No rows to display.';
 
@@ -236,6 +249,10 @@ class TableView extends Component
 
         $this->sortDirection = strtolower($sortDirection) === 'desc' ? 'desc' : 'asc';
 
+        $this->defaultSortDirectionForNewColumn = $table->options()->getDefaultSortDirection();
+
+        $this->flipSortIndicatorGlyphs = $table->options()->getFlipSortIndicatorGlyphs();
+
         $hydratedFromDomainTable = false;
 
         if ($table->isNotEmpty()) {
@@ -350,7 +367,7 @@ class TableView extends Component
                 $columnClass = $this->columnTypeClasses[$columnIndex] ?? Column::class;
             }
 
-            $textMatch = $columnClass === DualColumn::class ? 'exact' : 'substring';
+            $textMatch = 'substring';
 
             $this->filterDefinitions[] = [
                 'columnKey' => $definition->columnKey,
@@ -373,7 +390,7 @@ class TableView extends Component
                 } elseif ($ftype === FilterType::Enum && $definition->allowMultiple) {
                     $this->filterValues[$definition->columnKey] = [];
                 } elseif (self::filterDefinitionUsesTextLikeMulti($ftype, $definition)) {
-                    $this->filterValues[$definition->columnKey] = [];
+                    $this->filterValues[$definition->columnKey] = '';
                 } else {
                     $this->filterValues[$definition->columnKey] = $this->initialFilterStateForType($definition->type);
                 }
@@ -396,7 +413,7 @@ class TableView extends Component
             } elseif ($ftype === FilterType::Enum && ($definition['allowMultiple'] ?? false)) {
                 $next[$definition['columnKey']] = [];
             } elseif (self::filterUsesTextLikeMulti($ftype, $definition)) {
-                $next[$definition['columnKey']] = [];
+                $next[$definition['columnKey']] = '';
             } else {
                 $next[$definition['columnKey']] = $this->initialFilterStateForType($definition['type']);
             }
@@ -432,7 +449,26 @@ class TableView extends Component
             $type = FilterType::tryFrom($definition['type']) ?? FilterType::Text;
 
             if (($definition['allowMultiple'] ?? false) && in_array($type, [FilterType::Text, FilterType::Phone, FilterType::Email], true)) {
-                $current = $next[$key] ?? [];
+                $current = $next[$key] ?? '';
+
+                if (is_string($current)) {
+                    if ($current === '') {
+                        continue;
+                    }
+
+                    $formatted = match ($type) {
+                        FilterType::Phone => TableUiPhoneFilterInputFormatter::format($current),
+                        FilterType::Email => TableUiEmailFilterInputFormatter::format($current),
+                        default => null,
+                    };
+
+                    if ($formatted !== null && $formatted !== $current) {
+                        $next[$key] = $formatted;
+                        $changed = true;
+                    }
+
+                    continue;
+                }
 
                 if (! is_array($current)) {
                     continue;
@@ -482,7 +518,7 @@ class TableView extends Component
     }
 
     /**
-     * Coerce legacy scalar filter state to a list when the filter is configured for multiselect text-like inputs.
+     * Text-like multiselect filters accept a live substring string or a list of committed needles (OR semantics).
      */
     private function normalizeTextLikeMultiFilterShapes(): void
     {
@@ -504,16 +540,11 @@ class TableView extends Component
 
             $v = $next[$key];
 
-            if (is_array($v)) {
+            if (is_array($v) || is_string($v)) {
                 continue;
             }
 
-            if ($v === null || $v === '') {
-                $next[$key] = [];
-            } else {
-                $next[$key] = [(string) $v];
-            }
-
+            $next[$key] = $v === null ? '' : trim((string) $v);
             $changed = true;
         }
 
@@ -937,7 +968,7 @@ class TableView extends Component
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
         } else {
             $this->sortBy = $column;
-            $this->sortDirection = 'asc';
+            $this->sortDirection = $this->defaultSortDirectionForNewColumn;
         }
 
         $this->clampPaginationPage();
@@ -975,16 +1006,16 @@ class TableView extends Component
      */
     public function getDisplayRowsProperty(): array
     {
-        $filtered = $this->applyFiltersToRows($this->sortedRows());
+        $prepared = $this->filteredThenSortedRows();
 
-        if ($this->paginationPerPage <= 0 || count($filtered) <= $this->paginationPerPage) {
-            return $filtered;
+        if ($this->paginationPerPage <= 0 || count($prepared) <= $this->paginationPerPage) {
+            return $prepared;
         }
 
-        $totalPages = max(1, (int) ceil(count($filtered) / $this->paginationPerPage));
+        $totalPages = max(1, (int) ceil(count($prepared) / $this->paginationPerPage));
         $page = max(1, min($this->paginationPage, $totalPages));
 
-        return array_slice($filtered, ($page - 1) * $this->paginationPerPage, $this->paginationPerPage);
+        return array_slice($prepared, ($page - 1) * $this->paginationPerPage, $this->paginationPerPage);
     }
 
     /**
@@ -996,7 +1027,7 @@ class TableView extends Component
             return false;
         }
 
-        $filteredCount = count($this->applyFiltersToRows($this->sortedRows()));
+        $filteredCount = count($this->filteredThenSortedRows());
 
         return $filteredCount > $this->paginationPerPage;
     }
@@ -1007,7 +1038,7 @@ class TableView extends Component
             return 1;
         }
 
-        $filteredCount = count($this->applyFiltersToRows($this->sortedRows()));
+        $filteredCount = count($this->filteredThenSortedRows());
 
         return max(1, (int) ceil($filteredCount / $this->paginationPerPage));
     }
@@ -1049,7 +1080,7 @@ class TableView extends Component
             return;
         }
 
-        $filteredCount = count($this->applyFiltersToRows($this->sortedRows()));
+        $filteredCount = count($this->filteredThenSortedRows());
 
         if ($filteredCount <= $this->paginationPerPage) {
             $this->paginationPage = 1;
@@ -1062,22 +1093,51 @@ class TableView extends Component
     }
 
     /**
+     * Active filters narrow the in-memory dataset; sorting applies to that full filtered set before pagination slices.
+     *
      * @return list<array<array-key, mixed>>
      */
-    private function sortedRows(): array
+    private function filteredThenSortedRows(): array
+    {
+        $filtered = $this->applyFiltersToRows($this->rows);
+
+        return $this->sortRows($filtered);
+    }
+
+    /**
+     * @param  list<array<array-key, mixed>>  $rows
+     * @return list<array<array-key, mixed>>
+     */
+    private function sortRows(array $rows): array
     {
         if ($this->sortBy === null) {
-            return $this->rows;
+            return $rows;
         }
 
-        return Collection::make($this->rows)
-            ->sortBy(
-                fn (array $row): string => mb_strtolower((string) data_get($row, $this->sortBy, '')),
-                SORT_NATURAL,
-                $this->sortDirection === 'desc'
-            )
-            ->values()
-            ->all();
+        $sortBy = $this->sortBy;
+        $descending = $this->sortDirection === 'desc';
+
+        $indexed = [];
+        foreach ($rows as $index => $row) {
+            $indexed[] = ['i' => $index, 'r' => $row];
+        }
+
+        usort($indexed, function (array $a, array $b) use ($sortBy, $descending): int {
+            $va = mb_strtolower((string) data_get($a['r'], $sortBy, ''));
+            $vb = mb_strtolower((string) data_get($b['r'], $sortBy, ''));
+            $cmp = strnatcasecmp($va, $vb);
+
+            if ($cmp !== 0) {
+                return $descending ? -$cmp : $cmp;
+            }
+
+            return $a['i'] <=> $b['i'];
+        });
+
+        return array_map(
+            static fn (array $wrap): array => $wrap['r'],
+            $indexed
+        );
     }
 
     /**
@@ -1242,15 +1302,15 @@ class TableView extends Component
             return $explicit;
         }
 
-        if (! $hydratedFromDomainTable) {
-            return null;
-        }
-
         if (in_array('id', $columnKeys, true)) {
             return 'id';
         }
 
-        return $columnKeys[0] ?? null;
+        if ($hydratedFromDomainTable) {
+            return $columnKeys[0] ?? null;
+        }
+
+        return null;
     }
 
     private function resolveColumnKeys(array $rows, array $headers): array

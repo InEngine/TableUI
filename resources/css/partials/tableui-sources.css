@@ -40,6 +40,10 @@
 @source inline("table-ui__filter-enum-multi-control");
 @source inline("table-ui__filter-enum-multi-trigger");
 @source inline("table-ui__filter-enum-multi-summary-scroll");
+@source inline("table-ui__filter-typeahead-multi-chips");
+@source inline("table-ui__filter-typeahead-multi-chip");
+@source inline("table-ui__filter-typeahead-multi-chip-label");
+@source inline("table-ui__filter-typeahead-multi__stack");
 @source inline("table-ui__filter-enum-multi-panel");
 @source inline("table-ui__filter-enum-multi-option");
 @source inline("table-ui__filter-enum-multi-option--selected");

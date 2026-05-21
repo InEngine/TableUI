@@ -9,6 +9,7 @@ use InEngine\TableUI\ActionTypes\ViewAction;
 use InEngine\TableUI\Columns;
 use InEngine\TableUI\ColumnTypes\Column;
 use InEngine\TableUI\ColumnTypes\Complex\DualColumn;
+use InEngine\TableUI\ColumnTypes\Complex\EmailColumn;
 use InEngine\TableUI\ColumnTypes\Complex\MoneyColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\EnumColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\StringColumn;
@@ -104,10 +105,10 @@ it('hydrates headers and rows from a Table domain object', function (): void {
         ->assertSet('headers', ['ID', 'User Name'])
         ->assertSet('columnKeys', ['id', 'user_name'])
         ->assertSet('sortBy', 'id')
-        ->assertSet('sortDirection', 'desc')
+        ->assertSet('sortDirection', 'asc')
         ->assertCount('visibleRowActionSnapshots', 3)
         ->assertSet('hasRowLinkAction', true)
-        ->assertSeeInOrder(['2', 'Ada', '1', 'Bob']);
+        ->assertSeeInOrder(['1', 'Bob', '2', 'Ada']);
 });
 
 it('redirects via row_link when navigateRowLink is called for a default model table', function (): void {
@@ -137,12 +138,12 @@ it('uses dual display keys for sorting while preserving canonical keys for row a
     ])
         ->assertSet('columnKeys', ['hid'])
         ->assertSet('sortBy', 'hid')
-        ->assertSeeInOrder(['200', '100'])
+        ->assertSeeInOrder(['100', '200'])
         ->call('navigateRowLink', 'id:10')
         ->assertRedirect('/LivewireTableComponentTestModel/10/view');
 });
 
-it('filters DualColumn rows by display key using exact match semantics', function (): void {
+it('filters DualColumn hid display values with a numeric min/max range', function (): void {
     $first = new LivewireTableComponentTestModel;
     $first->forceFill(['id' => 10, 'hid' => 200, 'slug' => 'alpha']);
 
@@ -160,10 +161,10 @@ it('filters DualColumn rows by display key using exact match semantics', functio
     ])
         ->assertSee('alpha')
         ->assertSee('beta')
-        ->set('filterValues', ['hid' => '100'])
-        ->assertSee('beta')
-        ->assertDontSee('alpha')
-        ->set('filterValues.hid', 100)
+        ->set('filterValues', ['hid' => ['min' => '150', 'max' => '']])
+        ->assertSee('alpha')
+        ->assertDontSee('beta')
+        ->set('filterValues.hid', ['min' => '100', 'max' => '100'])
         ->assertSee('beta')
         ->assertDontSee('alpha');
 });
@@ -177,7 +178,10 @@ it('renders multiselect checkboxes for enum filters when enum_allow_multiple is 
     $published = new LivewireTableComponentTestModel;
     $published->forceFill(['id' => 2, 'status' => 'published', 'slug' => 'row-pub']);
 
-    $table = new Table([$draft, $published], new Columns([
+    $archived = new LivewireTableComponentTestModel;
+    $archived->forceFill(['id' => 3, 'status' => 'archived', 'slug' => 'row-archived']);
+
+    $table = new Table([$draft, $published, $archived], new Columns([
         new EnumColumn('status'),
         new Column('slug'),
     ]));
@@ -205,7 +209,10 @@ it('renders enum multiselect summary container so labels wrap without widening t
     $published = new LivewireTableComponentTestModel;
     $published->forceFill(['id' => 2, 'status' => 'published', 'slug' => 'row-pub']);
 
-    $table = new Table([$draft, $published], new Columns([
+    $archived = new LivewireTableComponentTestModel;
+    $archived->forceFill(['id' => 3, 'status' => 'archived', 'slug' => 'row-archived']);
+
+    $table = new Table([$draft, $published, $archived], new Columns([
         new EnumColumn('status'),
         new Column('slug'),
     ]));
@@ -220,6 +227,63 @@ it('renders enum multiselect summary container so labels wrap without widening t
         ->assertSeeHtml('table-ui__filter-cell-height-spacer');
 });
 
+it('renders a single select for low-cardinality columns such as gender', function (): void {
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 1, 'gender' => 'male', 'user_name' => 'Ada']);
+
+    $bob = new LivewireTableComponentTestModel;
+    $bob->forceFill(['id' => 2, 'gender' => 'female', 'user_name' => 'Bob']);
+
+    $table = new Table([$ada, $bob], new Columns([
+        Column::fromAttributeKey('gender'),
+        new StringColumn('user_name'),
+    ]));
+    $table->setFilters(Filters::inferFromTable($table));
+
+    $genderFilter = collect($table->filters()->definitions())->first(
+        fn ($definition): bool => $definition->columnKey === 'gender'
+    );
+
+    expect($genderFilter)->not->toBeNull()
+        ->and($genderFilter->type)->toBe(FilterType::Enum->value)
+        ->and($genderFilter->allowMultiple)->toBeFalse();
+
+    Livewire::test(TableView::class, [
+        'table' => $table,
+    ])
+        ->call('toggleFiltersPanel')
+        ->assertSeeHtml('table-ui__filter-select')
+        ->assertSee('Male')
+        ->assertSee('Female');
+});
+
+it('filters email by live substring while typing in the typeahead input', function (): void {
+    config()->set('tableui.filters.text_like_allow_multiple', true);
+
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 1, 'user_name' => 'Ada', 'email' => 'ada@legacytradecollege.org']);
+
+    $bob = new LivewireTableComponentTestModel;
+    $bob->forceFill(['id' => 2, 'user_name' => 'Bob', 'email' => 'bob@example.com']);
+
+    $table = new Table([$ada, $bob], new Columns([
+        new EmailColumn('email'),
+    ]));
+    $table->setFilters(Filters::inferFromTable($table));
+
+    Livewire::test(TableView::class, [
+        'table' => $table,
+    ])
+        ->call('toggleFiltersPanel')
+        ->set('filterValues.email', 'legacytradecollege.org')
+        ->tap(function ($component): void {
+            $rows = $component->instance()->displayRows;
+
+            expect($rows)->toHaveCount(1)
+                ->and($rows[0]['email'])->toBe('ada@legacytradecollege.org');
+        });
+});
+
 it('filters string columns with OR semantics when text-like multiselect is enabled', function (): void {
     config()->set('tableui.filters.text_like_allow_multiple', true);
 
@@ -229,7 +293,10 @@ it('filters string columns with OR semantics when text-like multiselect is enabl
     $bob = new LivewireTableComponentTestModel;
     $bob->forceFill(['id' => 2, 'user_name' => 'Bob']);
 
-    $table = new Table([$ada, $bob], new Columns([
+    $carol = new LivewireTableComponentTestModel;
+    $carol->forceFill(['id' => 3, 'user_name' => 'Carol']);
+
+    $table = new Table([$ada, $bob, $carol], new Columns([
         new StringColumn('user_name'),
     ]));
     $table->setFilters(Filters::inferFromTable($table));
@@ -238,7 +305,12 @@ it('filters string columns with OR semantics when text-like multiselect is enabl
         'table' => $table,
     ])
         ->call('toggleFiltersPanel')
+        ->assertSeeHtml('table-ui__filter-typeahead-multi')
         ->assertSeeHtml('table-ui__filter-enum-multi')
+        ->assertSeeInOrder([
+            'table-ui__filter-enum-multi-control',
+            'table-ui__filter-typeahead-multi-chips',
+        ])
         ->set('filterValues.user_name', ['Ada', 'Bob']);
 
     expect($component->instance()->displayRows)->toHaveCount(2);
@@ -277,8 +349,8 @@ it('defaults sort to the first column when the domain table has no id key', func
         'table' => new Table([$ada, $bob]),
     ])
         ->assertSet('sortBy', 'user_name')
-        ->assertSet('sortDirection', 'desc')
-        ->assertSeeInOrder(['Bob', 'Ada']);
+        ->assertSet('sortDirection', 'asc')
+        ->assertSeeInOrder(['Ada', 'Bob']);
 });
 
 it('uses explicit defaultSortColumn for legacy headers and rows', function (): void {
@@ -291,8 +363,8 @@ it('uses explicit defaultSortColumn for legacy headers and rows', function (): v
         ],
     ])
         ->assertSet('sortBy', '1')
-        ->assertSet('sortDirection', 'desc')
-        ->assertSeeInOrder(['Bob', 'Operator', 'Ada', 'Developer']);
+        ->assertSet('sortDirection', 'asc')
+        ->assertSeeInOrder(['Ada', 'Developer', 'Bob', 'Operator']);
 });
 
 it('renders money column cells with minor-unit divisor', function (): void {
@@ -451,17 +523,64 @@ it('sorts rows by selected column and toggles direction', function (): void {
         'table' => new Table([]),
         'headers' => ['Name', 'Role'],
         'rows' => [
-            ['Bob', 'Operator'],
-            ['Ada', 'Developer'],
+            ['Ada', 'Operator'],
+            ['Bob', 'Developer'],
         ],
     ])
         ->call('sort', '0')
         ->assertSet('sortBy', '0')
         ->assertSet('sortDirection', 'asc')
-        ->assertSeeInOrder(['Ada', 'Developer', 'Bob', 'Operator'])
+        ->assertSeeInOrder(['Ada', 'Operator', 'Bob', 'Developer'])
         ->call('sort', '0')
         ->assertSet('sortDirection', 'desc')
-        ->assertSeeInOrder(['Bob', 'Operator', 'Ada', 'Developer']);
+        ->assertSeeInOrder(['Bob', 'Developer', 'Ada', 'Operator']);
+});
+
+it('infers id as the default sort column for legacy rows that include an id key', function (): void {
+    Livewire::test(TableView::class, [
+        'table' => new Table([]),
+        'headers' => ['ID', 'Name'],
+        'rows' => [
+            ['id' => 1, 'name' => 'First'],
+            ['id' => 3, 'name' => 'Third'],
+            ['id' => 2, 'name' => 'Second'],
+        ],
+    ])
+        ->assertSet('sortBy', 'id')
+        ->assertSet('sortDirection', 'asc')
+        ->assertSeeInOrder(['1', 'First', '2', 'Second', '3', 'Third']);
+});
+
+it('preserves collection order when sort keys tie', function (): void {
+    Livewire::test(TableView::class, [
+        'table' => new Table([]),
+        'headers' => ['Label', 'Seq'],
+        'rows' => [
+            ['label' => 'Same', 'seq' => 'B'],
+            ['label' => 'Same', 'seq' => 'A'],
+        ],
+    ])
+        ->set('sortBy', 'label')
+        ->set('sortDirection', 'asc')
+        ->assertSeeInOrder(['Same', 'B', 'Same', 'A']);
+});
+
+it('shows flipped sort indicator glyphs by default through Options', function (): void {
+    $a = new LivewireTableComponentTestModel;
+    $a->forceFill(['id' => 1, 'user_name' => 'Zed']);
+
+    $b = new LivewireTableComponentTestModel;
+    $b->forceFill(['id' => 2, 'user_name' => 'Ann']);
+
+    Livewire::test(TableView::class, [
+        'table' => new Table([$a, $b], null, new Options(
+            defaultSortColumn: 'id',
+            defaultSortDirection: 'asc',
+        )),
+    ])
+        ->assertSet('sortDirection', 'asc')
+        ->assertSet('flipSortIndicatorGlyphs', true)
+        ->assertSee('↓');
 });
 
 it('renders bulk toolbar and row checkboxes when at least one action is bulk', function (): void {
@@ -640,7 +759,7 @@ it('toggleSelectAll selects and clears all displayed row keys', function (): voi
         'table' => livewireTableWithBulkDelete([$ada, $bob]),
     ])
         ->call('toggleSelectAll')
-        ->assertSet('selectedRowKeys', ['id:2', 'id:1'])
+        ->assertSet('selectedRowKeys', ['id:1', 'id:2'])
         ->call('toggleSelectAll')
         ->assertSet('selectedRowKeys', []);
 });
@@ -772,4 +891,40 @@ it('hides pagination when filters reduce the row count to within per page', func
         ->set('filterValues', ['0' => 'User-001'])
         ->assertDontSeeHtml('table-ui__pagination')
         ->assertSee('User-001');
+});
+
+it('sorts the filtered row set before slicing pages', function (): void {
+    $table = new Table([], null, new Options(perPage: 1, enableDefaultSort: false));
+    $table->setFilters(Filters::make(
+        new FilterDefinition('tier', 'Tier', FilterType::Text),
+    ));
+
+    $rows = [
+        ['id' => 4, 'tier' => 'x'],
+        ['id' => 2, 'tier' => 'match'],
+        ['id' => 3, 'tier' => 'x'],
+        ['id' => 1, 'tier' => 'match'],
+    ];
+
+    Livewire::test(TableView::class, [
+        'table' => $table,
+        'headers' => ['ID', 'Tier'],
+        'rows' => $rows,
+    ])
+        ->set('filterValues', ['tier' => 'match'])
+        ->set('sortBy', 'id')
+        ->set('sortDirection', 'desc')
+        ->tap(function ($component): void {
+            expect(array_map(
+                static fn (array $row): int => (int) $row['id'],
+                $component->instance()->displayRows,
+            ))->toBe([2]);
+        })
+        ->call('gotoPaginationPage', 2)
+        ->tap(function ($component): void {
+            expect(array_map(
+                static fn (array $row): int => (int) $row['id'],
+                $component->instance()->displayRows,
+            ))->toBe([1]);
+        });
 });

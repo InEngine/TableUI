@@ -21,7 +21,7 @@
     class="table-ui__filter-autocomplete relative min-w-0 w-full max-w-full"
     x-data="{
         suggestions: @js($suggestions),
-        query: $wire.entangle(@js($wireModelPath)).live,
+        query: @entangle($wireModelPath).live,
         open: false,
         panelStyle: {},
         positionPanel() {

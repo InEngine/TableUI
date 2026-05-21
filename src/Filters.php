@@ -2,8 +2,10 @@
 
 namespace InEngine\TableUI;
 
+use InEngine\TableUI\ColumnTypes\Column;
 use InEngine\TableUI\ColumnTypes\Primitives\EnumColumn;
 use InEngine\TableUI\FilterTypes\FilterDefinition;
+use InEngine\TableUI\Support\TableUiFilterEnumOptionInference;
 
 /**
  * Ordered filter definitions attached to a {@see Table}.
@@ -40,28 +42,29 @@ final class Filters
     }
 
     /**
-     * Like {@see forColumns()}, but fills enum option lists from distinct values in {@see Table} rows when possible.
+     * Like {@see forColumns()}, but fills enum option lists from schema ENUM columns and/or distinct row values when possible.
      */
     public static function inferFromTable(Table $table): self
     {
         $enumOptionsByColumnKey = [];
+        $singleSelectMax = (int) config('tableui.filters.enum_single_select_max', 2);
 
         foreach ($table->columns()->items() as $column) {
-            if (! $column instanceof EnumColumn || $table->isEmpty()) {
+            if (! TableUiFilterEnumOptionInference::columnSupportsEnumOptionInference($column)) {
                 continue;
             }
 
-            $key = $column->key();
-            $options = [];
+            $options = TableUiFilterEnumOptionInference::resolveForColumn($table, $column);
 
-            foreach ($table->pluck($key)->unique()->sort()->values() as $value) {
-                $s = (string) $value;
-                $options[$s] = $s;
+            if ($options === null || $options === []) {
+                continue;
             }
 
-            if ($options !== []) {
-                $enumOptionsByColumnKey[$key] = $options;
+            if (! $column instanceof EnumColumn && count($options) > $singleSelectMax) {
+                continue;
             }
+
+            $enumOptionsByColumnKey[$column->key()] = $options;
         }
 
         return self::forColumns($table->columns(), $enumOptionsByColumnKey);

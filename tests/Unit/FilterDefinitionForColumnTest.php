@@ -23,6 +23,7 @@ it('maps column classes to filter types', function (): void {
     expect(FilterDefinition::forColumn(new StringColumn('title'))->type)->toBe(FilterType::Text->value)
         ->and(FilterDefinition::forColumn(new StringColumn('title'))->allowMultiple)->toBeTrue()
         ->and(FilterDefinition::forColumn(new IdColumn('uuid'))->type)->toBe(FilterType::Text->value)
+        ->and(FilterDefinition::forColumn(new IdColumn('hid'))->type)->toBe(FilterType::Number->value)
         ->and(FilterDefinition::forColumn(new BooleanColumn('active'))->type)->toBe(FilterType::Boolean->value)
         ->and(FilterDefinition::forColumn(new NumberColumn('qty'))->type)->toBe(FilterType::Number->value)
         ->and(FilterDefinition::forColumn(new MoneyColumn('total'))->type)->toBe(FilterType::Money->value)
@@ -40,7 +41,11 @@ it('maps column classes to filter types', function (): void {
 
     expect($enumFilter->type)->toBe(FilterType::Enum->value)
         ->and($enumFilter->enumOptions)->toBe(['draft' => 'Draft'])
-        ->and($enumFilter->allowMultiple)->toBeTrue();
+        ->and($enumFilter->allowMultiple)->toBeFalse();
+
+    config()->set('tableui.filters.enum_allow_multiple', true);
+
+    expect(FilterDefinition::forColumn(new EnumColumn('status'), ['a' => 'A', 'b' => 'B', 'c' => 'C'])->allowMultiple)->toBeTrue();
 
     config()->set('tableui.filters.enum_allow_multiple', false);
 
@@ -56,8 +61,8 @@ it('maps column classes to filter types', function (): void {
     $dualFilter = FilterDefinition::forColumn(new DualColumn('hid', 'id'));
 
     expect($dualFilter->columnKey)->toBe('hid')
-        ->and($dualFilter->type)->toBe(FilterType::Text->value)
-        ->and($dualFilter->allowMultiple)->toBeTrue();
+        ->and($dualFilter->type)->toBe(FilterType::Number->value)
+        ->and($dualFilter->allowMultiple)->toBeFalse();
 
     config()->set('tableui.filters.text_like_allow_multiple', false);
 

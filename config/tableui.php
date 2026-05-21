@@ -18,9 +18,10 @@ return [
     | Filters (combobox autocomplete)
     |--------------------------------------------------------------------------
     |
-    | Typeable filter inputs use an Alpine combobox with suggestions built from distinct values in the current
-    | {@see \InEngine\TableUI\Livewire\TableView::$rows} payload. When you add server-side pagination,
-    | refresh {@code rows} (or replace the suggestion builder) so options stay aligned with loaded data.
+    | Typeable text-like filters (text, id-as-text, phone, email) use a combobox: type to narrow distinct
+    | values, press Enter to add a substring needle, and toggle rows in the list (OR semantics). Enum
+    | multiselect panels include a search field to narrow options. Date, datetime, time, number, and money
+    | filters keep range or numeric controls.
     |
     | Email filters treat "@domain.tld", ".tld", "domain.tld", and bare common TLD tokens (see package defaults)
     | specially so values like "com" match the domain suffix only (not substrings inside the local part).
@@ -38,6 +39,13 @@ return [
         | {@see \InEngine\TableUI\FilterTypes\FilterDefinition::$allowMultiple}.
         */
         'enum_allow_multiple' => true,
+
+        /*
+        | Enum filters with at most this many distinct options (from inferred table data or host-provided
+        | labels) render as a single {@code <select>} (All + each option), like boolean / is_alumni filters.
+        | Larger sets use {@see enum_allow_multiple} for multiselect vs single select.
+        */
+        'enum_single_select_max' => 2,
 
         /*
         | When true, {@see \InEngine\TableUI\FilterTypes\FilterDefinition::forColumn()} uses multiselect
@@ -128,14 +136,14 @@ return [
     | When {@see \InEngine\TableUI\Livewire\TableView} applies an initial sort (see {@see \InEngine\TableUI\Options::getEnableDefaultSort()}),
     | this value is used unless the host passes an explicit {@code defaultSortDirection} into {@see \InEngine\TableUI\Options}.
     |
-    | • {@code desc} — typical for newest-first when the default column is a monotonic integer {@code id} or {@code hid}.
-    | • {@code asc} — restore the previous package default behaviour.
+    | • {@code asc} — package default: smallest / lowest key first when the default column is numeric ({@code id}, {@code hid}).
+    | • {@code desc} — use when you want newest-first or largest-first on a monotonic column (override in {@see \InEngine\TableUI\Options} or published config).
     |
     | UUID {@code id} columns are not chronological in either direction; prefer {@see \InEngine\TableUI\Options::setEnableDefaultSort(false)}
     | or an explicit {@code defaultSortColumn} such as {@code created_at} when the row payload includes one.
     |
     */
-    'default_sort_direction' => 'desc',
+    'default_sort_direction' => 'asc',
 
     /*
     |--------------------------------------------------------------------------
