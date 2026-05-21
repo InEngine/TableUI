@@ -91,7 +91,8 @@
      * Keep this modest so simple select filters match body-row density.
      */
     .table-ui__filter-cell-height-spacer {
-        @apply pointer-events-none min-h-[5.5rem] w-full shrink-0 select-none;
+        /* Taller strip so typeahead input + applied chips below + enum search are not vertically squished (absolute controls sit in the td above this). */
+        @apply pointer-events-none min-h-[10rem] w-full shrink-0 select-none;
     }
 
     .table-ui__td--filter.table-ui__td--filter-has-control {
@@ -107,7 +108,7 @@
          * left-3 + right-3 defines width (avoid w-full with inset-x — 100% width + offset clips the right edge).
          * Top inset matches py-2; max-h keeps stacked filters scrollable.
          */
-        @apply absolute left-3 right-3 top-2 z-[5] flex h-max max-h-[calc(100%-1rem)] min-h-0 w-auto max-w-none min-w-0 flex-col gap-1 overflow-x-hidden overflow-y-auto;
+        @apply absolute left-3 right-3 top-1.5 z-[5] flex h-max max-h-[min(24rem,calc(100vh-10.5rem))] min-h-0 w-auto max-w-none min-w-0 flex-col gap-1 overflow-x-hidden overflow-y-auto;
     }
 
     .table-ui__td--filter:not(.table-ui__td--filter-has-control) {
@@ -157,5 +158,25 @@
      */
     .table-ui__td--filter .table-ui__filter-enum-multi-summary-scroll {
         @apply min-h-5 min-w-0 overflow-hidden;
+    }
+
+    .table-ui__td--filter .table-ui__filter-typeahead-multi,
+    .table-ui__td--filter .table-ui__filter-typeahead-multi__stack {
+        @apply min-w-0 max-w-full overflow-x-hidden;
+    }
+
+    /*
+     * Applied filter chips below the control: one per row within the column (no horizontal scroll).
+     */
+    .table-ui__filter-typeahead-multi-chips {
+        @apply flex max-h-[8rem] min-h-0 w-full min-w-0 max-w-full flex-col gap-1 overflow-x-hidden overflow-y-auto;
+    }
+
+    .table-ui__filter-typeahead-multi-chip {
+        @apply box-border flex w-full max-w-full min-w-0 shrink-0 items-center gap-1 justify-start;
+    }
+
+    .table-ui__filter-typeahead-multi-chip-label {
+        @apply min-w-0 flex-1 break-words leading-snug;
     }
 }
