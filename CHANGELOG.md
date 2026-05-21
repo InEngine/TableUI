@@ -2,6 +2,14 @@
 
 All notable changes to `TableUI` will be documented in this file.
 
+## Version 1.0.2 - 2026-05-21
+
+### What's Changed
+
+* Update composer.json by @excellentingenuity in https://github.com/InEngine/TableUI/pull/20
+
+**Full Changelog**: https://github.com/InEngine/TableUI/compare/v1.0.1...v1.0.2
+
 ## Version 1.0.1 - 2026-05-21
 
 ### What's Changed
