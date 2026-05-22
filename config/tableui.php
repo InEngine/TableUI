@@ -21,7 +21,8 @@ return [
     | Typeable text-like filters (text, id-as-text, phone, email) use a combobox: type to narrow distinct
     | values, press Enter to add a substring needle, and toggle rows in the list (OR semantics). Enum
     | multiselect panels include a search field to narrow options. Date, datetime, time, number, and money
-    | filters keep range or numeric controls.
+    | filters keep range or numeric controls. Date and datetime range inputs start blank (no
+    | filter applied until the user sets from/to); HTML min/max on those inputs still reflect row data.
     |
     | Email filters treat "@domain.tld", ".tld", "domain.tld", and bare common TLD tokens (see package defaults)
     | specially so values like "com" match the domain suffix only (not substrings inside the local part).

@@ -13,6 +13,7 @@ use InEngine\TableUI\ColumnTypes\Complex\EmailColumn;
 use InEngine\TableUI\ColumnTypes\Complex\MoneyColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\EnumColumn;
 use InEngine\TableUI\ColumnTypes\Primitives\StringColumn;
+use InEngine\TableUI\ColumnTypes\Primitives\TimestampColumn;
 use InEngine\TableUI\Filters;
 use InEngine\TableUI\FilterTypes\FilterDefinition;
 use InEngine\TableUI\FilterTypes\FilterType;
@@ -467,7 +468,7 @@ it('renders combobox autocomplete panel tied to typeable filter inputs', functio
         ->and($html)->toContain('\u0022Bob\u0022');
 });
 
-it('defaults date filters to row min/max, constrains inputs, and keeps neutral active count', function (): void {
+it('defaults date filters to blank values while constraining inputs to row min/max', function (): void {
     $filters = Filters::make(
         new FilterDefinition('event_date', 'Event', FilterType::Date),
     );
@@ -481,9 +482,11 @@ it('defaults date filters to row min/max, constrains inputs, and keeps neutral a
         ],
     ])
         ->call('toggleFiltersPanel')
-        ->assertSet('filterValues.event_date.from', '2024-01-05')
-        ->assertSet('filterValues.event_date.to', '2024-02-01')
+        ->assertSet('filterValues.event_date.from', '')
+        ->assertSet('filterValues.event_date.to', '')
         ->assertSet('activeFilterCount', 0)
+        ->assertSee('2024-02-01')
+        ->assertSee('2024-01-05')
         ->assertSeeHtml('min="2024-01-05"')
         ->assertSeeHtml('max="2024-02-01"');
 });
@@ -927,4 +930,30 @@ it('sorts the filtered row set before slicing pages', function (): void {
                 $component->instance()->displayRows,
             ))->toBe([1]);
         });
+});
+
+it('shows rows at the default datetime filter max even when that timestamp has seconds', function (): void {
+    $newest = new LivewireTableComponentTestModel;
+    $newest->forceFill(['id' => 'newest', 'hid' => 57, 'created_at' => '2026-05-09 20:37:44']);
+
+    $older = new LivewireTableComponentTestModel;
+    $older->forceFill(['id' => 'older', 'hid' => 10, 'created_at' => '2026-04-01 10:00:00']);
+
+    $columns = new Columns([
+        new Column('hid'),
+        new TimestampColumn('created_at', dateOnly: false),
+    ]);
+
+    $table = Table::fromCollection(
+        [$newest, $older],
+        $columns,
+        new Options(enableDefaultSort: false),
+        null,
+        Filters::forColumns($columns),
+    );
+
+    Livewire::test(TableView::class, ['table' => $table])
+        ->assertSet('activeFilterCount', 0)
+        ->assertSee('57')
+        ->assertSee('10');
 });

@@ -70,7 +70,7 @@ final class TableUiFilterMatcher
     }
 
     /**
-     * Date/datetime filters seeded to the column's min/max row range are "inactive" for toolbar counts.
+     * Date/datetime filters set exactly to the column's row min/max range are "inactive" for toolbar counts.
      *
      * @param  array{temporalBounds?: array{min: string, max: string}|null}  $definition
      * @param  array{from: string, to: string}  $range
@@ -607,7 +607,7 @@ final class TableUiFilterMatcher
 
         if ($range['from'] !== '') {
             try {
-                $from = Carbon::parse($range['from']);
+                $from = self::parseDatetimeFilterBound($range['from'], isUpper: false);
                 if ($t->lt($from)) {
                     return false;
                 }
@@ -618,7 +618,7 @@ final class TableUiFilterMatcher
 
         if ($range['to'] !== '') {
             try {
-                $to = Carbon::parse($range['to']);
+                $to = self::parseDatetimeFilterBound($range['to'], isUpper: true);
                 if ($t->gt($to)) {
                     return false;
                 }
@@ -628,6 +628,20 @@ final class TableUiFilterMatcher
         }
 
         return true;
+    }
+
+    /**
+     * Datetime filter inputs use minute precision ({@see TableUiFilterColumnBounds}); treat the upper bound as inclusive through end-of-minute.
+     */
+    private static function parseDatetimeFilterBound(string $value, bool $isUpper): Carbon
+    {
+        $parsed = Carbon::parse($value);
+
+        if (preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/', trim($value)) === 1) {
+            return $isUpper ? $parsed->copy()->endOfMinute() : $parsed->copy()->startOfMinute();
+        }
+
+        return $parsed;
     }
 
     /**
