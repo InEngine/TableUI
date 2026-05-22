@@ -2,6 +2,14 @@
 
 All notable changes to `TableUI` will be documented in this file.
 
+## Version 1.0.3 - 2026-05-22
+
+### What's Changed
+
+* fix(filters): blank date/datetime defaults and skip inactive ranges by @excellentingenuity in https://github.com/InEngine/TableUI/pull/21
+
+**Full Changelog**: https://github.com/InEngine/TableUI/compare/v1.0.2...v1.0.3
+
 ## Version 1.0.2 - 2026-05-21
 
 ### What's Changed
