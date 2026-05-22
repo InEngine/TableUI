@@ -236,3 +236,18 @@ it('treats date/datetime filters as inactive when range equals temporal data bou
     expect(TableUiFilterMatcher::isFilterActive($def, ['from' => '2024-01-01', 'to' => '2024-12-31']))->toBeFalse()
         ->and(TableUiFilterMatcher::isFilterActive($def, ['from' => '2024-06-01', 'to' => '2024-12-31']))->toBeTrue();
 });
+
+it('includes datetimes within the filter to minute when bounds use minute precision', function (): void {
+    $def = [
+        'columnKey' => 'last_donation_at',
+        'label' => 'Last Donation At',
+        'type' => FilterType::Datetime->value,
+        'enumOptions' => null,
+        'moneyDivisor' => null,
+    ];
+
+    $range = ['from' => '2024-11-21T13:43', 'to' => '2026-05-09T20:37'];
+
+    expect(TableUiFilterMatcher::matches(['last_donation_at' => '2026-05-09 20:37:44'], $def, $range))->toBeTrue()
+        ->and(TableUiFilterMatcher::matches(['last_donation_at' => '2026-05-09 20:38:00'], $def, $range))->toBeFalse();
+});

@@ -600,7 +600,7 @@ class TableView extends Component
     }
 
     /**
-     * Min/max for date and datetime filter columns from {@see $rows} (for defaults, HTML min/max, neutral counts).
+     * Min/max for date and datetime filter columns from {@see $rows} (HTML input min/max attributes only).
      *
      * @return array<string, array{min: string, max: string}>
      */
@@ -627,21 +627,13 @@ class TableView extends Component
     }
 
     /**
+     * Date/datetime filter inputs start blank; row min/max remain on inputs via {@see getFilterTemporalBoundsProperty()}.
+     *
      * @param  array{columnKey: string, type: string}  $definition
      * @return array{from: string, to: string}
      */
     private function defaultTemporalFilterStateForDefinition(array $definition): array
     {
-        $bounds = TableUiFilterColumnBounds::forColumn(
-            $definition['columnKey'],
-            $definition['type'],
-            $this->rows
-        );
-
-        if ($bounds !== null) {
-            return ['from' => $bounds['min'], 'to' => $bounds['max']];
-        }
-
         return ['from' => '', 'to' => ''];
     }
 
@@ -1105,6 +1097,31 @@ class TableView extends Component
     }
 
     /**
+     * @param  mixed  $left
+     * @param  mixed  $right
+     */
+    private static function compareSortValues(mixed $left, mixed $right): int
+    {
+        if ($left instanceof \DateTimeInterface) {
+            $left = $left->format('Y-m-d H:i:s');
+        }
+
+        if ($right instanceof \DateTimeInterface) {
+            $right = $right->format('Y-m-d H:i:s');
+        }
+
+        $leftString = mb_strtolower(trim((string) $left));
+        $rightString = mb_strtolower(trim((string) $right));
+
+        if ($leftString !== '' && $rightString !== ''
+            && is_numeric($leftString) && is_numeric($rightString)) {
+            return (float) $leftString <=> (float) $rightString;
+        }
+
+        return strnatcasecmp($leftString, $rightString);
+    }
+
+    /**
      * @param  list<array<array-key, mixed>>  $rows
      * @return list<array<array-key, mixed>>
      */
@@ -1123,9 +1140,9 @@ class TableView extends Component
         }
 
         usort($indexed, function (array $a, array $b) use ($sortBy, $descending): int {
-            $va = mb_strtolower((string) data_get($a['r'], $sortBy, ''));
-            $vb = mb_strtolower((string) data_get($b['r'], $sortBy, ''));
-            $cmp = strnatcasecmp($va, $vb);
+            $va = data_get($a['r'], $sortBy, '');
+            $vb = data_get($b['r'], $sortBy, '');
+            $cmp = self::compareSortValues($va, $vb);
 
             if ($cmp !== 0) {
                 return $descending ? -$cmp : $cmp;
@@ -1161,11 +1178,23 @@ class TableView extends Component
      */
     private function rowMatchesActiveFilters(array $row): bool
     {
+        $boundsByKey = $this->filterTemporalBounds;
+
         foreach ($this->filterDefinitions as $definition) {
             $columnKey = $definition['columnKey'];
             $state = $this->filterValues[$columnKey] ?? null;
 
-            if (! TableUiFilterMatcher::matches($row, $definition, $state)) {
+            $enriched = $definition;
+
+            if (array_key_exists($columnKey, $boundsByKey)) {
+                $enriched['temporalBounds'] = $boundsByKey[$columnKey];
+            }
+
+            if (! TableUiFilterMatcher::isFilterActive($enriched, $state)) {
+                continue;
+            }
+
+            if (! TableUiFilterMatcher::matches($row, $enriched, $state)) {
                 return false;
             }
         }
