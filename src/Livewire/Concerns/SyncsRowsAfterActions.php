@@ -3,6 +3,7 @@
 namespace InEngine\TableUI\Livewire\Concerns;
 
 use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Contracts\Session\Session;
 use Illuminate\Http\Request;
 use InEngine\TableUI\ActionTypes\ActionResponse;
 use InEngine\TableUI\Livewire\TableView;
@@ -170,8 +171,13 @@ trait SyncsRowsAfterActions
         $request = Request::create($uri, 'GET');
         $request->headers->set('Accept', 'text/html');
 
-        if (session()->isStarted()) {
-            $request->setLaravelSession(session());
+        if (app()->bound('session.store')) {
+            /** @var Session $sessionStore */
+            $sessionStore = app('session.store');
+
+            if ($sessionStore->isStarted()) {
+                $request->setLaravelSession($sessionStore);
+            }
         }
 
         $request->setUserResolver(fn () => auth()->user());

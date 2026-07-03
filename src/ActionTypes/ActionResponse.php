@@ -14,7 +14,7 @@ final class ActionResponse
 {
     /**
      * @param  'none'|'remove'|'patch'  $mode
-     * @param  list<string>|array<string, array<string, mixed>>  $payload
+     * @param  array{keys?: list<string>, patches?: array<string, array<string, mixed>>}  $payload
      */
     private function __construct(
         private readonly string $mode,
