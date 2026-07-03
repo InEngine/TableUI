@@ -38,7 +38,8 @@ trait ManagesBulkSelection
     /**
      * Dispatches {@code tableui-bulk-action} with {@see $bulkActionSelection} and current {@see $selectedRowKeys}, then clears the selection mode.
      *
-     * Host apps should listen for {@code tableui-bulk-action} (e.g. on the table component or via JS) to perform routing or API calls.
+     * Bulk {@see Closure} targets sync {@see TableView::$rows} in place (row removal or patches) without a full page reload.
+     * Host apps may listen for {@code tableui-bulk-action} when using string targets instead of closures.
      */
     public function executeBulkAction(): void
     {
@@ -83,11 +84,11 @@ trait ManagesBulkSelection
     }
 
     /**
-     * True when every currently displayed row’s key is in {@see $selectedRowKeys}.
+     * True when every filtered row (all pages) is in {@see $selectedRowKeys}.
      */
     public function getAllDisplayedSelectedProperty(): bool
     {
-        $keys = $this->keysForDisplayedRows();
+        $keys = $this->keysForFilteredRows();
 
         if ($keys === []) {
             return false;
@@ -103,11 +104,11 @@ trait ManagesBulkSelection
     }
 
     /**
-     * Select or clear every displayed row (after sort).
+     * Select or clear every filtered row across all pagination pages.
      */
     public function toggleSelectAll(): void
     {
-        $keys = $this->keysForDisplayedRows();
+        $keys = $this->keysForFilteredRows();
 
         if ($keys === []) {
             return;
@@ -128,6 +129,17 @@ trait ManagesBulkSelection
         } else {
             $this->selectedRowKeys = array_values(array_unique(array_merge($this->selectedRowKeys, $keys)));
         }
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function keysForFilteredRows(): array
+    {
+        return array_map(
+            fn (array $row): string => $this->rowKey($row),
+            $this->filteredThenSortedRows()
+        );
     }
 
     /**

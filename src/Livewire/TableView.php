@@ -12,9 +12,11 @@ use InEngine\TableUI\Concerns\ToTable;
 use InEngine\TableUI\FilterTypes\FilterDefinition;
 use InEngine\TableUI\FilterTypes\FilterType;
 use InEngine\TableUI\Livewire\Concerns\ManagesBulkSelection;
+use InEngine\TableUI\Livewire\Concerns\SyncsRowsAfterActions;
 use InEngine\TableUI\Options;
 use InEngine\TableUI\Rendering\ColumnRendererRegistry;
 use InEngine\TableUI\Support\SerializableClosurePayload;
+use InEngine\TableUI\Support\TableRowActionId;
 use InEngine\TableUI\Support\TableUiEmailFilterInputFormatter;
 use InEngine\TableUI\Support\TableUiFilterAutocompleteSuggestions;
 use InEngine\TableUI\Support\TableUiFilterColumnBounds;
@@ -52,6 +54,7 @@ use Livewire\Component;
 class TableView extends Component
 {
     use ManagesBulkSelection;
+    use SyncsRowsAfterActions;
     use ToTable;
 
     /**
@@ -154,6 +157,16 @@ class TableView extends Component
     public array $selectedRowKeys = [];
 
     /**
+     * Bumped when {@see $rows} changes in place (patch/remove) so Livewire re-renders body cells.
+     */
+    public int $tableDataRevision = 0;
+
+    /**
+     * Row attribute used to identify records for actions ({@see TableRowActionId}).
+     */
+    public string $actionIdKey = 'id';
+
+    /**
      * Serialized {@see Action} definitions for row links + bulk toolbar (built in {@see mount()}).
      *
      * @var list<array{name: string, label: string, bulk: bool, target: ?string, serializedClosure: string, isButton: bool, showInRowColumn: bool}>
@@ -252,6 +265,8 @@ class TableView extends Component
         $this->defaultSortDirectionForNewColumn = $table->options()->getDefaultSortDirection();
 
         $this->flipSortIndicatorGlyphs = $table->options()->getFlipSortIndicatorGlyphs();
+
+        $this->actionIdKey = $table->options()->getActionIdKey();
 
         $hydratedFromDomainTable = false;
 
@@ -771,7 +786,7 @@ class TableView extends Component
 
         $href = $this->rowActionHref($snapshot, $row);
         if ($href !== null) {
-            $this->redirect($href);
+            $this->redirect($href, navigate: true);
 
             return;
         }
@@ -791,7 +806,7 @@ class TableView extends Component
             return null;
         }
 
-        return Action::resolveUrlFromStringTarget($snapshot['target'] ?? null, $row);
+        return Action::resolveUrlFromStringTarget($snapshot['target'] ?? null, $row, $this->actionIdKey);
     }
 
     /**
@@ -813,7 +828,8 @@ class TableView extends Component
     }
 
     /**
-     * Runs the row action: navigates via string targets (handled in Blade), executes a serialized {@see \Closure} when present, otherwise dispatches {@code tableui-row-action}.
+     * Runs the row action: in-place refresh for mutating targets, SPA navigation for view/edit links,
+     * executes a serialized {@see \Closure} when present, otherwise dispatches {@code tableui-row-action}.
      */
     public function runRowAction(string $actionName, string $rowKey): void
     {
@@ -822,15 +838,30 @@ class TableView extends Component
             return;
         }
 
+        $row = $this->rowDataForKey($rowKey);
+        if ($row === null) {
+            return;
+        }
+
         $payload = $snapshot['serializedClosure'] ?? '';
         if ($payload !== '') {
-            $row = $this->rowDataForKey($rowKey);
-            if ($row === null) {
-                return;
-            }
-
             $invokable = SerializableClosurePayload::decode($payload);
-            $invokable($row);
+            $result = $invokable($row);
+            $this->syncTableAfterAction($actionName, [$rowKey], $result);
+
+            return;
+        }
+
+        $href = $this->rowActionHref($snapshot, $row);
+        if ($href !== null && $this->actionAppliesInPlace($actionName)) {
+            $this->invokeApplicationGetRoute($href);
+            $this->syncTableAfterAction($actionName, [$rowKey], null);
+
+            return;
+        }
+
+        if ($href !== null) {
+            $this->redirect($href, navigate: true);
 
             return;
         }
@@ -865,7 +896,10 @@ class TableView extends Component
 
         $rows = $this->selectedRowsForBulkAction();
         $invokable = SerializableClosurePayload::decode($payload);
-        $invokable($rows);
+        $result = $invokable($rows);
+        $selectedKeys = $this->selectedRowKeys;
+        $this->syncTableAfterAction($this->bulkActionSelection, $selectedKeys, $result);
+        $this->selectedRowKeys = [];
 
         return true;
     }
@@ -889,7 +923,7 @@ class TableView extends Component
      */
     private function rowDataForKey(string $rowKey): ?array
     {
-        foreach ($this->displayRows as $row) {
+        foreach ($this->filteredThenSortedRows() as $row) {
             if ($this->rowKey($row) === $rowKey) {
                 return $row;
             }
@@ -899,7 +933,7 @@ class TableView extends Component
     }
 
     /**
-     * Selected rows in display order for bulk closure handlers.
+     * Selected rows in filtered/sorted order for bulk closure handlers (all pages, not only the current slice).
      *
      * @return list<array<array-key, mixed>>
      */
@@ -908,7 +942,7 @@ class TableView extends Component
         $selected = array_flip($this->selectedRowKeys);
         $rows = [];
 
-        foreach ($this->displayRows as $row) {
+        foreach ($this->filteredThenSortedRows() as $row) {
             if (isset($selected[$this->rowKey($row)])) {
                 $rows[] = $row;
             }
@@ -1089,7 +1123,7 @@ class TableView extends Component
      *
      * @return list<array<array-key, mixed>>
      */
-    private function filteredThenSortedRows(): array
+    protected function filteredThenSortedRows(): array
     {
         $filtered = $this->applyFiltersToRows($this->rows);
 
@@ -1227,22 +1261,7 @@ class TableView extends Component
      */
     private function rowKey(array $row): string
     {
-        if (array_key_exists('id', $row) && $row['id'] !== null && (string) $row['id'] !== '') {
-            return 'id:'.(string) $row['id'];
-        }
-
-        foreach ($this->referenceRowKeys() as $referenceKey) {
-            if (array_key_exists($referenceKey, $row) && $row[$referenceKey] !== null && (string) $row[$referenceKey] !== '') {
-                return 'id:'.(string) $row[$referenceKey];
-            }
-        }
-
-        $sorted = $row;
-        ksort($sorted);
-
-        $encoded = json_encode($sorted);
-
-        return 'row:'.md5(is_string($encoded) ? $encoded : serialize($sorted));
+        return TableRowActionId::rowKeyFromRow($row, $this->actionIdKey, $this->referenceRowKeys());
     }
 
     public function render(): View
@@ -1269,9 +1288,26 @@ class TableView extends Component
             $columns->items()
         );
         $this->rows = $table
-            ->map(fn (Model $model): array => $model->only($requiredRowKeys))
+            ->map(fn (Model $model): array => $this->rowPayloadFromModel($model, $requiredRowKeys))
             ->values()
             ->all();
+    }
+
+    /**
+     * @param  list<string>  $requiredRowKeys
+     * @return array<string, mixed>
+     */
+    private function rowPayloadFromModel(Model $model, array $requiredRowKeys): array
+    {
+        $keys = $requiredRowKeys;
+        $keys[] = $this->actionIdKey;
+
+        $keyName = $model->getKeyName();
+        if (is_string($keyName) && $keyName !== '') {
+            $keys[] = $keyName;
+        }
+
+        return $model->only(array_values(array_unique($keys)));
     }
 
     /**
