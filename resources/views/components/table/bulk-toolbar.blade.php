@@ -4,10 +4,10 @@
         <button
             type="button"
             wire:click="toggleSelectAll"
-            class="table-ui__select-all"
+            class="{{ $this->allDisplayedSelected ? 'table-ui__deselect-all' : 'table-ui__select-all' }}"
             aria-pressed="{{ $this->allDisplayedSelected ? 'true' : 'false' }}"
         >
-            {{ $this->allDisplayedSelected ? __('Deselect all') : __('Select all') }}
+            {{ $this->allDisplayedSelected ? __('Deselect All') : __('Select all') }}
         </button>
     @else
         <button
@@ -21,6 +21,15 @@
             @endphp
             {{ $activeBulk['label'] ?? $bulkActionSelection }}
         </button>
+        @if ($this->selectedRowKeys !== [])
+            <button
+                type="button"
+                wire:click="clearBulkRowSelection"
+                class="table-ui__deselect-all"
+            >
+                {{ __('Deselect All') }}
+            </button>
+        @endif
     @endif
     @if ($this->hasBulkActionOptions)
         <div class="table-ui__bulk-actions">
@@ -29,6 +38,7 @@
                 id="{{ $bulkActionsSelectId }}"
                 wire:model.live="bulkActionSelection"
                 class="table-ui__actions-select"
+                @disabled($this->selectedRowKeys === [])
             >
                 <option value="">{{ __('Actions') }}</option>
                 @foreach ($this->bulkActionSnapshots as $snap)

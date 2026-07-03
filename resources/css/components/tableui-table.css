@@ -42,16 +42,15 @@
     }
 
     .table-ui__sort-button {
-        @apply inline-flex w-full items-center gap-1 rounded px-1 py-0.5 text-left font-semibold hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400 dark:text-gray-100 dark:hover:bg-gray-800 dark:focus-visible:outline-gray-500;
+        @apply inline-flex w-full items-center gap-1 rounded px-1 py-0.5 text-left font-semibold underline-offset-2 transition-[color,text-decoration-color] outline-none;
         color: var(--table-ui-primary, theme(colors.gray.800));
     }
 
-    .table-ui__sort-button:hover {
-        color: var(--table-ui-secondary, theme(colors.gray.900));
-    }
-
-    .dark .table-ui__sort-button:hover {
-        color: var(--table-ui-secondary, theme(colors.white));
+    .table-ui__sort-button:hover,
+    .table-ui__sort-button:focus-visible {
+        color: var(--table-ui-primary, theme(colors.gray.800));
+        text-decoration: underline;
+        text-decoration-color: var(--table-ui-primary, theme(colors.gray.600));
     }
 
     .table-ui__tbody {

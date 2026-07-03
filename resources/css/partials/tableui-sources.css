@@ -66,6 +66,7 @@
 @source inline("table-ui__bulk-selection-count-suffix");
 @source inline("table-ui__actions-select");
 @source inline("table-ui__select-all");
+@source inline("table-ui__deselect-all");
 @source inline("table-ui__checkbox");
 @source inline("table-ui__th--action");
 @source inline("table-ui__td--action");

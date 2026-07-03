@@ -680,16 +680,53 @@ it('disables the bulk action button until at least one row is selected', functio
     $component = Livewire::test(TableView::class, [
         'table' => livewireTableWithBulkDelete([$ada]),
     ])
-        ->set('bulkActionSelection', 'delete')
-        ->assertSet('isBulkActionButtonDisabled', true);
+        ->assertSet('selectedRowKeys', []);
 
-    expect($component->html())->toMatch('/wire:click="executeBulkAction"[^>]*\bdisabled\b/');
+    expect($component->html())->toMatch('/table-ui__actions-select[^>]*\bdisabled\b/');
 
     $component
         ->set('selectedRowKeys', ['id:10'])
+        ->set('bulkActionSelection', 'delete')
         ->assertSet('isBulkActionButtonDisabled', false);
 
-    expect($component->html())->not->toMatch('/wire:click="executeBulkAction"[^>]*\bdisabled\b/');
+    expect($component->html())->not->toMatch('/wire:click="executeBulkAction"[^>]*\bdisabled\b/')
+        ->and($component->html())->not->toMatch('/table-ui__actions-select[^>]*\bdisabled\b/');
+});
+
+it('resets the actions select when the last bulk row is unchecked', function (): void {
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 10, 'user_name' => 'Ada']);
+
+    Livewire::test(TableView::class, [
+        'table' => livewireTableWithBulkDelete([$ada]),
+    ])
+        ->set('selectedRowKeys', ['id:10'])
+        ->set('bulkActionSelection', 'delete')
+        ->set('selectedRowKeys', [])
+        ->assertSet('bulkActionSelection', '')
+        ->assertSee(__('Select all'));
+});
+
+it('shows a deselect all button when a bulk action is chosen and rows are selected', function (): void {
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 10, 'user_name' => 'Ada']);
+
+    $bob = new LivewireTableComponentTestModel;
+    $bob->forceFill(['id' => 11, 'user_name' => 'Bob']);
+
+    Livewire::test(TableView::class, [
+        'table' => livewireTableWithBulkDelete([$ada, $bob]),
+    ])
+        ->set('bulkActionSelection', 'delete')
+        ->assertDontSeeHtml('table-ui__deselect-all')
+        ->set('selectedRowKeys', ['id:10'])
+        ->assertSeeHtml('table-ui__deselect-all')
+        ->assertSee(__('Deselect All'))
+        ->call('clearBulkRowSelection')
+        ->assertSet('selectedRowKeys', [])
+        ->assertSet('bulkActionSelection', '')
+        ->assertSee(__('Select all'))
+        ->assertDontSeeHtml('table-ui__deselect-all');
 });
 
 it('does not dispatch tableui-bulk-action when executeBulkAction is called with no rows selected', function (): void {
@@ -882,6 +919,8 @@ it('toggleSelectAll selects and clears all filtered row keys across pagination p
     ])
         ->call('toggleSelectAll')
         ->assertSet('selectedRowKeys', array_map(static fn (int $id): string => 'id:'.$id, range(1, 12)))
+        ->assertSeeHtml('table-ui__deselect-all')
+        ->assertSee(__('Deselect All'))
         ->call('toggleSelectAll')
         ->assertSet('selectedRowKeys', []);
 });
