@@ -36,6 +36,27 @@ trait ManagesBulkSelection
     }
 
     /**
+     * Clear bulk row checkboxes and reset the Actions select to its default (shows Select all again).
+     */
+    public function clearBulkRowSelection(): void
+    {
+        $this->selectedRowKeys = [];
+        $this->bulkActionSelection = '';
+    }
+
+    /**
+     * When the last row is unchecked, return the toolbar to its default Actions / Select all state.
+     *
+     * @param  list<string>  $value
+     */
+    public function updatedSelectedRowKeys(array $value): void
+    {
+        if ($value === []) {
+            $this->bulkActionSelection = '';
+        }
+    }
+
+    /**
      * Dispatches {@code tableui-bulk-action} with {@see $bulkActionSelection} and current {@see $selectedRowKeys}, then clears the selection mode.
      *
      * Bulk {@see Closure} targets sync {@see TableView::$rows} in place (row removal or patches) without a full page reload.

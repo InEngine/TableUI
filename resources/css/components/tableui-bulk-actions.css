@@ -22,15 +22,45 @@
         @apply min-w-[10rem] rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 shadow-sm focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-gray-500/40;
     }
 
-    .table-ui__select-all {
-        @apply inline-flex cursor-pointer rounded-md px-3 py-1.5 text-sm font-medium transition-colors;
-        background-color: var(--table-ui-primary, theme(colors.gray.600));
-        color: #fff;
+    .table-ui__actions-select:disabled {
+        @apply cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 shadow-none dark:border-gray-700 dark:bg-gray-900/60 dark:text-gray-500;
     }
 
-    .table-ui__select-all:hover {
-        background-color: var(--table-ui-secondary, theme(colors.blue.600));
+    .table-ui__select-all {
+        @apply inline-flex cursor-pointer rounded-md border px-3 py-1.5 text-sm font-medium transition-colors outline-none;
+        background-color: var(--table-ui-primary, theme(colors.gray.600));
         color: #fff;
+        border-color: var(--table-ui-primary, theme(colors.gray.600));
+    }
+
+    .table-ui__deselect-all {
+        @apply inline-flex cursor-pointer rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-200 dark:hover:bg-gray-900;
+    }
+
+    .table-ui__select-all:hover:not(:disabled):not([disabled]),
+    .table-ui__select-all:focus-visible:not(:disabled):not([disabled]) {
+        @apply bg-white;
+        color: var(--table-ui-primary, theme(colors.gray.600));
+        border-color: var(--table-ui-primary, theme(colors.gray.600));
+    }
+
+    .table-ui__select-all:focus-visible:not(:disabled):not([disabled]) {
+        box-shadow:
+            0 0 0 2px #fff,
+            0 0 0 4px var(--table-ui-primary, theme(colors.gray.600));
+    }
+
+    .dark .table-ui__select-all:hover:not(:disabled):not([disabled]),
+    .dark .table-ui__select-all:focus-visible:not(:disabled):not([disabled]) {
+        @apply bg-gray-950;
+        color: var(--table-ui-primary, theme(colors.gray.600));
+        border-color: var(--table-ui-primary, theme(colors.gray.600));
+    }
+
+    .dark .table-ui__select-all:focus-visible:not(:disabled):not([disabled]) {
+        box-shadow:
+            0 0 0 2px theme(colors.gray.950),
+            0 0 0 4px var(--table-ui-primary, theme(colors.gray.600));
     }
 
     .table-ui__select-all:disabled {
