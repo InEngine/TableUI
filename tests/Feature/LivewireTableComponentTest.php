@@ -3,8 +3,11 @@
 declare(strict_types=1);
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Route;
 use InEngine\TableUI\Actions;
+use InEngine\TableUI\ActionTypes\ActionResponse;
 use InEngine\TableUI\ActionTypes\DeleteAction;
+use InEngine\TableUI\ActionTypes\UpdateAction;
 use InEngine\TableUI\ActionTypes\ViewAction;
 use InEngine\TableUI\Columns;
 use InEngine\TableUI\ColumnTypes\Column;
@@ -749,6 +752,165 @@ it('executes a bulk action closure and does not dispatch tableui-bulk-action', f
     expect($GLOBALS['tableui_bulk_closure_test'][0])->toMatchArray(['id' => 10, 'user_name' => 'Ada']);
 
     unset($GLOBALS['tableui_bulk_closure_test']);
+});
+
+it('removes selected rows from Livewire state after a bulk delete closure', function (): void {
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 10, 'user_name' => 'Ada']);
+
+    $bob = new LivewireTableComponentTestModel;
+    $bob->forceFill(['id' => 20, 'user_name' => 'Bob']);
+
+    $table = new Table([$ada, $bob]);
+    $table->setActions(new Actions([
+        new DeleteAction(target: static function (array $rows): void {
+            // Simulates persistence; TableUI drops rows from in-memory state after the closure.
+        }),
+    ]));
+
+    Livewire::test(TableView::class, [
+        'table' => $table,
+    ])
+        ->assertSee('Ada')
+        ->assertSee('Bob')
+        ->set('bulkActionSelection', 'delete')
+        ->set('selectedRowKeys', ['id:10'])
+        ->call('executeBulkAction')
+        ->assertSet('selectedRowKeys', [])
+        ->assertCount('rows', 1)
+        ->assertSet('rows.0.user_name', 'Bob');
+});
+
+it('removes a row after a delete string target without a browser navigation', function (): void {
+    $removed = [];
+
+    Route::get('/tableui-test/delete/{id}', function (string $id) use (&$removed): void {
+        $removed[] = $id;
+    });
+
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 10, 'user_name' => 'Ada']);
+
+    $bob = new LivewireTableComponentTestModel;
+    $bob->forceFill(['id' => 20, 'user_name' => 'Bob']);
+
+    $table = new Table([$ada, $bob]);
+    $table->setActions(new Actions([
+        new DeleteAction(target: '/tableui-test/delete/{id}', bulk: false),
+    ]));
+
+    Livewire::test(TableView::class, [
+        'table' => $table,
+    ])
+        ->call('runRowAction', 'delete', 'id:10')
+        ->assertCount('rows', 1)
+        ->assertSet('rows.0.user_name', 'Bob');
+
+    expect($removed)->toBe(['10']);
+});
+
+it('patchRowsByKeys updates row attributes in Livewire state', function (): void {
+    $message = new LivewireTableComponentTestModel;
+    $message->forceFill(['id' => 10, 'user_name' => 'Ada', 'has_been_read' => true]);
+
+    $table = new Table([$message], new Columns([
+        new Column('user_name'),
+        new Column('has_been_read'),
+    ]));
+
+    $component = Livewire::test(TableView::class, ['table' => $table])
+        ->call('patchRowsByKeys', ['id:10' => ['has_been_read' => false, 'read_at' => null]]);
+
+    expect($component->get('rows')[0]['has_been_read'])->toBeFalse()
+        ->and($component->get('tableDataRevision'))->toBe(1);
+});
+
+it('patches row flags after an update string target without a browser navigation', function (): void {
+    Route::get('/tableui-test/unread/{id}', fn (): string => 'ok');
+
+    $message = new LivewireTableComponentTestModel;
+    $message->forceFill([
+        'id' => 10,
+        'user_name' => 'Ada',
+        'has_been_read' => true,
+    ]);
+
+    $table = new Table([$message], new Columns([
+        new Column('user_name'),
+        new Column('has_been_read'),
+    ]));
+    $table->setActions(new Actions([
+        new UpdateAction('Mark unread', '/tableui-test/unread/{id}', false, true),
+    ]));
+
+    Livewire::test(TableView::class, [
+        'table' => $table,
+    ])
+        ->call('runRowAction', 'update', 'id:10')
+        ->assertSet('rows.0.has_been_read', false)
+        ->assertSet('rows.0.read_at', null);
+});
+
+it('honours ActionResponse::none() from a row action closure', function (): void {
+    $ada = new LivewireTableComponentTestModel;
+    $ada->forceFill(['id' => 10, 'user_name' => 'Ada']);
+
+    $table = new Table([$ada]);
+    $table->setActions(new Actions([
+        new DeleteAction(target: static fn (): ActionResponse => ActionResponse::none(), bulk: false),
+    ]));
+
+    Livewire::test(TableView::class, [
+        'table' => $table,
+    ])
+        ->call('runRowAction', 'delete', 'id:10')
+        ->assertSee('Ada')
+        ->assertCount('rows', 1);
+});
+
+it('toggleSelectAll selects and clears all filtered row keys across pagination pages', function (): void {
+    $models = [];
+
+    foreach (range(1, 12) as $id) {
+        $model = new LivewireTableComponentTestModel;
+        $model->forceFill(['id' => $id, 'user_name' => 'User-'.$id]);
+        $models[] = $model;
+    }
+
+    Livewire::test(TableView::class, [
+        'table' => new Table($models, null, new Options(perPage: 5)),
+    ])
+        ->call('toggleSelectAll')
+        ->assertSet('selectedRowKeys', array_map(static fn (int $id): string => 'id:'.$id, range(1, 12)))
+        ->call('toggleSelectAll')
+        ->assertSet('selectedRowKeys', []);
+});
+
+it('executes bulk delete for rows selected on different pagination pages', function (): void {
+    $models = [];
+
+    foreach (range(1, 12) as $id) {
+        $model = new LivewireTableComponentTestModel;
+        $model->forceFill(['id' => $id, 'user_name' => 'User-'.$id]);
+        $models[] = $model;
+    }
+
+    $table = new Table($models, null, new Options(perPage: 5));
+    $table->setActions(new Actions([
+        new DeleteAction(target: static function (array $rows): void {
+            // Simulates persistence.
+        }),
+    ]));
+
+    Livewire::test(TableView::class, [
+        'table' => $table,
+    ])
+        ->set('selectedRowKeys', ['id:1', 'id:7'])
+        ->set('bulkActionSelection', 'delete')
+        ->call('executeBulkAction')
+        ->assertCount('rows', 10)
+        ->assertSet('tableDataRevision', 1)
+        ->assertSet('selectedRowKeys', []);
 });
 
 it('toggleSelectAll selects and clears all displayed row keys', function (): void {

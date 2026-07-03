@@ -2,6 +2,7 @@
 
 namespace InEngine\TableUI;
 
+use InEngine\TableUI\Support\TableRowActionId;
 use InvalidArgumentException;
 
 /**
@@ -44,6 +45,11 @@ final class Options
     private bool $flipSortIndicatorGlyphs = true;
 
     /**
+     * Row attribute used to identify records for actions ({@see TableRowActionId}).
+     */
+    private string $actionIdKey;
+
+    /**
      * @param  bool  $stripping  Default: true
      * @param  ?string  $defaultSortColumn  When non-null and present on the table, used as initial sort column (also works for legacy headers/rows). When null, {@see TableView} infers {@code id} or the first column only for non-empty domain {@see Table} payloads.
      * @param  ?string  $defaultSortDirection  {@code null} uses {@code config('tableui.default_sort_direction', 'asc')}. Otherwise {@code asc} or {@code desc}.
@@ -53,6 +59,7 @@ final class Options
      * @param  string|null  $verticalMaxHeight  {@code null} uses {@code config('tableui.scrollbars.vertical_max_height')}; empty string treated as uncapped.
      * @param  mixed  $perPage  {@code null} uses {@code config('tableui.pagination')} (package/app default). Any non-negative integer overrides (numeric strings coerced).
      * @param  bool  $flipSortIndicatorGlyphs  When true (default), swap ↑/↓ in the sort button (ascending → ↓, descending → ↑). Pass false for classic arrows.
+     * @param  ?string  $actionIdKey  {@code null} uses {@code config('tableui.action_id_key', 'id')}.
      *
      * @throws InvalidArgumentException When {@see defaultSortDirection} is not asc/desc, or scrollbar modes are invalid.
      */
@@ -66,6 +73,7 @@ final class Options
         ?string $verticalMaxHeight = null,
         mixed $perPage = null,
         bool $flipSortIndicatorGlyphs = true,
+        ?string $actionIdKey = null,
     ) {
         $resolvedSortDirection = $defaultSortDirection ?? (string) config('tableui.default_sort_direction', 'asc');
         $this->assertDefaultSortDirection($resolvedSortDirection);
@@ -79,6 +87,22 @@ final class Options
         );
         $this->perPage = self::resolvePerPage($perPage);
         $this->flipSortIndicatorGlyphs = $flipSortIndicatorGlyphs;
+        $this->actionIdKey = self::normalizeActionIdKey($actionIdKey);
+    }
+
+    public static function normalizeActionIdKey(?string $actionIdKey): string
+    {
+        if ($actionIdKey !== null && trim($actionIdKey) !== '') {
+            return trim($actionIdKey);
+        }
+
+        $configured = config('tableui.action_id_key', 'id');
+
+        if (! is_string($configured) || trim($configured) === '') {
+            return 'id';
+        }
+
+        return trim($configured);
     }
 
     /**
@@ -294,5 +318,15 @@ final class Options
     public function setFlipSortIndicatorGlyphs(bool $flipSortIndicatorGlyphs): void
     {
         $this->flipSortIndicatorGlyphs = $flipSortIndicatorGlyphs;
+    }
+
+    public function getActionIdKey(): string
+    {
+        return $this->actionIdKey;
+    }
+
+    public function setActionIdKey(?string $actionIdKey): void
+    {
+        $this->actionIdKey = self::normalizeActionIdKey($actionIdKey);
     }
 }
