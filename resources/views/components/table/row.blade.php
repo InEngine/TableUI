@@ -1,9 +1,12 @@
 {{-- Single body row; include from TableView so Livewire + columnKeys/showRowSelection stay in scope. --}}
 @php($rowKey = $this->rowKeyForRow($row))
+@php($rowEmphasis = $this->rowEmphasisForRow($row))
 <tr
     @class([
         'table-ui__tr',
         'table-ui__tr--row-link cursor-pointer' => $this->hasRowLinkAction,
+        'table-ui__tr--emphasis-bold' => $rowEmphasis === 'bold',
+        'table-ui__tr--emphasis-highlight' => $rowEmphasis === 'highlight',
         'odd:bg-gray-50/90 dark:odd:bg-gray-900/45 odd:hover:bg-gray-100 dark:odd:hover:bg-gray-800/70' => $stripping,
     ])
     wire:key="table-ui-r-{{ $rowKey }}-v{{ $this->tableDataRevision }}"

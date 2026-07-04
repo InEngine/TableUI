@@ -15,6 +15,7 @@ use InEngine\TableUI\Livewire\Concerns\ManagesBulkSelection;
 use InEngine\TableUI\Livewire\Concerns\SyncsRowsAfterActions;
 use InEngine\TableUI\Options;
 use InEngine\TableUI\Rendering\ColumnRendererRegistry;
+use InEngine\TableUI\Support\RowEmphasis;
 use InEngine\TableUI\Support\SerializableClosurePayload;
 use InEngine\TableUI\Support\TableRowActionId;
 use InEngine\TableUI\Support\TableUiEmailFilterInputFormatter;
@@ -167,6 +168,11 @@ class TableView extends Component
     public string $actionIdKey = 'id';
 
     /**
+     * Serialized {@see Options::getRowEmphasis()} closure for per-row styling (built in {@see mount()}).
+     */
+    public string $serializedRowEmphasisClosure = '';
+
+    /**
      * Serialized {@see Action} definitions for row links + bulk toolbar (built in {@see mount()}).
      *
      * @var list<array{name: string, label: string, bulk: bool, target: ?string, serializedClosure: string, isButton: bool, showInRowColumn: bool}>
@@ -267,6 +273,11 @@ class TableView extends Component
         $this->flipSortIndicatorGlyphs = $table->options()->getFlipSortIndicatorGlyphs();
 
         $this->actionIdKey = $table->options()->getActionIdKey();
+
+        $rowEmphasis = $table->options()->getRowEmphasis();
+        $this->serializedRowEmphasisClosure = $rowEmphasis instanceof \Closure
+            ? SerializableClosurePayload::encode($rowEmphasis)
+            : '';
 
         $hydratedFromDomainTable = false;
 
@@ -816,11 +827,11 @@ class TableView extends Component
      */
     public function actionButtonClasses(string $actionName): string
     {
-        $suffix = match ($actionName) {
-            'delete' => 'btn-delete',
-            'view' => 'btn-view',
-            'edit', 'update' => 'btn-edit',
-            'row_link' => 'btn-neutral',
+        $suffix = match (true) {
+            $actionName === 'delete' || str_ends_with($actionName, '_delete') => 'btn-delete',
+            $actionName === 'view' => 'btn-view',
+            in_array($actionName, ['edit', 'update'], true) || str_contains($actionName, 'mark_unread') || str_contains($actionName, 'mark_read') => 'btn-edit',
+            $actionName === 'row_link' => 'btn-neutral',
             default => 'btn-neutral',
         };
 
@@ -959,6 +970,30 @@ class TableView extends Component
     public function rowKeyForRow(array $row): string
     {
         return $this->rowKey($row);
+    }
+
+    /**
+     * Resolved emphasis token for a row ({@see RowEmphasis}), or {@code null} when unemphasized.
+     *
+     * @param  array<array-key, mixed>  $row
+     */
+    public function rowEmphasisForRow(array $row): ?string
+    {
+        if ($this->serializedRowEmphasisClosure === '') {
+            return null;
+        }
+
+        $result = SerializableClosurePayload::decode($this->serializedRowEmphasisClosure)($row);
+
+        if ($result instanceof RowEmphasis) {
+            return $result->value;
+        }
+
+        if (! is_string($result) || $result === '') {
+            return null;
+        }
+
+        return RowEmphasis::tryFrom($result)?->value;
     }
 
     /**

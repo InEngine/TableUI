@@ -22,6 +22,7 @@ use InEngine\TableUI\FilterTypes\FilterDefinition;
 use InEngine\TableUI\FilterTypes\FilterType;
 use InEngine\TableUI\Livewire\TableView;
 use InEngine\TableUI\Options;
+use InEngine\TableUI\Support\RowEmphasis;
 use InEngine\TableUI\Table;
 use Livewire\Livewire;
 
@@ -1157,4 +1158,53 @@ it('shows rows at the default datetime filter max even when that timestamp has s
         ->assertSet('activeFilterCount', 0)
         ->assertSee('57')
         ->assertSee('10');
+});
+
+it('applies bold row emphasis from Options rowEmphasis closure', function (): void {
+    Livewire::test(TableView::class, [
+        'table' => new Table([], null, new Options(
+            rowEmphasis: static fn (array $row): ?string => ($row['unread'] ?? false) ? RowEmphasis::Bold->value : null,
+        )),
+        'headers' => ['Name'],
+        'rows' => [
+            ['id' => 1, 'unread' => true, 'Name' => 'Unread'],
+            ['id' => 2, 'unread' => false, 'Name' => 'Read'],
+        ],
+    ])
+        ->assertSeeHtml('table-ui__tr--emphasis-bold')
+        ->assertSee('Unread')
+        ->assertSee('Read');
+});
+
+it('applies highlight row emphasis from Options rowEmphasis closure', function (): void {
+    Livewire::test(TableView::class, [
+        'table' => new Table([], null, new Options(
+            rowEmphasis: static fn (array $row): ?RowEmphasis => ($row['flagged'] ?? false)
+                ? RowEmphasis::Highlight
+                : null,
+        )),
+        'headers' => ['Name'],
+        'rows' => [
+            ['id' => 1, 'flagged' => true, 'Name' => 'Flagged'],
+            ['id' => 2, 'flagged' => false, 'Name' => 'Normal'],
+        ],
+    ])
+        ->assertSeeHtml('table-ui__tr--emphasis-highlight')
+        ->assertSee('Flagged')
+        ->assertSee('Normal');
+});
+
+it('clears bold emphasis after row payload is patched in Livewire state', function (): void {
+    Livewire::test(TableView::class, [
+        'table' => new Table([], null, new Options(
+            rowEmphasis: static fn (array $row): ?string => empty($row['has_been_read']) ? RowEmphasis::Bold->value : null,
+        )),
+        'headers' => ['Subject'],
+        'rows' => [
+            ['id' => 1, 'has_been_read' => false, 'Subject' => 'New message'],
+        ],
+    ])
+        ->assertSeeHtml('table-ui__tr--emphasis-bold')
+        ->call('patchRowsByKeys', ['id:1' => ['has_been_read' => true]])
+        ->assertDontSeeHtml('table-ui__tr--emphasis-bold');
 });
