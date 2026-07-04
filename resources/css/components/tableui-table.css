@@ -65,6 +65,26 @@
         @apply transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/60;
     }
 
+    .table-ui__tr--emphasis-bold .table-ui__td {
+        @apply font-semibold text-gray-900 dark:text-gray-100;
+    }
+
+    .table-ui__tr--emphasis-highlight {
+        background-color: color-mix(in oklab, var(--table-ui-primary, theme(colors.gray.600)) 12%, transparent);
+    }
+
+    .table-ui__tr--emphasis-highlight:hover {
+        background-color: color-mix(in oklab, var(--table-ui-primary, theme(colors.gray.600)) 18%, transparent);
+    }
+
+    .dark .table-ui__tr--emphasis-highlight {
+        background-color: color-mix(in oklab, var(--table-ui-primary, theme(colors.gray.600)) 22%, transparent);
+    }
+
+    .dark .table-ui__tr--emphasis-highlight:hover {
+        background-color: color-mix(in oklab, var(--table-ui-primary, theme(colors.gray.600)) 30%, transparent);
+    }
+
     .table-ui__td {
         @apply whitespace-nowrap px-3 py-2 align-middle text-gray-800 dark:text-gray-200;
     }

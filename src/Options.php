@@ -2,6 +2,8 @@
 
 namespace InEngine\TableUI;
 
+use Closure;
+use InEngine\TableUI\Support\RowEmphasis;
 use InEngine\TableUI\Support\TableRowActionId;
 use InvalidArgumentException;
 
@@ -50,6 +52,13 @@ final class Options
     private string $actionIdKey;
 
     /**
+     * Optional per-row emphasis ({@see RowEmphasis}) from row payload.
+     *
+     * @var (Closure(array<string, mixed>): (RowEmphasis|string|null)|null)|null
+     */
+    private ?Closure $rowEmphasis = null;
+
+    /**
      * @param  bool  $stripping  Default: true
      * @param  ?string  $defaultSortColumn  When non-null and present on the table, used as initial sort column (also works for legacy headers/rows). When null, {@see TableView} infers {@code id} or the first column only for non-empty domain {@see Table} payloads.
      * @param  ?string  $defaultSortDirection  {@code null} uses {@code config('tableui.default_sort_direction', 'asc')}. Otherwise {@code asc} or {@code desc}.
@@ -60,6 +69,7 @@ final class Options
      * @param  mixed  $perPage  {@code null} uses {@code config('tableui.pagination')} (package/app default). Any non-negative integer overrides (numeric strings coerced).
      * @param  bool  $flipSortIndicatorGlyphs  When true (default), swap ↑/↓ in the sort button (ascending → ↓, descending → ↑). Pass false for classic arrows.
      * @param  ?string  $actionIdKey  {@code null} uses {@code config('tableui.action_id_key', 'id')}.
+     * @param  (Closure(array<string, mixed>): (RowEmphasis|string|null)|null)|null  $rowEmphasis  When set, {@see Livewire\TableView} applies {@code bold} or {@code highlight} styling per row.
      *
      * @throws InvalidArgumentException When {@see defaultSortDirection} is not asc/desc, or scrollbar modes are invalid.
      */
@@ -74,6 +84,7 @@ final class Options
         mixed $perPage = null,
         bool $flipSortIndicatorGlyphs = true,
         ?string $actionIdKey = null,
+        ?Closure $rowEmphasis = null,
     ) {
         $resolvedSortDirection = $defaultSortDirection ?? (string) config('tableui.default_sort_direction', 'asc');
         $this->assertDefaultSortDirection($resolvedSortDirection);
@@ -88,6 +99,7 @@ final class Options
         $this->perPage = self::resolvePerPage($perPage);
         $this->flipSortIndicatorGlyphs = $flipSortIndicatorGlyphs;
         $this->actionIdKey = self::normalizeActionIdKey($actionIdKey);
+        $this->rowEmphasis = $rowEmphasis;
     }
 
     public static function normalizeActionIdKey(?string $actionIdKey): string
@@ -328,5 +340,21 @@ final class Options
     public function setActionIdKey(?string $actionIdKey): void
     {
         $this->actionIdKey = self::normalizeActionIdKey($actionIdKey);
+    }
+
+    /**
+     * @return (Closure(array<string, mixed>): (RowEmphasis|string|null)|null)|null
+     */
+    public function getRowEmphasis(): ?Closure
+    {
+        return $this->rowEmphasis;
+    }
+
+    /**
+     * @param  (Closure(array<string, mixed>): (RowEmphasis|string|null)|null)|null  $rowEmphasis
+     */
+    public function setRowEmphasis(?Closure $rowEmphasis): void
+    {
+        $this->rowEmphasis = $rowEmphasis;
     }
 }

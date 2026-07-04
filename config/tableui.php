@@ -32,6 +32,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Row emphasis (optional)
+    |--------------------------------------------------------------------------
+    |
+    | Per-table row styling is configured on {@see \InEngine\TableUI\Options::setRowEmphasis()} with a
+    | closure that receives each row payload and returns {@see \InEngine\TableUI\Support\RowEmphasis::Bold},
+    | {@see \InEngine\TableUI\Support\RowEmphasis::Highlight}, or {@code null}. There is no global default;
+    | host apps supply criteria (for example unread contact messages → bold).
+    |
+    */
+
+    /*
+    |--------------------------------------------------------------------------
     | Filters (combobox autocomplete)
     |--------------------------------------------------------------------------
     |
