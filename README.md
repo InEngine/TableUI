@@ -29,7 +29,10 @@ php artisan vendor:publish --tag="tableui-config"
 
 ### Tailwind CSS (v4)
 
-**Recommended (host app already uses `@tailwindcss/vite`):** import **`resources/css/tableui.css` only** — it pulls in **`partials/tableui-sources.css`** (`@source` scanning for this package’s Blade views and inline literals), shared base **`[x-cloak]`**, filter-panel **view transitions**, and **`components/tableui-*.css`** (`@layer components` chunks). It **does not** `@import "tailwindcss"` again, so Tailwind is loaded a single time from your app entry (e.g. `base.css`).
+If your app already loads Tailwind (for example with `@tailwindcss/vite`), import TableUI’s entry stylesheet from
+`resources/css/tableui.css`. That file brings in the package’s `@source` paths, shared base styles such as `[x-cloak]`,
+filter-panel view transitions, and the component layer CSS. It does **not** import Tailwind again, so you keep a single
+Tailwind pipeline in your app entry:
 
 ```css
 @import "tailwindcss";
@@ -37,7 +40,7 @@ php artisan vendor:publish --tag="tableui-config"
 @import "./../../vendor/inengine/tableui/resources/css/tableui.css";
 ```
 
-**Optional publish** (copy into your repo):
+Prefer not to point at `vendor/` from your CSS? Publish a copy into the app:
 
 ```bash
 php artisan vendor:publish --tag="tableui-css"
@@ -47,9 +50,8 @@ php artisan vendor:publish --tag="tableui-css"
 @import "./vendor/tableui.css"; /* resources/css/vendor/tableui.css */
 ```
 
-**Standalone bundle:** `resources/css/tableui-standalone.css` imports Tailwind + `tableui.css` and is the **Vite input**
-for maintainers. Building produces `public/css/tableui.css` for environments that link a precompiled stylesheet instead
-of merging into the app pipeline:
+Some setups link a precompiled stylesheet instead of merging into the app’s Vite/Tailwind build. Maintainers (or anyone
+developing this package from a path checkout) can build that bundle with:
 
 ```bash
 cd vendor/inengine/tableui   # or this package’s root when developing the package
@@ -57,8 +59,8 @@ npm install
 npm run build
 ```
 
-Release checklist: run `npm run build` so `public/css/tableui.css` stays up to date for consumers who use the static
-file.
+That uses `resources/css/tableui-standalone.css` as the Vite input and writes `public/css/tableui.css`. Run
+`npm run build` before a release so that static file stays current for those consumers.
 
 The config includes:
 
