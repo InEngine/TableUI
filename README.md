@@ -63,6 +63,16 @@ file.
 The config includes:
 
 - **`empty_message`** — default empty-state copy for the Livewire table when no `emptyMessage` prop is passed.
+- **`action_id_key`** — row attribute used for Livewire selection keys, `{id}` URL tokens, and closure payloads
+  (default `id`; use `hid` when routes resolve by human-readable id). Override per table via `Options`.
+- **`default_sort_direction`** — initial client sort direction (`asc` / `desc`) when default sort is enabled. UUID `id`
+  columns are not chronological; prefer `enableDefaultSort: false` or an explicit `defaultSortColumn` such as
+  `created_at` / `hid` when needed.
+- **`pagination`** — client-side page size (integer `>= 1`, or `0` to show all rows). Override per table via
+  `Options` / Livewire `perPage`.
+- **`scrollbars`** — horizontal/vertical overflow modes and optional `vertical_max_height`.
+- **`theme`** — primary/secondary Tailwind palette tokens for table chrome.
+- **`filters`** — autocomplete, enum/text multiselect defaults, and email TLD matching (see published file).
 - **`column_types`** — package defaults grouped by column kind. For **`boolean`** you can set **`show_false`** (hide the
   false-state icon when `false`), plus **`true`** / **`false`** branches, each with:
     - **`icon`** — Heroicons v2 outline slug (e.g. `check`, `x-mark`). Unknown slugs fall back until you extend the icon
@@ -75,8 +85,9 @@ The config includes:
 - **`column_types.number`** — **`max_decimals`** for non-integer formatting in `NumberColumnRenderer`.
 - **`column_types.money`** — **`divisor`** (default `100` for cents), **`decimals`**, **`prefix`**, **`suffix`** for
   `MoneyColumnRenderer`.
-- **`columns`** / **`renderers`** — optional FQCN lists for app-defined column types and renderers (see comments in the
-  published file).
+- **`columns`** / **`renderers`** / **`actions`** / **`filter_definitions`** — optional FQCN lists for app-defined
+  column types, renderers, default action providers, and filter definition providers (see comments in the published
+  file).
 
 Column inference (when building `Columns` from `Schema::getColumnType()` maps plus sample data) uses the **schema type
 first** (boolean, id patterns, timestamps, enums, text, **string family**, **numeric family**), then **upgrades** using
@@ -99,6 +110,8 @@ php artisan vendor:publish --tag="tableui-views"
 
 ## Usage
 
+### Quick start
+
 Create a table from an Eloquent collection and render it with the Livewire component:
 
 ```php
@@ -111,6 +124,137 @@ $table = Table::fromCollection(User::query()->latest()->limit(50)->get());
 ```blade
 <livewire:tableui.table-view :table="$table" />
 ```
+
+When you omit optional arguments, TableUI:
+
+- Infers **columns** from the first model’s attributes
+- Builds **filters** with `Filters::inferFromTable()`
+- Attaches **default view / edit / delete** actions via `DefaultTableActions` (pass `Actions::empty()` to disable)
+- Uses **`Options`** constructor defaults (striping, default sort, pagination from config)
+
+### Options (sort, pagination, action id)
+
+Pass an `Options` instance as the third argument to `Table::fromCollection` (after optional `Columns`):
+
+```php
+use InEngine\TableUI\Columns;
+use InEngine\TableUI\ColumnTypes\Primitives\TextColumn;
+use InEngine\TableUI\Options;
+use InEngine\TableUI\Table;
+
+$table = Table::fromCollection(
+    $messages,
+    new Columns([
+        new TextColumn('hid'),
+        new TextColumn('subject'),
+    ]),
+    new Options(
+        defaultSortColumn: 'hid',
+        defaultSortDirection: 'desc',
+        actionIdKey: 'id', // selection keys + `{id}` in action URLs
+        perPage: 25,
+    ),
+);
+```
+
+Useful flags:
+
+- **`enableDefaultSort: false`** — do not apply an initial client sort (host query order stands until the user clicks a
+  header). Helpful when the default column would be a non-chronological UUID `id`.
+- **`actionIdKey`** — which row attribute identifies the record for actions (`id` by default; set globally with
+  `config('tableui.action_id_key')`). Keep this aligned with how your routes and handlers resolve models even if the
+  visible / sort column is `hid`.
+
+### Row and bulk actions
+
+Pass an `Actions` collection as the fourth argument. String targets may include `{id}` (replaced from the configured
+action id key) and other `{column}` tokens. Closure targets run on the server via Livewire:
+
+```php
+use InEngine\TableUI\Actions;
+use InEngine\TableUI\ActionTypes\ActionResponse;
+use InEngine\TableUI\ActionTypes\DeleteAction;
+use InEngine\TableUI\ActionTypes\UpdateAction;
+use InEngine\TableUI\ActionTypes\ViewAction;
+use InEngine\TableUI\Options;
+use InEngine\TableUI\Table;
+
+$table = Table::fromCollection(
+    $messages,
+    columns: null,
+    options: new Options(actionIdKey: 'id'),
+    actions: new Actions([
+        new ViewAction('Open', '/messages/{id}', bulk: false, isButton: true),
+        new UpdateAction(
+            'Mark unread',
+            static function (array $row): ActionResponse {
+                // Persist your domain change, then tell the table how to refresh rows:
+                return ActionResponse::patchRowsForRows([$row], ['has_been_read' => false]);
+            },
+            bulk: false,
+            isButton: true,
+        ),
+        new DeleteAction(
+            'Delete',
+            static function (array $row): ActionResponse {
+                // Delete the model, then remove it from the Livewire row set:
+                return ActionResponse::removeRowsForRows([$row]);
+            },
+            bulk: false,
+            isButton: true,
+        ),
+        // Bulk actions: Closure receives list<array> $rows
+        new DeleteAction(
+            'Delete selected',
+            static function (array $rows): ActionResponse {
+                return ActionResponse::removeRowsForRows($rows);
+            },
+            bulk: true,
+            isButton: true,
+        ),
+    ]),
+);
+```
+
+**Bulk toolbar:** when the table has bulk-capable actions, users can select rows, run an action from the toolbar, use
+**Select all** / **Deselect All** for the current page, and clear the whole selection with the dedicated **Deselect
+All** control. The Actions control stays disabled until at least one row is selected.
+
+### In-place row sync (`ActionResponse`)
+
+Mutating row and bulk actions refresh `TableView` rows without a full page reload. Closures may return
+`ActionResponse` to control that sync:
+
+| Helper | Effect |
+|--------|--------|
+| `ActionResponse::removeRows()` / `removeRowsForRows($rows)` | Drop rows from the in-memory table |
+| `ActionResponse::patchRows()` / `patchRowsForRows($rows, $attrs)` | Merge attributes into existing rows |
+| `ActionResponse::none()` | Leave the Livewire row set unchanged |
+
+If you omit `ActionResponse`, TableUI infers updates from the action name where possible (for example `delete` removes
+rows; names containing `unread` or `spam` patch common flags). Prefer an explicit `ActionResponse` for app-specific
+handlers.
+
+Use `InEngine\TableUI\Support\TableRowActionId` in host code when you need the same action-id / row-key rules outside
+the package.
+
+### Row emphasis
+
+Bold or highlight rows from payload criteria via `Options` (there is no global default):
+
+```php
+use InEngine\TableUI\Options;
+use InEngine\TableUI\Support\RowEmphasis;
+
+new Options(
+    rowEmphasis: static fn (array $row): ?RowEmphasis => empty($row['has_been_read'])
+        ? RowEmphasis::Bold
+        : null,
+);
+```
+
+`RowEmphasis::Bold` and `RowEmphasis::Highlight` map to `.table-ui__tr--emphasis-bold` and
+`.table-ui__tr--emphasis-highlight`. Returning `null` (or omitting the option) leaves the row unstyled.
 
 ## Extending TableUI
 
