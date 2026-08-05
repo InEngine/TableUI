@@ -13,6 +13,15 @@ Use this file so new chats pick up **recent package work**, **branch focus**, an
 
 <!-- SESSION_LOG_START -->
 
+### 2026-08-05 — PR #45 merged; v1.0.4 released
+
+- **Merged:** **[PR #45](https://github.com/InEngine/TableUI/pull/45)** (`dev` → `main`) — merge commit **`4df0067`**. Conflict fix on **`dev`:** **`81dc62a`** (kept **dev** `CHANGELOG` + `composer.lock`; took **main** workflow bumps).
+- **Release:** GitHub **[Version 1.0.4](https://github.com/InEngine/TableUI/releases/tag/v1.0.4)** / tag **`v1.0.4`** (includes **#9** row sync, **#33** bulk toolbar, **#35** row emphasis + bulk `btn-*` classes, README rework).
+- **QA:** local **`composer test`** — **243 passed** (657 assertions).
+- **Also this session:** README voice/structure (Usage after Installation; **Customization** for CSS/views/config; second-person copy).
+- **Next (package):** open issues **#10** (multi-dataset), **#14** (custom pagination), **#36** (user-based actions) — work as prioritized; bump/tag again when those ship.
+- **Host (LTC):** switch back to **`issue-144-dynamic-tables`** — **`composer update inengine/tableui`** to **`^1.0.4`**, remove path repo, push branch / open PR to **`dev`**.
+
 ### 2026-07-03 — Issues #9 / #33 merged; #35 committed; next #10, #14, #36
 
 - **Branch (current work):** **`issue-35-row-highlighting`** — commit **`4a7f2b3`** (author **James Johnson**; **not pushed**).
