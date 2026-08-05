@@ -15,6 +15,35 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Action row identifier
+    |--------------------------------------------------------------------------
+    |
+    | Row attribute used to target actions on the correct Eloquent model / database row:
+    | Livewire selection keys ({@code {key}:{value}}), URL {@code {id}} token replacement, and closure payloads.
+    |
+    | • {@code id} — package default; use when the model primary key (often UUID) is present on each row payload.
+    | • {@code hid} — human-readable id when routes and controllers resolve records by {@code hid} instead.
+    |
+    | Override per table via {@see \InEngine\TableUI\Options::setActionIdKey()} or the constructor argument.
+    | {@see \InEngine\TableUI\Support\TableRowActionId} centralizes reads for app action handlers.
+    |
+    */
+    'action_id_key' => 'id',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Row emphasis (optional)
+    |--------------------------------------------------------------------------
+    |
+    | Per-table row styling is configured on {@see \InEngine\TableUI\Options::setRowEmphasis()} with a
+    | closure that receives each row payload and returns {@see \InEngine\TableUI\Support\RowEmphasis::Bold},
+    | {@see \InEngine\TableUI\Support\RowEmphasis::Highlight}, or {@code null}. There is no global default;
+    | host apps supply criteria (for example unread contact messages → bold).
+    |
+    */
+
+    /*
+    |--------------------------------------------------------------------------
     | Filters (combobox autocomplete)
     |--------------------------------------------------------------------------
     |
@@ -304,6 +333,12 @@ return [
     | Each class must implement {@see \InEngine\TableUI\Contracts\BuildsDefaultTableAction}.
     | Providers are called by {@see \InEngine\TableUI\DefaultTableActions::forTable()} and may
     | return one extra {@see \InEngine\TableUI\ActionTypes\Action} (or null to skip).
+    |
+    | **In-place row sync (issue #9):** Mutating row/bulk actions (delete, update, closure targets)
+    | refresh {@see \InEngine\TableUI\Livewire\TableView::$rows} via Livewire without a full page
+    | reload. Closures may return {@see \InEngine\TableUI\ActionTypes\ActionResponse} to override
+    | default removal/patch behaviour. String-target GET routes run in-process on the server; view/edit
+    | links use Livewire {@code navigate: true}.
     |
     | @var list<class-string<\InEngine\TableUI\Contracts\BuildsDefaultTableAction>>
     */

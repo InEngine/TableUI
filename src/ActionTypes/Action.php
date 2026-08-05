@@ -3,20 +3,22 @@
 namespace InEngine\TableUI\ActionTypes;
 
 use Closure;
+use InEngine\TableUI\Support\TableRowActionId;
 
 /**
  * Base definition for a table row or bulk action (see {@see EditAction}, {@see ViewAction}, …).
  *
  * {@see $target}: a path or URL for browser navigation, or a {@see Closure} executed on the server by Livewire.
  * Closures must be serializable (avoid capturing unserializable values). Signatures: row actions
- * {@code function (array $row): void}; bulk actions {@code function (array $rows): void} where {@code $rows} is a list of row arrays.
+ * {@code function (array $row): void|ActionResponse}; bulk actions {@code function (array $rows): void|ActionResponse}
+ * where {@code $rows} is a list of row arrays. Return {@see ActionResponse} to override default in-table row sync.
  */
 abstract class Action
 {
     public function __construct(
         protected ?string $label = null,
         /**
-         * Path/URL (optional `{id}` token) or a server-side {@see Closure}.
+         * Path/URL (optional `{id}` token for the designated action id, plus other `{column}` tokens) or a server-side {@see Closure}.
          */
         protected string|Closure|null $target = null,
         protected bool $bulk = false,
@@ -88,7 +90,7 @@ abstract class Action
      *
      * @param  array<array-key, mixed>  $row
      */
-    public function urlForRow(array $row): ?string
+    public function urlForRow(array $row, ?string $actionIdKey = null): ?string
     {
         $t = $this->target;
 
@@ -96,35 +98,19 @@ abstract class Action
             return null;
         }
 
-        return self::resolveUrlFromStringTarget(is_string($t) ? $t : null, $row);
+        return self::resolveUrlFromStringTarget(is_string($t) ? $t : null, $row, $actionIdKey);
     }
 
     /**
      * Shared URL resolution for string targets (used by Livewire snapshots).
      *
+     * The {@code {id}} token uses the designated action id value ({@see TableRowActionId}).
+     *
      * @param  array<array-key, mixed>  $row
      */
-    public static function resolveUrlFromStringTarget(?string $target, array $row): ?string
+    public static function resolveUrlFromStringTarget(?string $target, array $row, ?string $actionIdKey = null): ?string
     {
-        if ($target === null || $target === '') {
-            return null;
-        }
-
-        $id = $row['id'] ?? null;
-
-        if (str_contains($target, '{id}')) {
-            return str_replace('{id}', rawurlencode((string) $id), $target);
-        }
-
-        if (str_starts_with($target, '/') && $id !== null && (string) $id !== '') {
-            return rtrim($target, '/').'/'.rawurlencode((string) $id);
-        }
-
-        if (filter_var($target, FILTER_VALIDATE_URL) !== false) {
-            return $target;
-        }
-
-        return $target;
+        return TableRowActionId::resolveUrlFromStringTarget($target, $row, $actionIdKey);
     }
 
     private function defaultLabelFromClassName(): string

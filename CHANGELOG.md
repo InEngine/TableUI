@@ -2,6 +2,19 @@
 
 All notable changes to `TableUI` will be documented in this file.
 
+## Unreleased
+
+### What's Changed
+
+* Actions: sync table rows in Livewire after row and bulk actions (#9) by @excellentingenuity in https://github.com/InEngine/TableUI/pull/34
+  * `ActionResponse` (`removeRows` / `patchRows` / `none`, plus `*ForRows` helpers)
+  * `action_id_key` config + `Options` / `TableRowActionId` for selection keys and `{id}` URL tokens
+  * In-process mutating actions refresh the Livewire row set without a full page reload
+* Bulk toolbar: Deselect All control and selection UX polish (#33) by @excellentingenuity in https://github.com/InEngine/TableUI/pull/37
+* Add row emphasis criteria and bulk action button class mapping (#35) by @excellentingenuity in https://github.com/InEngine/TableUI/pull/38
+  * `Options::rowEmphasis` / `RowEmphasis` (`bold`, `highlight`)
+  * Bulk delete / mark read / mark unread actions use the same `btn-*` classes as row counterparts
+
 ## Version 1.0.3 - 2026-05-22
 
 ### What's Changed

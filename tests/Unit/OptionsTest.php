@@ -15,7 +15,8 @@ it('applies constructor defaults', function (): void {
         ->and($options->getScrollbarHorizontal())->toBe('auto')
         ->and($options->getScrollbarVertical())->toBe('auto')
         ->and($options->getVerticalMaxHeight())->toBeNull()
-        ->and($options->getPerPage())->toBe((int) config('tableui.pagination', 25));
+        ->and($options->getPerPage())->toBe((int) config('tableui.pagination', 25))
+        ->and($options->getActionIdKey())->toBe((string) config('tableui.action_id_key', 'id'));
 });
 
 it('allows disabling flipSortIndicatorGlyphs via named constructor argument', function (): void {
