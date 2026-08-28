@@ -1,0 +1,12 @@
+---
+description: Read and maintain local session handoff for continuity between chats
+alwaysApply: true
+---
+
+# Session handoff
+
+At the **start** of substantive work on this repo, read **`.cursor/SESSION_HANDOFF.md`** (newest entry under `SESSION_LOG_START`) for recent decisions, branch focus, and next steps. For sibling InEngine apps/modules and Composer path packages, also skim the **platform map** near the top of that file.
+
+When the user asks to **save context**, **update the handoff**, **end session**, or similar—or after completing a meaningful chunk of work—append a new session block at the **top** of the log (see template in that file). Keep entries short; **do not** record secrets.
+
+If the handoff is missing or empty, offer to seed it from the current task.
